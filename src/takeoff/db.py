@@ -3,7 +3,12 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from takeoff.config import settings
 
-engine = create_engine(settings.database_url, pool_pre_ping=True)
+_is_sqlite = settings.database_url.startswith("sqlite")
+engine = create_engine(
+    settings.database_url,
+    pool_pre_ping=not _is_sqlite,
+    connect_args={"check_same_thread": False} if _is_sqlite else {},
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 

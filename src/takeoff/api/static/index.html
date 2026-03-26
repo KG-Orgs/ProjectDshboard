@@ -290,10 +290,10 @@
       const data = await res.json();
 
       if (res.ok) {
+        clearSelection();
         showStatus('success', 'Upload successful! Drawing stored for processing.');
         result.textContent = JSON.stringify(data, null, 2);
         result.style.display = 'block';
-        clearSelection();
       } else {
         showStatus('error', data.detail ?? 'Upload failed.');
         uploadBtn.disabled = false;
