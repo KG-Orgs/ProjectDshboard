@@ -26,6 +26,7 @@ class CalloutAssociator:
 
     def associate(self, view: View) -> None:
         """Run all substages for a view in dependency order."""
+        from takeoff.pipeline.phase6_callout_association.callout_reader import CalloutReader
         from takeoff.pipeline.phase6_callout_association.leader import LeaderAssociator
         from takeoff.pipeline.phase6_callout_association.annotation_role import AnnotationRoleClassifier
         from takeoff.pipeline.phase6_callout_association.proximity import ProximityAssociator
@@ -33,6 +34,7 @@ class CalloutAssociator:
         from takeoff.pipeline.phase6_callout_association.typ import TypPropagator
         from takeoff.pipeline.phase6_callout_association.conflict import ConflictResolver
 
+        CalloutReader(self.db).run(view)             # 2.4: extract nearby text
         LeaderAssociator(self.db).run(view)          # 5a
         AnnotationRoleClassifier(self.db).run(view)  # 5b
         ProximityAssociator(self.db).run(view)       # 5c

@@ -34,6 +34,7 @@ class Callout(Base):
     callout_type: Mapped[CalloutType] = mapped_column(Enum(CalloutType), default=CalloutType.unknown)
     confidence: Mapped[float | None] = mapped_column(Float)
     classification_method: Mapped[str | None] = mapped_column(String)
+    nearby_texts: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
 
 
 class AssociationMode(str, enum.Enum):
