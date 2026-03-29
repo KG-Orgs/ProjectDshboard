@@ -47,13 +47,11 @@ class ScaleEngine:
         Detect the scale for a view and persist it.
         Returns the numeric ratio (paper PDF units → real inches), or None if not found.
         """
-        raise NotImplementedError(
-            "Phase 3 not yet implemented. "
-            "Steps: (1) search text blocks near view title for scale string, "
-            "(2) try _SCALE_PATTERNS regex list, "
-            "(3) detect graphic scale bar, "
-            "(4) set view.scale_ratio and view.scale_confidence."
-        )
+        # For MVP, scale is unknown.
+        # TODO: Implement scale detection from text or graphics.
+        view.scale_ratio = None
+        self.db.commit()
+        return None
 
     def _parse_scale_text(self, text: str) -> float | None:
         """Try each pattern in _SCALE_PATTERNS. Returns ratio or None."""

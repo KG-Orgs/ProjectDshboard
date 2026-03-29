@@ -29,13 +29,9 @@ class ViewDetector:
         Detect and classify all views on the drawing sheet.
         Persists View records and returns the list.
         """
-        raise NotImplementedError(
-            "Phase 2 not yet implemented. "
-            "Steps: (1) find title block rectangle in outer margin, "
-            "(2) detect viewport boundaries as closed rectangles, "
-            "(3) match nearby text labels to classify view type, "
-            "(4) use Claude vision for ambiguous cases."
-        )
+        # For MVP, views are already created as pages in phase 1.
+        # No further detection needed.
+        return drawing.views
 
     def _detect_title_block(self, entities: list[dict]) -> dict | None:
         """Find the largest rectangle in the outer 15% margin — the title block."""

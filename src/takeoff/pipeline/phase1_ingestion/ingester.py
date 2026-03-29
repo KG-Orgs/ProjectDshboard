@@ -18,9 +18,11 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+import fitz
+
 from sqlalchemy.orm import Session
 
-from takeoff.models.drawing import Drawing
+from takeoff.models.drawing import Drawing, View, ViewType
 
 
 class DrawingIngester:
@@ -33,12 +35,32 @@ class DrawingIngester:
 
         Returns the Drawing ORM object.
         """
-        raise NotImplementedError(
-            "Phase 1 not yet implemented. "
-            "Implement using pymupdf: open PDF, iterate pages, extract "
-            "vector paths (page.get_drawings()), text blocks (page.get_text('rawdict')), "
-            "and render a raster image (page.get_pixmap()) for the provenance layer."
-        )
+        if drawing_id is None:
+            drawing_id = str(uuid.uuid4())
+
+        doc = fitz.open(pdf_path)
+        drawing = Drawing(drawing_id=drawing_id, source_file=str(pdf_path))
+        self.db.add(drawing)
+
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)
+            rect = page.rect
+            view_id = str(uuid.uuid4())
+            view = View(
+                view_id=view_id,
+                drawing_id=drawing_id,
+                view_type=ViewType.unknown,
+                bbox_x1=rect.x0,
+                bbox_y1=rect.y0,
+                bbox_x2=rect.x1,
+                bbox_y2=rect.y1,
+                scale_ratio=None,  # unknown
+            )
+            self.db.add(view)
+
+        self.db.commit()
+        doc.close()
+        return drawing
 
     # ------------------------------------------------------------------
     # Internal helpers (to be implemented)

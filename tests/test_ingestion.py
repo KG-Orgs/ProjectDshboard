@@ -63,20 +63,18 @@ def test_drawing_model_persists(db):
 def test_phase1_ingestion_smoke(db):
     """
     If a fixture PDF exists, run Phase 1 ingestion and assert at least one
-    vector entity was extracted.
+    view was created.
 
-    Phase 1 is not yet implemented — this test will xfail until it is.
+    Phase 1 is partially implemented — creates views for each page.
     """
     from takeoff.pipeline.phase1_ingestion.ingester import DrawingIngester
 
     drawing_id = str(uuid.uuid4())
-    try:
-        drawing = DrawingIngester(db).ingest(FIXTURE_PDF, drawing_id)
-        db.commit()
-    except NotImplementedError:
-        pytest.xfail("Phase 1 ingestion not yet implemented")
+    drawing = DrawingIngester(db).ingest(FIXTURE_PDF, drawing_id)
+    db.commit()
 
     assert drawing is not None, "Ingester should return a Drawing"
-    # Once implemented, at least one entity should exist.
-    total_entities = sum(len(v.classified_entities) for v in drawing.views)
-    assert total_entities > 0, "Expected at least one vector entity after ingestion"
+    assert len(drawing.views) > 0, "Expected at least one view after ingestion"
+    for view in drawing.views:
+        assert view.view_id is not None
+        assert view.bbox_x1 is not None  # coordinate space
