@@ -24,48 +24,37 @@ def get_client() -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
 
-def classify_annotation_role(
-    text: str,
-    font_size: float | None,
-    nearby_pattern_class: str | None,
-    is_leader_connected: bool,
-    context_texts: list[str] | None = None,
-) -> dict:
+def classify_material_type(text: str) -> dict:
     """
-    Ask Claude to classify the role of an annotation text block.
+    Ask Claude to normalize a material designation text.
 
     Returns:
     {
-      "role": "member_mark" | "elevation_note" | "general_note" | "material_designation" | ...,
+      "normalized_name": str,
+      "category": "structural_steel" | "unknown",
+      "default_measurement_basis": "length" | "area" | "volume" | "count",
+      "default_unit": "LF" | "SF" | "CF" | "EA",
       "confidence": float,
       "reasoning": str
     }
     """
     client = get_client()
 
-    context = ""
-    if context_texts:
-        context = "\nNearby text blocks: " + ", ".join(f'"{t}"' for t in context_texts[:5])
-
     prompt = f"""You are analyzing a structural engineering drawing.
-A text block has been extracted from a CAD-exported PDF.
+A text block has been identified as a material designation, but deterministic rules could not normalize it.
 
 Text: "{text}"
-Font size (relative): {font_size}
-Nearby pattern type: {nearby_pattern_class or "unknown"}
-Connected to leader line: {is_leader_connected}{context}
 
-Classify this text block's role. Choose from:
-- material_designation (e.g. W10x77, HSS6x6x1/4)
-- member_mark (e.g. B12, G4, C-1)
-- detail_ref (e.g. 3/S401)
-- section_ref
-- elevation_note (e.g. TOP OF STEEL EL. 118'-0")
-- dimension (a measured length)
-- general_note (instructions, specifications)
-- unknown
+Normalize this material designation to a canonical form. For structural steel:
+- W-shapes: W10x77
+- HSS: HSS6x6x1/4
+- Pipes: PIPE6STD
+- Angles: L3x3x1/4
+- Channels: C8x11.5
 
-Respond with JSON only: {{"role": "...", "confidence": 0.0-1.0, "reasoning": "..."}}"""
+If it's not a recognizable material, set category to "unknown" and normalized_name to "UNKNOWN_{text.upper().replace(' ', '_')}".
+
+Respond with JSON only: {{"normalized_name": "...", "category": "...", "default_measurement_basis": "...", "default_unit": "...", "confidence": 0.0-1.0, "reasoning": "..."}}"""
 
     response = client.messages.create(
         model=MODEL,
@@ -78,4 +67,11 @@ Respond with JSON only: {{"role": "...", "confidence": 0.0-1.0, "reasoning": "..
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
-        return {"role": "unknown", "confidence": 0.0, "reasoning": "parse error"}
+        return {
+            "normalized_name": f"UNKNOWN_{text.upper().replace(' ', '_')}",
+            "category": "unknown",
+            "default_measurement_basis": "length",
+            "default_unit": "LF",
+            "confidence": 0.0,
+            "reasoning": "parse error"
+        }

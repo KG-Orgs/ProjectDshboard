@@ -14,11 +14,15 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy.orm import Session
+from rapidfuzz import fuzz, process
+from sqlalchemy.orm import Session, joinedload
 
+from takeoff.models.callout import CalloutAssociation
 from takeoff.models.drawing import Drawing
 from takeoff.models.material import MaterialType
-from takeoff.pipeline.phase7_material_normalization.catalog import normalize_material_text
+from takeoff.models.pattern import Pattern
+from takeoff.models.view import View
+from takeoff.ai.client import classify_material_type
 
 
 class MaterialNormalizer:
@@ -30,14 +34,53 @@ class MaterialNormalizer:
         For each CalloutAssociation with a resolved_material_text, find or create
         a matching MaterialType record and link it.
         """
-        raise NotImplementedError(
-            "Phase 7 not yet implemented. "
-            "Load all CalloutAssociations with resolved_material_text for this drawing, "
-            "call normalize_material_text() on each, "
-            "if result is None try rapidfuzz against existing MaterialType.normalized_name, "
-            "if still None call AI classifier, "
-            "get_or_create MaterialType, link to the association."
+        # Load associations with resolved_material_text for this drawing
+        associations = (
+            self.db.query(CalloutAssociation)
+            .join(CalloutAssociation.pattern)
+            .join(Pattern.view)
+            .filter(
+                View.drawing_id == drawing.drawing_id,
+                CalloutAssociation.resolved_material_text.isnot(None)
+            )
+            .options(joinedload(CalloutAssociation.pattern).joinedload(Pattern.view))
+            .all()
         )
+
+        for assoc in associations:
+            raw = assoc.resolved_material_text.strip()
+            norm = normalize_material_text(raw)
+            if norm:
+                mt = self.get_or_create_material_type(
+                    norm['normalized_name'],
+                    norm['category'],
+                    norm['default_measurement_basis'],
+                    norm['default_unit']
+                )
+                assoc.material_type_id = mt.material_type_id
+            else:
+                # Fuzzy match against existing MaterialType.normalized_name
+                existing_names = [
+                    mt.normalized_name for mt in self.db.query(MaterialType.normalized_name).all()
+                ]
+                if existing_names:
+                    best_match = process.extractOne(raw, existing_names, scorer=fuzz.ratio)
+                    if best_match and best_match[1] > 80:  # Confidence threshold
+                        mt = self.db.query(MaterialType).filter_by(normalized_name=best_match[0]).first()
+                        assoc.material_type_id = mt.material_type_id
+                        continue
+
+                # AI fallback
+                ai_result = classify_material_type(raw)
+                mt = self.get_or_create_material_type(
+                    ai_result['normalized_name'],
+                    ai_result['category'],
+                    ai_result['default_measurement_basis'],
+                    ai_result['default_unit']
+                )
+                assoc.material_type_id = mt.material_type_id
+
+        self.db.commit()
 
     def get_or_create_material_type(self, normalized_name: str, category: str,
                                      measurement_basis: str, unit: str) -> MaterialType:

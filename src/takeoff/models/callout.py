@@ -62,11 +62,13 @@ class CalloutAssociation(Base):
     evidence: Mapped[dict[str, Any] | None] = mapped_column(JSON)  # mode-specific payload
     resolved_callout_type: Mapped[CalloutType | None] = mapped_column(Enum(CalloutType), nullable=True)
     resolved_material_text: Mapped[str | None] = mapped_column(String)
+    material_type_id: Mapped[str | None] = mapped_column(ForeignKey("material_types.material_type_id"), nullable=True)
     is_override: Mapped[bool] = mapped_column(Boolean, default=False)
     flagged_for_review: Mapped[bool] = mapped_column(Boolean, default=False)
     review_reason: Mapped[str | None] = mapped_column(Text)
 
     pattern: Mapped["Pattern"] = relationship(back_populates="callout_associations")  # type: ignore[name-defined]
+    material_type: Mapped["MaterialType"] = relationship()  # type: ignore[name-defined]
 
 
 class ScheduleType(str, enum.Enum):
