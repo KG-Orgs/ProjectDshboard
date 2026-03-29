@@ -49,6 +49,7 @@ class DrawingIngester:
             view = View(
                 view_id=view_id,
                 drawing_id=drawing_id,
+                page_num=page_num,
                 view_type=ViewType.unknown,
                 bbox_x1=rect.x0,
                 bbox_y1=rect.y0,

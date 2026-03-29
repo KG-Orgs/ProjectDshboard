@@ -19,9 +19,15 @@ from __future__ import annotations
 
 import math
 import uuid
+from pathlib import Path
+import io
+
+import fitz
+from PIL import Image
 
 from sqlalchemy.orm import Session, joinedload
 
+from takeoff.config import settings
 from takeoff.models.drawing import Drawing, View
 from takeoff.models.material import MaterialInstance
 from takeoff.models.quantity import Quantity
@@ -87,6 +93,46 @@ class QuantityExtractor:
                 confidence_breakdown=confidence_breakdown
             )
             
+            # Save provenance
+            geometry = instance.geometry
+            bbox = self.calculate_bbox(geometry)
+            drawing = instance.view.drawing
+            pdf_path = Path(drawing.source_file)
+            doc = fitz.open(pdf_path)
+            page = doc.load_page(instance.view.page_num)
+            
+            # Render page to image
+            zoom = 2
+            matrix = fitz.Matrix(zoom, zoom)
+            pix = page.get_pixmap(matrix=matrix)
+            img = Image.open(io.BytesIO(pix.tobytes()))
+            
+            # Crop around bbox, with padding
+            padding = 50
+            x1, y1, x2, y2 = bbox
+            x1_img = (x1 - page.rect.x0) * zoom
+            y1_img = (page.rect.y1 - y2) * zoom
+            x2_img = (x2 - page.rect.x0) * zoom
+            y2_img = (page.rect.y1 - y1) * zoom
+            x1_img = max(0, x1_img - padding)
+            y1_img = max(0, y1_img - padding)
+            x2_img = min(pix.width, x2_img + padding)
+            y2_img = min(pix.height, y2_img + padding)
+            cropped = img.crop((x1_img, y1_img, x2_img, y2_img))
+            
+            # Save
+            storage_path = Path(settings.storage_path) / drawing.drawing_id
+            storage_path.mkdir(exist_ok=True)
+            image_filename = f"{quantity.quantity_id}_provenance.png"
+            image_path = storage_path / image_filename
+            cropped.save(image_path)
+            
+            # Set provenance
+            quantity.provenance_image_path = str(image_path.relative_to(Path(settings.storage_path)))
+            quantity.provenance_geometry = geometry
+            
+            doc.close()
+            
             self.db.add(quantity)
             quantities.append(quantity)
         
@@ -108,3 +154,16 @@ class QuantityExtractor:
             dy = points[i + 1][1] - points[i][1]
             total += math.sqrt(dx * dx + dy * dy)
         return total
+
+    @staticmethod
+    def calculate_bbox(geometry: dict) -> tuple[float, float, float, float]:
+        """
+        Calculate bounding box of geometry.
+        Returns (x1, y1, x2, y2)
+        """
+        points = geometry.get("points", [])
+        if not points:
+            return (0, 0, 0, 0)
+        xs = [p[0] for p in points]
+        ys = [p[1] for p in points]
+        return (min(xs), min(ys), max(xs), max(ys))

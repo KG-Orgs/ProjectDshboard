@@ -22,5 +22,8 @@ class Quantity(Base):
     # Per-stage confidence breakdown
     confidence_breakdown: Mapped[dict | None] = mapped_column(JSON)
     # {"pattern_detection": 0.91, "callout_association": 0.95, "scale": 0.93, "quantity": 0.98}
+    # Provenance
+    provenance_image_path: Mapped[str | None] = mapped_column(String)
+    provenance_geometry: Mapped[dict | None] = mapped_column(JSON)
 
     instance: Mapped["MaterialInstance"] = relationship(back_populates="quantity")  # type: ignore[name-defined]

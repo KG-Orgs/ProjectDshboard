@@ -42,6 +42,7 @@ class View(Base):
 
     view_id: Mapped[str] = mapped_column(String, primary_key=True)
     drawing_id: Mapped[str] = mapped_column(ForeignKey("drawings.drawing_id"))
+    page_num: Mapped[int] = mapped_column(Integer)  # page number in the PDF
     view_type: Mapped[ViewType] = mapped_column(Enum(ViewType), default=ViewType.unknown)
     title: Mapped[str | None] = mapped_column(String)
     # bbox: [x1, y1, x2, y2] in PDF user units
