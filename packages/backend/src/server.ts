@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from 'express';
+import http from 'http';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { createClient } from 'redis';
@@ -12,6 +13,7 @@ import oneDriveRoutes from './routes/onedrive';
 import chatRoutes from './routes/chat';
 import featuresRoutes from './routes/features';
 import indexingRoutes from './routes/indexingRoutes';
+import ragRoutes, { setupWebSocketHandlers } from './routes/ragRoutes';
 
 // Services
 import { IndexingQueueWorker } from './services/indexingQueueWorker';
@@ -56,6 +58,7 @@ app.use('/api/onedrive', oneDriveRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/features', featuresRoutes);
 app.use('/api/indexing', indexingRoutes);
+app.use('/api/rag', ragRoutes);
 
 // Error handling middleware
 app.use((err: any, _req: Request, res: Response) => {
@@ -70,9 +73,19 @@ app.use((err: any, _req: Request, res: Response) => {
 });
 
 // Start server
-const server = app.listen(port, async () => {
+const httpServer = http.createServer(app);
+const server = httpServer.listen(port, async () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔌 WebSocket available at ws://localhost:${port}/ws/chat`);
+
+  // Setup WebSocket handlers for RAG chat
+  try {
+    setupWebSocketHandlers(httpServer);
+    console.log('✅ WebSocket handlers initialized');
+  } catch (error) {
+    console.error('❌ Failed to setup WebSocket:', error);
+  }
 
   // Initialize indexing queue worker
   try {
