@@ -14,6 +14,58 @@ export interface ParsedQuery {
   confidence: number; // 0-1
 }
 
+export interface QueryContext {
+  // Core parsed data
+  parsedQuery: ParsedQuery;
+  
+  // Parsing metadata
+  parsingMethod: 'regex' | 'haiku' | 'hybrid';
+  parsingDuration: number; // milliseconds
+  
+  // Advanced extraction
+  multiSpecSections?: string[]; // Multiple spec sections if detected
+  specSectionCategories?: Record<string, string>; // Spec to category mapping
+  
+  // Query intent classification
+  intent?: 'search' | 'comparison' | 'calculation' | 'explanation';
+  queryType?: 'categorical' | 'numerical' | 'structural';
+  
+  // Search optimization hints
+  searchFilters: {
+    projectId?: string;
+    specSection?: string;
+    specSectionRange?: { start: string; end: string };
+    categories?: string[];
+    excludeSpecSections?: string[];
+  };
+  
+  // Semantic information
+  entities: {
+    materials?: string[];
+    systems?: string[];
+    properties?: string[];
+    values?: string[];
+  };
+  
+  // Processing flags
+  requiresExactMatch?: boolean;
+  requiresSemanticMatch?: boolean;
+  prioritizeMetadata?: boolean;
+  
+  // Context metadata
+  timestamp: string;
+  userId?: string;
+  projectId?: string;
+  sessionId?: string;
+  
+  // Performance/debugging
+  debug?: {
+    regexMatches?: Record<string, any>;
+    haikuExtractionTime?: number;
+    fallbackReason?: string;
+  };
+}
+
 // ============================================================================
 // Vector Store (6.2)
 // ============================================================================
