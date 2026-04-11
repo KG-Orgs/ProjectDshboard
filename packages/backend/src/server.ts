@@ -11,6 +11,10 @@ import taskRoutes from './routes/tasks';
 import oneDriveRoutes from './routes/onedrive';
 import chatRoutes from './routes/chat';
 import featuresRoutes from './routes/features';
+import indexingRoutes from './routes/indexingRoutes';
+
+// Services
+import { IndexingQueueWorker } from './services/indexingQueueWorker';
 
 dotenv.config();
 
@@ -51,6 +55,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/onedrive', oneDriveRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/features', featuresRoutes);
+app.use('/api/indexing', indexingRoutes);
 
 // Error handling middleware
 app.use((err: any, _req: Request, res: Response) => {
@@ -65,15 +70,25 @@ app.use((err: any, _req: Request, res: Response) => {
 });
 
 // Start server
-const server = app.listen(port, () => {
+const server = app.listen(port, async () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+  // Initialize indexing queue worker
+  try {
+    const redisUrl = process.env.REDIS_URL;
+    await IndexingQueueWorker.initialize(redisUrl);
+    console.log('✅ Indexing queue worker initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize indexing queue worker:', error);
+  }
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('Shutting down...');
   server.close(async () => {
+    await IndexingQueueWorker.close();
     await redisClient.quit();
     process.exit(0);
   });
