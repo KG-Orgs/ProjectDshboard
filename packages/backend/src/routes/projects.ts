@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { Project } from '@contractor/shared';
+import { FeaturesService } from '../services/featuresService';
 
 const router = Router();
 
@@ -158,6 +159,143 @@ router.delete('/:id', async (req: Request, res: Response) => {
       error: {
         code: 'PROJECT_DELETE_ERROR',
         message: 'Failed to delete project',
+      },
+    });
+  }
+});
+
+/**
+ * GET /api/projects/:id/files
+ * Get indexed files for a project (paginated, filterable)
+ */
+router.get('/:id/files', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { page = '1', limit = '20', filter = '', sort = 'name' } = req.query;
+
+    // TODO: Query files from database
+    // TODO: Apply filters and sorting
+    // TODO: Implement pagination
+
+    const mockFiles = [
+      {
+        id: 'file-1',
+        name: 'Floor Plan A.pdf',
+        type: 'application/pdf',
+        size: 2048000,
+        uploadedAt: '2024-01-20T10:30:00Z',
+        uploadedBy: 'user-123',
+        indexed: true,
+        metadata: {
+          pages: 5,
+          extractedElements: 45,
+        },
+      },
+      {
+        id: 'file-2',
+        name: 'Material List.xlsx',
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        size: 512000,
+        uploadedAt: '2024-01-19T14:15:00Z',
+        uploadedBy: 'user-123',
+        indexed: true,
+        metadata: {
+          rows: 150,
+          materialsIdentified: 87,
+        },
+      },
+    ];
+
+    res.json({
+      success: true,
+      data: {
+        projectId: id,
+        files: mockFiles,
+        pagination: {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+          total: 2,
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'FILES_FETCH_ERROR',
+        message: 'Failed to fetch project files',
+      },
+    });
+  }
+});
+
+/**
+ * GET /api/projects/:id/features
+ * Get enabled features for a project
+ */
+router.get('/:id/features', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const features = await FeaturesService.getProjectFeatures(id);
+
+    res.json({
+      success: true,
+      data: {
+        projectId: id,
+        features,
+        count: features.length,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'PROJECT_FEATURES_ERROR',
+        message: 'Failed to fetch project features',
+      },
+    });
+  }
+});
+
+/**
+ * PUT /api/projects/:id/features/:fid
+ * Enable/disable or configure a feature for a project
+ */
+router.put('/:id/features/:fid', async (req: Request, res: Response) => {
+  try {
+    const { id, fid } = req.params;
+    const { enabled, config } = req.body;
+
+    // Validate configuration if provided
+    if (config && !FeaturesService.validateFeatureConfig(fid, config)) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_CONFIG',
+          message: 'Invalid feature configuration',
+        },
+      });
+      return;
+    }
+
+    const feature = await FeaturesService.updateProjectFeature(
+      id,
+      fid,
+      enabled ?? true,
+      config
+    );
+
+    res.json({
+      success: true,
+      data: feature,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'FEATURE_UPDATE_ERROR',
+        message: 'Failed to update feature',
       },
     });
   }

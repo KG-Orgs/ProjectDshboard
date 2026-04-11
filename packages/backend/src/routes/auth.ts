@@ -137,4 +137,36 @@ router.post('/refresh', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/auth/me
+ * Get current user and organization info
+ */
+router.get('/me', async (req: Request, res: Response) => {
+  try {
+    // TODO: Extract user from auth middleware/token
+    // TODO: Query user and organization from database
+    const currentUser = {
+      id: '123',
+      name: 'John Doe',
+      email: 'john@example.com',
+      role: 'manager',
+      organization: {
+        id: 'org-123',
+        name: 'Acme Construction',
+        role: 'owner',
+      },
+    };
+
+    res.json({ success: true, data: currentUser });
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      error: {
+        code: 'AUTH_ERROR',
+        message: 'Failed to fetch current user',
+      },
+    });
+  }
+});
+
 export default router;

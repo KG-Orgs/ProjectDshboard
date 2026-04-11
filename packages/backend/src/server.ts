@@ -8,6 +8,9 @@ import { Queue } from 'bullmq';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import taskRoutes from './routes/tasks';
+import oneDriveRoutes from './routes/onedrive';
+import chatRoutes from './routes/chat';
+import featuresRoutes from './routes/features';
 
 dotenv.config();
 
@@ -45,6 +48,9 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/onedrive', oneDriveRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/features', featuresRoutes);
 
 // Error handling middleware
 app.use((err: any, _req: Request, res: Response) => {
