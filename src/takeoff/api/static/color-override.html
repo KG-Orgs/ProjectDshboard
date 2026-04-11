@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Takeoff — Color Override Manager</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f4;
+      color: #1c1917;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #78716c;
+    }
+
+    /* Main grid */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 968px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.10), 0 4px 16px rgba(0,0,0,.06);
+      padding: 24px;
+    }
+
+    .panel h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel h2 .icon {
+      width: 20px;
+      height: 20px;
+      opacity: 0.6;
+    }
+
+    /* Form section */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #57534e;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d6d3d1;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .color-picker-wrapper {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    input[type="color"] {
+      width: 50px;
+      height: 40px;
+      padding: 2px;
+      cursor: pointer;
+    }
+
+    .color-hex-display {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #78716c;
+      padding: 8px 12px;
+      background: #f5f5f4;
+      border-radius: 4px;
+      flex: 1;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s, color .15s, opacity .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+      width: 100%;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #1f2937;
+    }
+
+    .btn-secondary:hover { background: #d1d5db; }
+
+    .btn-danger {
+      background: #f3f4f6;
+      color: #dc2626;
+    }
+
+    .btn-danger:hover { background: #e5e7eb; }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+
+    /* Status messages */
+    .status {
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .status.show { display: block; }
+
+    .status.info    { background: #eff6ff; color: #1d4ed8; }
+    .status.success { background: #f0fdf4; color: #166534; }
+    .status.error   { background: #fef2f2; color: #991b1b; }
+
+    /* Material list */
+    .materials-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .material-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #f5f5f4;
+      border-radius: 6px;
+      transition: background .15s;
+    }
+
+    .material-item:hover { background: #efefed; }
+
+    .material-color {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      border: 1px solid #d6d3d1;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform .15s;
+    }
+
+    .material-color:hover { transform: scale(1.1); }
+
+    .material-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .material-name {
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: #1c1917;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .material-group {
+      font-size: 0.75rem;
+      color: #a8a29e;
+      margin-top: 2px;
+    }
+
+    .material-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 32px 20px;
+      color: #a8a29e;
+      font-size: 0.9rem;
+    }
+
+    .empty-state svg {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 12px;
+      opacity: 0.4;
+    }
+
+    /* Loading indicator */
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #78716c;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #e5e7eb;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal.show { display: flex; }
+
+    .modal-content {
+      background: #fff;
+      border-radius: 12px;
+      padding: 32px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,.1);
+    }
+
+    .modal h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Material Color Override Manager</h1>
+    <p class="subtitle">Customize material colors for your drawing and persist them across refreshes.</p>
+  </header>
+
+  <div class="layout">
+    <!-- Color selector panel -->
+    <div class="panel">
+      <h2>
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+        </svg>
+        Set Color Override
+      </h2>
+
+      <div id="form-status" class="status"></div>
+
+      <div class="form-group">
+        <label for="drawing-id">Drawing ID</label>
+        <input type="text" id="drawing-id" placeholder="Enter drawing ID (UUID)">
+      </div>
+
+      <div class="form-group">
+        <label for="material-group">Material Group</label>
+        <select id="material-group">
+          <option value="">Select a material group...</option>
+        </select>
+        <small style="display: block; margin-top: 4px; color: #a8a29e;">Loads available materials for the selected drawing</small>
+      </div>
+
+      <div class="form-group">
+        <label>Color</label>
+        <div class="color-picker-wrapper">
+          <input type="color" id="color-picker" value="#2563eb">
+          <div class="color-hex-display" id="color-hex">#2563eb</div>
+        </div>
+      </div>
+
+      <button id="apply-btn" class="btn btn-primary">Apply Color Override</button>
+
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+        <button id="load-materials-btn" class="btn btn-secondary" style="width: 100%;">Refresh Material List</button>
+      </div>
+    </div>
+
+    <!-- Material list panel -->
+    <div class="panel">
+      <h2>
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+        Material Overrides
+      </h2>
+
+      <div id="materials-list-status" class="status"></div>
+
+      <div id="materials-list" class="materials-list">
+        <div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m0 0C3.75 4.097 7.444 2.25 12 2.25s8.25 1.847 8.25 4.125" />
+          </svg>
+          <p>No color overrides yet.<br>Enter a drawing ID to get started.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div id="confirm-modal" class="modal">
+  <div class="modal-content">
+    <h3>Remove Color Override</h3>
+    <p id="confirm-message"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary btn-small" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn btn-danger btn-small" id="confirm-btn">Remove</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // DOM elements
+  const drawingIdInput = document.getElementById('drawing-id');
+  const materialGroupSelect = document.getElementById('material-group');
+  const colorPicker = document.getElementById('color-picker');
+  const colorHexDisplay = document.getElementById('color-hex');
+  const applyBtn = document.getElementById('apply-btn');
+  const loadMaterialsBtn = document.getElementById('load-materials-btn');
+  const formStatus = document.getElementById('form-status');
+  const materialsListStatus = document.getElementById('materials-list-status');
+  const materialsList = document.getElementById('materials-list');
+  const confirmModal = document.getElementById('confirm-modal');
+  const confirmBtn = document.getElementById('confirm-btn');
+
+  let currentDrawingId = null;
+  let overridesToRemove = {}; // Track which material groups are pending removal
+
+  // --- Helper functions ---
+
+  function showStatus(element, type, message) {
+    element.className = 'status show';
+    element.className += ' ' + type;
+    element.textContent = message;
+  }
+
+  function clearStatus(element) {
+    element.className = 'status';
+    element.textContent = '';
+  }
+
+  function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(x => {
+      const hex = x.toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    }).join('').toUpperCase();
+  }
+
+  // --- Color picker ---
+
+  colorPicker.addEventListener('input', (e) => {
+    colorHexDisplay.textContent = e.target.value.toUpperCase();
+  });
+
+  // --- Load materials ---
+
+  loadMaterialsBtn.addEventListener('click', loadMaterials);
+
+  async function loadMaterials() {
+    const drawingId = drawingIdInput.value.trim();
+    if (!drawingId) {
+      showStatus(materialsListStatus, 'error', 'Please enter a drawing ID');
+      return;
+    }
+
+    currentDrawingId = drawingId;
+    showStatus(materialsListStatus, 'info', 'Loading materials...');
+    materialsList.innerHTML = '<div class="loading"><span class="spinner"></span>Loading...</div>';
+
+    try {
+      // First, fetch the overlay-by-group endpoint to get available materials
+      const res = await fetch(`/takeoff/${drawingId}/color-overrides`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      clearStatus(materialsListStatus);
+      renderMaterialsList(data.overrides || [], drawingId);
+    } catch (err) {
+      showStatus(materialsListStatus, 'error', `Failed to load materials: ${err.message}`);
+      materialsList.innerHTML = '<div class="empty-state"><p>Failed to load materials</p></div>';
+    }
+  }
+
+  function renderMaterialsList(overrides, drawingId) {
+    if (overrides.length === 0) {
+      materialsList.innerHTML = '<div class="empty-state"><p>No color overrides set yet.</p></div>';
+      return;
+    }
+
+    materialsList.innerHTML = overrides.map(override => `
+      <div class="material-item">
+        <div class="material-color" style="background-color: ${override.color_hex};" title="${override.color_hex}"></div>
+        <div class="material-info">
+          <div class="material-name">${escapeHtml(override.material_group)}</div>
+          <div class="material-group">${override.color_hex}</div>
+        </div>
+        <div class="material-actions">
+          <button class="btn btn-small btn-secondary" onclick="editOverride('${escapeHtml(override.material_group)}')">Edit</button>
+          <button class="btn btn-small btn-danger" onclick="confirmRemove('${drawingId}', '${escapeHtml(override.material_group)}')">Remove</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function escapeHtml(text) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+  }
+
+  // --- Apply color override ---
+
+  applyBtn.addEventListener('click', applyColorOverride);
+
+  async function applyColorOverride() {
+    const drawingId = drawingIdInput.value.trim();
+    const materialGroup = materialGroupSelect.value;
+    const colorHex = colorPicker.value.toUpperCase();
+
+    if (!drawingId) {
+      showStatus(formStatus, 'error', 'Please enter a drawing ID');
+      return;
+    }
+
+    if (!materialGroup) {
+      showStatus(formStatus, 'error', 'Please select a material group');
+      return;
+    }
+
+    applyBtn.disabled = true;
+    showStatus(formStatus, 'info', 'Applying color override...');
+
+    try {
+      const res = await fetch(`/takeoff/${drawingId}/color-override/${encodeURIComponent(materialGroup)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ color_hex: colorHex })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || 'Failed to apply override');
+      }
+
+      const data = await res.json();
+      showStatus(formStatus, 'success', `Color override applied for "${materialGroup}"`);
+      applyBtn.disabled = false;
+
+      // Reload materials list
+      if (currentDrawingId === drawingId) {
+        await loadMaterials();
+      }
+    } catch (err) {
+      showStatus(formStatus, 'error', `Error: ${err.message}`);
+      applyBtn.disabled = false;
+    }
+  }
+
+  // --- Edit override ---
+
+  function editOverride(materialGroup) {
+    materialGroupSelect.value = materialGroup;
+    materialGroupSelect.focus();
+  }
+
+  // --- Remove override ---
+
+  function confirmRemove(drawingId, materialGroup) {
+    overridesToRemove = { drawingId, materialGroup };
+    document.getElementById('confirm-message').textContent = 
+      `Remove color override for "${materialGroup}"? Colors will revert to auto-generated.`;
+    confirmModal.classList.add('show');
+  }
+
+  function closeConfirmModal() {
+    confirmModal.classList.remove('show');
+    overridesToRemove = {};
+  }
+
+  confirmBtn.addEventListener('click', async () => {
+    const { drawingId, materialGroup } = overridesToRemove;
+    closeConfirmModal();
+
+    try {
+      const res = await fetch(
+        `/takeoff/${drawingId}/color-override/${encodeURIComponent(materialGroup)}`,
+        { method: 'DELETE' }
+      );
+
+      if (!res.ok) {
+        throw new Error('Failed to remove override');
+      }
+
+      showStatus(materialsListStatus, 'success', `Override removed for "${materialGroup}"`);
+      await loadMaterials();
+    } catch (err) {
+      showStatus(materialsListStatus, 'error', `Error: ${err.message}`);
+    }
+  });
+
+  confirmModal.addEventListener('click', (e) => {
+    if (e.target === confirmModal) closeConfirmModal();
+  });
+
+  // Initialize
+  window.addEventListener('load', () => {
+    // Try to get drawing ID from URL params or local storage
+    const params = new URLSearchParams(window.location.search);
+    const drawingIdFromUrl = params.get('drawing_id');
+    if (drawingIdFromUrl) {
+      drawingIdInput.value = drawingIdFromUrl;
+      setTimeout(() => loadMaterials(), 100);
+    }
+  });
+</script>
+
+</body>
+</html>

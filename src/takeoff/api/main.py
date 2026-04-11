@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from takeoff.api.routes import drawings, takeoff
+from takeoff.api.routes import drawings, materials, takeoff
 
 _STATIC_DIR = Path(__file__).parent / "static"
 
@@ -33,6 +33,7 @@ app.add_middleware(
 )
 
 app.include_router(drawings.router, prefix="/drawings", tags=["drawings"])
+app.include_router(materials.router, prefix="/takeoff/materials", tags=["materials"])
 app.include_router(takeoff.router, prefix="/takeoff", tags=["takeoff"])
 
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
@@ -47,3 +48,9 @@ def health():
 def upload_ui():
     """Serve the drag-and-drop PDF upload page."""
     return FileResponse(_STATIC_DIR / "index.html")
+
+
+@app.get("/color-override", include_in_schema=False)
+def color_override_ui():
+    """Serve the material color override manager page."""
+    return FileResponse(_STATIC_DIR / "color-override.html")
