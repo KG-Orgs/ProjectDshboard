@@ -1,4 +1,7 @@
-// Shared API types and client
-// To be implemented in phase 1
+// Types
+export * from './types';
 
-export const API_VERSION = "v1";
+// Stores
+export { useAuthStore } from './stores/authStore';
+
+export const API_VERSION = 'v1';
