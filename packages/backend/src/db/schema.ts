@@ -205,6 +205,61 @@ export const vectorChunks = pgTable(
 );
 
 // ============================================================================
+// Sync Jobs & Indexing Tracking
+// ============================================================================
+
+/**
+ * Sync jobs - tracks OneDrive sync and indexing jobs
+ */
+export const syncJobs = pgTable(
+  'sync_jobs',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    jobType: text('job_type').notNull(), // 'sync', 'index', 'reindex'
+    status: text('status').default('pending'), // 'pending', 'processing', 'completed', 'failed'
+    bulkJobId: text('bulk_job_id'), // reference to BullMQ job ID
+    filesProcessed: integer('files_processed').default(0),
+    filesTotal: integer('files_total'),
+    errorMessage: text('error_message'),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_sync_jobs_project').on(table.projectId),
+    index('idx_sync_jobs_status').on(table.status),
+  ]
+);
+
+/**
+ * Indexing jobs - fine-grained tracking of individual file indexing
+ */
+export const indexingJobs = pgTable(
+  'indexing_jobs',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    fileId: uuid('file_id')
+      .notNull()
+      .references(() => fileRecords.id, { onDelete: 'cascade' }),
+    syncJobId: uuid('sync_job_id').references(() => syncJobs.id, { onDelete: 'set null' }),
+    bulkJobId: text('bulk_job_id'), // reference to BullMQ job ID
+    status: text('status').default('pending'), // 'pending', 'processing', 'completed', 'failed'
+    processedAt: timestamp('processed_at', { withTimezone: true }),
+    errorMessage: text('error_message'),
+    retriesCount: integer('retries_count').default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('idx_indexing_jobs_file').on(table.fileId),
+    index('idx_indexing_jobs_status').on(table.status),
+    index('idx_indexing_jobs_sync').on(table.syncJobId),
+  ]
+);
+
+// ============================================================================
 // Type Exports for Application Use
 // ============================================================================
 
@@ -234,3 +289,9 @@ export type NewProjectFeature = typeof projectFeatures.$inferInsert;
 
 export type VectorChunk = typeof vectorChunks.$inferSelect;
 export type NewVectorChunk = typeof vectorChunks.$inferInsert;
+
+export type SyncJob = typeof syncJobs.$inferSelect;
+export type NewSyncJob = typeof syncJobs.$inferInsert;
+
+export type IndexingJob = typeof indexingJobs.$inferSelect;
+export type NewIndexingJob = typeof indexingJobs.$inferInsert;
