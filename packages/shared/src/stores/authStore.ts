@@ -9,12 +9,34 @@ interface AuthStore {
   logout: () => Promise<void>;
   setUser: (user: User) => void;
   setToken: (token: string) => void;
+  hydrate: () => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
   isAuthenticated: false,
   user: null,
   token: null,
+
+  // Restore auth state from localStorage on app load
+  hydrate: () => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token');
+      const userData = localStorage.getItem('auth_user');
+
+      if (token && userData) {
+        try {
+          const user = JSON.parse(userData);
+          set({
+            isAuthenticated: true,
+            token,
+            user,
+          });
+        } catch (error) {
+          console.error('Failed to restore auth state:', error);
+        }
+      }
+    }
+  },
 
   login: async (email: string, password: string) => {
     try {
@@ -37,9 +59,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
         token: data.token,
       });
 
-      // Store token in localStorage
+      // Store token and user in localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('auth_user', JSON.stringify(data.user));
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -56,6 +79,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
     }
   },
 

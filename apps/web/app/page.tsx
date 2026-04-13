@@ -6,9 +6,12 @@ import { useEffect } from 'react';
 import './page.css';
 
 export default function Home() {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, hydrate } = useAuthStore();
 
-  useEffect(() => {}, [isAuthenticated]);
+  // Restore auth state from localStorage on mount
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
 
   return (
     <div className="home-container">

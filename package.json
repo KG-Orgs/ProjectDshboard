@@ -3,8 +3,9 @@
   "version": "0.0.1",
   "description": "ContractorAI - Construction Document Management & AI Chat MVP",
   "private": true,
+  "packageManager": "pnpm@10.33.0",
   "workspaces": [
-    "apps/*",
+    "apps/web",
     "packages/*"
   ],
   "scripts": {
@@ -15,7 +16,13 @@
     "type-check": "turbo run type-check"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitejs/plugin-react": "^4.4.1",
+    "jsdom": "^26.1.0",
     "turbo": "^2.0.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^3.2.4"
   }
 }

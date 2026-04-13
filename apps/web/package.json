@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run --config ./vitest.config.ts",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx"
   },
