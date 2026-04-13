@@ -16,6 +16,8 @@ export interface AuthState {
   error: string | null;
 
   // Actions
+  login: (email: string, password: string) => Promise<void>;
+  hydrate: () => Promise<void>;
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
@@ -32,6 +34,40 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+
+      login: async (email, password) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Login failed");
+          }
+
+          const data = await response.json();
+          set({
+            user: data.user,
+            accessToken: data.accessToken ?? data.token ?? null,
+            refreshToken: data.refreshToken ?? null,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Login failed";
+          set({ isLoading: false, error: message });
+          throw error;
+        }
+      },
+
+      hydrate: async () => {
+        await useAuthStore.persist.rehydrate();
+      },
 
       setAuth: (user, accessToken, refreshToken) => {
         set({

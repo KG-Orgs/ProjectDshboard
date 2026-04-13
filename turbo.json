@@ -1,6 +1,5 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "version": "2",
   "globalEnv": [
     "NODE_ENV"
   ],
@@ -11,7 +10,6 @@
       ],
       "outputs": [
         ".next",
-        ".expo",
         "dist",
         "build"
       ],
