@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { Task } from '@contractor/shared';
+import { authMiddleware } from '../middleware/auth';
+import { dataStore } from '../services/dataStore';
 
-const router = Router();
+const router: Router = Router();
+
+router.use(authMiddleware);
 
 /**
  * GET /api/tasks
@@ -10,32 +13,12 @@ const router = Router();
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { projectId, status } = req.query;
-    // TODO: Get tasks from database with filters
-    const mockTasks: Task[] = [
-      {
-        id: '1',
-        projectId: '1',
-        title: 'Complete electrical wiring',
-        description: 'Install all electrical lines on floors 1-3',
-        status: 'in-progress',
-        priority: 'high',
-        assignee: 'John Doe',
-        dueDate: '2024-04-15',
-        createdAt: '2024-04-01',
-      },
-      {
-        id: '2',
-        projectId: '1',
-        title: 'HVAC system installation',
-        description: 'Install heating and cooling system',
-        status: 'todo',
-        priority: 'medium',
-        dueDate: '2024-05-01',
-        createdAt: '2024-04-01',
-      },
-    ];
+    const filteredTasks = await dataStore.listTasks(req.user!.userId, {
+      projectId: projectId ? String(projectId) : undefined,
+      status: status ? String(status) : undefined,
+    });
 
-    res.json({ success: true, data: mockTasks });
+    res.json({ success: true, data: filteredTasks });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -54,20 +37,20 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // TODO: Get task from database
-    const mockTask: Task = {
-      id,
-      projectId: '1',
-      title: 'Complete electrical wiring',
-      description: 'Install all electrical lines',
-      status: 'in-progress',
-      priority: 'high',
-      assignee: 'John Doe',
-      dueDate: '2024-04-15',
-      createdAt: '2024-04-01',
-    };
+    const task = await dataStore.getTask(req.user!.userId, id);
 
-    res.json({ success: true, data: mockTask });
+    if (!task) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'TASK_NOT_FOUND',
+          message: 'Task not found',
+        },
+      });
+      return;
+    }
+
+    res.json({ success: true, data: task });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -98,17 +81,37 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    // TODO: Create task in database
-    const newTask: Task = {
-      id: 'new-task-id',
+    const project = await dataStore.getProject(req.user!.userId, projectId);
+
+    if (!project) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'PROJECT_NOT_FOUND',
+          message: 'Project not found',
+        },
+      });
+      return;
+    }
+
+    const newTask = await dataStore.createTask(req.user!.userId, {
       projectId,
       title,
       description,
-      status: 'todo',
       priority: priority || 'medium',
       dueDate: dueDate || '',
-      createdAt: new Date().toISOString(),
-    };
+    });
+
+    if (!newTask) {
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'TASK_CREATE_ERROR',
+          message: 'Failed to create task',
+        },
+      });
+      return;
+    }
 
     res.status(201).json({ success: true, data: newTask });
   } catch (error) {
@@ -129,9 +132,20 @@ router.post('/', async (req: Request, res: Response) => {
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, priority, assignee } = req.body;
-    // TODO: Update task in database
-    res.json({ success: true, message: 'Task updated' });
+    const task = await dataStore.updateTask(req.user!.userId, id, req.body);
+
+    if (!task) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'TASK_NOT_FOUND',
+          message: 'Task not found',
+        },
+      });
+      return;
+    }
+
+    res.json({ success: true, data: task, message: 'Task updated' });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -150,7 +164,19 @@ router.patch('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // TODO: Delete task from database
+    const deleted = await dataStore.deleteTask(req.user!.userId, id);
+
+    if (!deleted) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'TASK_NOT_FOUND',
+          message: 'Task not found',
+        },
+      });
+      return;
+    }
+
     res.json({ success: true, message: 'Task deleted' });
   } catch (error) {
     res.status(500).json({

@@ -47,7 +47,7 @@ Backend (Node.js + Express)
 
 1. **Install dependencies**
    ```bash
-   npm install
+   pnpm install
    ```
 
 2. **Configure environment**
@@ -58,14 +58,37 @@ Backend (Node.js + Express)
 
 3. **Run development server**
    ```bash
-   npm run dev
+   pnpm --filter @contractor/backend dev
    ```
 
 4. **Build for production**
    ```bash
-   npm run build
-   npm start
+   pnpm --filter @contractor/backend build
+   pnpm --filter @contractor/backend start
    ```
+
+5. **Run end-to-end smoke test**
+   Start the backend in one terminal, then run:
+   ```bash
+   pnpm --filter @contractor/backend test:e2e
+   ```
+
+6. **Run backend integration tests**
+   ```bash
+   pnpm --filter @contractor/backend test
+   ```
+
+7. **Run backend linting**
+   ```bash
+   pnpm --filter @contractor/backend lint
+   ```
+
+   For a step-by-step request flow using `curl.exe` on Windows, run:
+   ```powershell
+   ./packages/backend/scripts/e2e-curl.ps1
+   ```
+
+The backend test suite now includes service unit tests, feature integration tests, and API contract tests for the shared success/error response envelope.
 
 ## Database Migrations
 
@@ -73,10 +96,10 @@ Migrations are managed with Drizzle ORM:
 
 ```bash
 # Run migrations
-npm run db:migrate
+pnpm --filter @contractor/backend db:migrate
 
 # Open DB studio
-npm run db:studio
+pnpm --filter @contractor/backend db:studio
 ```
 
 ## Background Jobs
@@ -122,3 +145,7 @@ Critical ones:
 - `JWT_SECRET` - Secret for JWT tokens
 - `REDIS_HOST` / `REDIS_PORT` - Redis cache
 - `DB_*` - PostgreSQL connection details
+
+The API now persists auth, project, and task data to a local file-backed store under `packages/backend/.data/` by default. Set `DATA_DIR` to point at a different directory for tests or isolated local runs.
+
+If Redis is unavailable, the server logs a warning and continues so local API smoke tests can run without full infrastructure.

@@ -48,7 +48,7 @@ export const authMiddleware = (
 
     req.user = payload;
     next();
-  } catch (error) {
+  } catch {
     res.status(401).json({
       success: false,
       error: {

@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { LoginRequest, LoginResponse, User } from '@contractor/shared';
+import { LoginRequest, LoginResponse } from '@contractor/shared';
+import { AuthService } from '../services/authService';
+import { dataStore } from '../services/dataStore';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * POST /api/auth/login
@@ -23,21 +25,28 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    // TODO: Verify credentials against database
-    // TODO: Generate JWT token
-    // For now, return a mock response
-    const mockUser: User = {
-      id: '123',
-      name: 'John Doe',
-      email,
-      role: 'manager',
-    };
+    const user = await dataStore.authenticateUser(email, password);
 
-    const mockToken = Buffer.from(`${email}:${Date.now()}`).toString('base64');
+    if (!user) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid email or password',
+        },
+      });
+      return;
+    }
+
+    const token = AuthService.generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
 
     const response: LoginResponse = {
-      token: mockToken,
-      user: mockUser,
+      token,
+      user,
     };
 
     res.json({ success: true, data: response });
@@ -90,21 +99,33 @@ router.post('/signup', async (req: Request, res: Response) => {
       return;
     }
 
-    // TODO: Check if user exists
-    // TODO: Hash password
-    // TODO: Create user in database
-    // TODO: Generate JWT token
-
-    const newUser: User = {
-      id: 'new-user-id',
-      name,
+    const newUser = await dataStore.registerUser({
       email,
+      password,
+      name,
       role: 'worker',
-    };
+    });
+
+    if (!newUser) {
+      res.status(409).json({
+        success: false,
+        error: {
+          code: 'USER_EXISTS',
+          message: 'A user with this email already exists',
+        },
+      });
+      return;
+    }
+
+    const token = AuthService.generateToken({
+      userId: newUser.id,
+      email: newUser.email,
+      role: newUser.role,
+    });
 
     res.status(201).json({
       success: true,
-      data: { user: newUser, token: 'mock-token' },
+      data: { user: newUser, token },
     });
   } catch (error) {
     res.status(500).json({
@@ -123,9 +144,36 @@ router.post('/signup', async (req: Request, res: Response) => {
  */
 router.post('/refresh', async (req: Request, res: Response) => {
   try {
-    // TODO: Validate refresh token
-    // TODO: Generate new access token
-    res.json({ success: true, data: { token: 'new-mock-token' } });
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'TOKEN_ERROR',
+          message: 'Refresh token is required',
+        },
+      });
+      return;
+    }
+
+    const existingToken = authHeader.substring(7);
+    const payload = AuthService.verifyToken(existingToken);
+
+    if (!payload) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'TOKEN_ERROR',
+          message: 'Token refresh failed',
+        },
+      });
+      return;
+    }
+
+    const token = AuthService.generateToken(payload);
+
+    res.json({ success: true, data: { token } });
   } catch (error) {
     res.status(401).json({
       success: false,

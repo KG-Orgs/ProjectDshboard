@@ -6,24 +6,28 @@ export interface TokenPayload {
   role: string;
 }
 
+const base64UrlEncode = (value: string): string =>
+  Buffer.from(value).toString('base64url');
+
+const base64UrlDecode = (value: string): string =>
+  Buffer.from(value, 'base64url').toString();
+
 export class AuthService {
   /**
    * Generate JWT-like token (simplified implementation)
    * In production, use jsonwebtoken library
    */
   static generateToken(payload: TokenPayload): string {
-    const header = Buffer.from(
-      JSON.stringify({ alg: 'HS256', typ: 'JWT' })
-    ).toString('base64');
+    const header = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
 
-    const payloadStr = Buffer.from(JSON.stringify(payload)).toString('base64');
+    const payloadStr = base64UrlEncode(JSON.stringify(payload));
 
     // Create signature
     const secret = process.env.JWT_SECRET || 'your-secret-key';
     const signature = crypto
       .createHmac('sha256', secret)
       .update(`${header}.${payloadStr}`)
-      .digest('base64');
+      .digest('base64url');
 
     return `${header}.${payloadStr}.${signature}`;
   }
@@ -45,16 +49,16 @@ export class AuthService {
       const expectedSignature = crypto
         .createHmac('sha256', secret)
         .update(`${header}.${payload}`)
-        .digest('base64');
+        .digest('base64url');
 
       if (signature !== expectedSignature) {
         return null;
       }
 
       // Decode payload
-      const decoded = JSON.parse(Buffer.from(payload, 'base64').toString());
+      const decoded = JSON.parse(base64UrlDecode(payload));
       return decoded;
-    } catch (error) {
+    } catch {
       return null;
     }
   }

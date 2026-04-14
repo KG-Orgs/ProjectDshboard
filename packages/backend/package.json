@@ -4,16 +4,23 @@
   "description": "ContractorAI Backend API (Node.js + Express)",
   "main": "dist/server.js",
   "scripts": {
+    "prebuild": "pnpm --filter @contractor/shared build",
+    "pretype-check": "pnpm --filter @contractor/shared build",
+    "pretest": "pnpm --filter @contractor/backend build",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "test": "node --test tests/**/*.test.mjs",
+    "test:e2e": "node scripts/e2e-smoke.mjs",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint --config eslint.config.mjs \"src/**/*.ts\" \"tests/**/*.mjs\" \"scripts/**/*.mjs\""
   },
   "dependencies": {
+    "@contractor/shared": "workspace:*",
     "express": "^4.18.0",
+    "cors": "^2.8.5",
     "postgres": "^3.4.0",
     "drizzle-orm": "^0.30.0",
     "redis": "^4.6.0",
@@ -21,9 +28,15 @@
     "dotenv": "^16.4.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "@types/cors": "^2.8.17",
     "@types/express": "^4.17.0",
     "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.30.1",
+    "@typescript-eslint/parser": "^8.30.1",
     "drizzle-kit": "^0.20.0",
+    "eslint": "^9.24.0",
+    "globals": "^16.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0"
   }

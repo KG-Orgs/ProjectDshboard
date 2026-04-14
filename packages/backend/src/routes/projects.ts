@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { Project } from '@contractor/shared';
+import { authMiddleware } from '../middleware/auth';
+import { dataStore } from '../services/dataStore';
 
-const router = Router();
+const router: Router = Router();
+
+router.use(authMiddleware);
 
 /**
  * GET /api/projects
@@ -9,33 +12,8 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // TODO: Get projects from database for authenticated user
-    const mockProjects: Project[] = [
-      {
-        id: '1',
-        name: 'Building A - Phase 2',
-        description: 'Commercial building project',
-        status: 'active',
-        progress: 65,
-        startDate: '2024-01-15',
-        endDate: '2025-06-30',
-        budget: 500000,
-        spent: 325000,
-      },
-      {
-        id: '2',
-        name: 'Building B - Foundation',
-        description: 'Residential complex development',
-        status: 'active',
-        progress: 45,
-        startDate: '2024-03-01',
-        endDate: '2025-12-31',
-        budget: 750000,
-        spent: 337500,
-      },
-    ];
-
-    res.json({ success: true, data: mockProjects });
+    const projects = await dataStore.listProjects(req.user!.userId);
+    res.json({ success: true, data: projects });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -54,20 +32,20 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // TODO: Get project from database
-    const mockProject: Project = {
-      id,
-      name: 'Building A',
-      description: 'A commercial building project',
-      status: 'active',
-      progress: 65,
-      startDate: '2024-01-15',
-      endDate: '2025-06-30',
-      budget: 500000,
-      spent: 325000,
-    };
+    const project = await dataStore.getProject(req.user!.userId, id);
 
-    res.json({ success: true, data: mockProject });
+    if (!project) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'PROJECT_NOT_FOUND',
+          message: 'Project not found',
+        },
+      });
+      return;
+    }
+
+    res.json({ success: true, data: project });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -98,18 +76,12 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    // TODO: Create project in database
-    const newProject: Project = {
-      id: 'new-project-id',
+    const newProject = await dataStore.createProject(req.user!.userId, {
       name,
       description,
-      status: 'planning',
-      progress: 0,
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: endDate || '',
-      budget,
-      spent: 0,
-    };
+      budget: Number(budget),
+      endDate,
+    });
 
     res.status(201).json({ success: true, data: newProject });
   } catch (error) {
@@ -130,8 +102,20 @@ router.post('/', async (req: Request, res: Response) => {
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // TODO: Update project in database
-    res.json({ success: true, message: 'Project updated' });
+    const project = await dataStore.updateProject(req.user!.userId, id, req.body);
+
+    if (!project) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'PROJECT_NOT_FOUND',
+          message: 'Project not found',
+        },
+      });
+      return;
+    }
+
+    res.json({ success: true, data: project, message: 'Project updated' });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -150,7 +134,19 @@ router.patch('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // TODO: Delete project from database
+    const deleted = await dataStore.deleteProject(req.user!.userId, id);
+
+    if (!deleted) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'PROJECT_NOT_FOUND',
+          message: 'Project not found',
+        },
+      });
+      return;
+    }
+
     res.json({ success: true, message: 'Project deleted' });
   } catch (error) {
     res.status(500).json({
