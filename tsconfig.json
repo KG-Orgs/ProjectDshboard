@@ -18,12 +18,14 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
+      "@contractor/shared": [
+        "packages/shared/src/index.ts"
+      ],
       "@contractor/shared/*": [
         "packages/shared/src/*"
       ]
     }
   },
-  "include": [],
   "references": [
     {
       "path": "./apps/mobile"
