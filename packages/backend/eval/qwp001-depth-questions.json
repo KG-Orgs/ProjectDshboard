@@ -1,0 +1,34 @@
+{
+  "projectId": "731cfd5d-e647-4551-89e7-0a3cc4915115",
+  "projectName": "MLJ-017 Package 6 - General (TEST CLONE)",
+  "questions": [
+    {
+      "id": "qwp-holdpoints",
+      "bucket": "answer",
+      "query": "What hold points does QWP-001 require before concrete placement?",
+      "expectedFilePatterns": ["QWP-001"],
+      "acceptableAnswerContains": ["hold", "concrete", "rebar", "sign"]
+    },
+    {
+      "id": "qwp-rebar-risks",
+      "bucket": "answer",
+      "query": "What rebar inspection risks does QWP-001 list for formwork installation?",
+      "expectedFilePatterns": ["QWP-001"],
+      "acceptableAnswerContains": ["rebar", "formwork", "ACI", "inspection"]
+    },
+    {
+      "id": "qwp-ambient-temp",
+      "bucket": "answer",
+      "query": "What ambient temperature checks are required before placing concrete per QWP-001?",
+      "expectedFilePatterns": ["QWP-001"],
+      "acceptableAnswerContains": ["temperature", "ambient", "concrete", "cold", "hot"]
+    },
+    {
+      "id": "qwp-quality-risks",
+      "bucket": "answer",
+      "query": "What quality risks does QWP-001 address for concrete formwork and reinforcement?",
+      "expectedFilePatterns": ["QWP-001"],
+      "acceptableAnswerContains": ["concrete", "formwork", "reinforcement", "quality"]
+    }
+  ]
+}

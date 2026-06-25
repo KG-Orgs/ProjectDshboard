@@ -1,0 +1,2607 @@
+{
+  "projectId": "731cfd5d-e647-4551-89e7-0a3cc4915115",
+  "projectName": "MLJ-017 Package 6 - General (TEST CLONE)",
+  "generatedAt": "2026-06-25T17:15:32.307Z",
+  "seed": 20260619,
+  "sampleStats": {
+    "filesSampled": 63,
+    "questionsGenerated": 110,
+    "categories": [
+      "change_order",
+      "contract",
+      "correspondence",
+      "drawing",
+      "invoice",
+      "meeting_minutes",
+      "other",
+      "permit",
+      "photo",
+      "report",
+      "rfi",
+      "safety",
+      "schedule",
+      "spec",
+      "submittal",
+      "unknown"
+    ],
+    "filesPerCategory": {
+      "change_order": 1,
+      "contract": 5,
+      "correspondence": 5,
+      "drawing": 4,
+      "invoice": 5,
+      "meeting_minutes": 5,
+      "other": 1,
+      "permit": 5,
+      "photo": 3,
+      "report": 3,
+      "rfi": 5,
+      "safety": 5,
+      "schedule": 3,
+      "spec": 5,
+      "submittal": 4,
+      "unknown": 4
+    }
+  },
+  "questions": [
+    {
+      "id": "chunk-69891ac7-c2",
+      "bucket": "answer",
+      "query": "In CO#15 - Ave I Relocate Water Service (MLJ Interal), what does the document state about 335 Center Avenue, Mamaroneck, NY 10543 (914) 777 – 8292 ♦ (914)?",
+      "expectedFilePatterns": [
+        "CO#15 - Ave I Relocate Water Service (MLJ Interal)"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "69891ac7-3dae-4361-b545-02ac5425a1e7",
+      "acceptableAnswerContains": [
+        "water",
+        "relocate",
+        "service",
+        "assistant"
+      ],
+      "notes": "change_order | CO#15 - Ave I Relocate Water Service (MLJ Interal).pdf (page 1)",
+      "groundingChunkId": "f6c8dccf-b342-4e48-853f-4805aeaa385e",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "___________________________________________________________________________\n335 Center Avenue, Mamaroneck, NY 10543 (914) 777 – 8292 ♦ (914) 777 - 0194\n290 East 132nd Street, Bronx, NY 10454\nApril 13th\n, 2026\nMLJ Contracting\n1010 Northern B",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-da0c6d56-c48",
+      "bucket": "answer",
+      "query": "In A37806_GEN-051R00 - APP - Subcontractor Approval Forms , what does GEN-051R00 say about contracting and prog?",
+      "expectedFilePatterns": [
+        "A37806_GEN-051R00 - APP - Subcontractor Approval Forms ",
+        "A37806",
+        "051R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "da0c6d56-07df-4ec8-abc1-72da8e05e1ca",
+      "acceptableAnswerContains": [
+        "contracting",
+        "prog",
+        "rosemar",
+        "inc."
+      ],
+      "notes": "contract | A37806_GEN-051R00 - APP - Subcontractor Approval Forms - Island Pavement Cutting Co Inc..pdf (page 36)",
+      "groundingChunkId": "0fbd9c60-e010-4fbe-af3f-8ea61a03cc04",
+      "groundingChunkIndex": 48,
+      "groundingPageNumber": 36,
+      "groundingSnippet": "Work In Prog NYS DOT 03/22/2023 12/31/2023\nRestani Construction Corporation:GFM526 1,363,150.00 Plug Joints, Joints, Sealing, RO NYCTA 06/21/2019 12/31/2024\nRestani Construction Corporation:HWK100SBC Recon of Southern BK Crosstown 348,570.0",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-da0c6d56-c30",
+      "bucket": "answer",
+      "query": "In A37806_GEN-051R00 - APP - Subcontractor Approval Forms , what does GEN-051R00 say about prog and contracting?",
+      "expectedFilePatterns": [
+        "A37806_GEN-051R00 - APP - Subcontractor Approval Forms ",
+        "A37806",
+        "051R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "da0c6d56-07df-4ec8-abc1-72da8e05e1ca",
+      "acceptableAnswerContains": [
+        "prog",
+        "contracting",
+        "sealing",
+        "joint"
+      ],
+      "notes": "contract | A37806_GEN-051R00 - APP - Subcontractor Approval Forms - Island Pavement Cutting Co Inc..pdf (page 32)",
+      "groundingChunkId": "8839de88-3ce7-48fd-9930-9acf1f390671",
+      "groundingChunkIndex": 30,
+      "groundingPageNumber": 32,
+      "groundingSnippet": "ied Work In Prog Private 08/12/2024 12/31/2024\nH & L Contracting LLC:CP 5343 Shinnecock Canal 23-45 16,755.00 Joint Adh, Saw Cut, Coring Work In Prog Suffolk County 02/29/2024 12/31/2024\nH & L Contracting LLC:D264629 LIE (2208-10)Crooked Hi",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-44a66cdc-c2",
+      "bucket": "answer",
+      "query": "In 2025-03-19 MTACD-MLJTC2-L-0022 Sub-Contractor Approval , what does the document state about 2 Broadway, 8th Floor?",
+      "expectedFilePatterns": [
+        "2025-03-19 MTACD-MLJTC2-L-0022 Sub-Contractor Approval ",
+        "MLJTC2",
+        "Contractor"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "44a66cdc-f6a1-497b-9b9a-acb9a4fad376",
+      "acceptableAnswerContains": [
+        "sub-contractor",
+        "engineering",
+        "surveying",
+        "munoz"
+      ],
+      "notes": "contract | 2025-03-19 MTACD-MLJTC2-L-0022 Sub-Contractor Approval  Munoz Engineering  Land Surveying DPC $241,473.00.pdf (page 1)",
+      "groundingChunkId": "b6673b83-4631-4442-8477-7e1df75e0755",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "2 Broadway, 8th Floor\nNew York, NY 10004-2207\nMarch 19, 2025\nTo: Ravi Jain\nMLJ-TC2 JV\n1010 Northern Blvd, Suite 200\nGreat Neck, New York 11021\nMTACD-MLJTC2-L-0022\nRe:\nSubject:\nContract A-37806 Design-Build Services for ADA Upgrades - Packag",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-38b42538-c48",
+      "bucket": "answer",
+      "query": "In Pre-Proposal Slideshow_A37806_RFP_Addendum_02, what requirements does spec section 01 10 30 include for 01 10 30?",
+      "expectedFilePatterns": [
+        "Pre-Proposal Slideshow_A37806_RFP_Addendum_02",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "38b42538-ceef-48b2-8f5c-3c16b1837437",
+      "acceptableAnswerContains": [
+        "01 10 30",
+        "information",
+        "avenue",
+        "construction"
+      ],
+      "notes": "contract | Pre-Proposal Slideshow_A37806_RFP_Addendum_02.pdf (page 46)",
+      "groundingChunkId": "007eaddc-08c0-41a0-8d35-c0db807e5107",
+      "groundingChunkIndex": 48,
+      "groundingPageNumber": 46,
+      "groundingSnippet": "47\nDisclaimer: This presentation and the information contained herein is provided for information only. MTA Construction and Development makes no representation as to the accuracy or completeness of information contained herein.\nPhasing Res",
+      "generatedQueryTemplate": "spec_section"
+    },
+    {
+      "id": "chunk-38b42538-c19",
+      "bucket": "answer",
+      "query": "In Pre-Proposal Slideshow_A37806_RFP_Addendum_02, what does the document state about Disclaimer: This presentation and the information contained herein is provided for info...?",
+      "expectedFilePatterns": [
+        "Pre-Proposal Slideshow_A37806_RFP_Addendum_02",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "38b42538-ceef-48b2-8f5c-3c16b1837437",
+      "acceptableAnswerContains": [
+        "information",
+        "contained",
+        "representation",
+        "presentation"
+      ],
+      "notes": "contract | Pre-Proposal Slideshow_A37806_RFP_Addendum_02.pdf (page 18)",
+      "groundingChunkId": "ddc874de-d36f-4e64-b7cd-b073b6dc2563",
+      "groundingChunkIndex": 19,
+      "groundingPageNumber": 18,
+      "groundingSnippet": "19\nDisclaimer: This presentation and the information contained herein is provided for information only. MTA Construction and Development makes no representation as to the accuracy or completeness of information contained herein.\nADA Scheme:",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-1be1940a-c51",
+      "bucket": "answer",
+      "query": "In A37806_GEN-027R00 - R&R - Subcontractor Approval Forms , what does GEN-027R00 say about subcontractor and contract?",
+      "expectedFilePatterns": [
+        "A37806_GEN-027R00 - R&R - Subcontractor Approval Forms ",
+        "A37806",
+        "027R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "1be1940a-56bd-455e-a359-26afa18c76b3",
+      "acceptableAnswerContains": [
+        "subcontractor",
+        "contract",
+        "significant",
+        "perform"
+      ],
+      "notes": "contract | A37806_GEN-027R00 - R&R - Subcontractor Approval Forms - Crossroads JV, LLC.pdf (page 30)",
+      "groundingChunkId": "8c5bcc04-3ae9-402e-82a8-40c15d6abb78",
+      "groundingChunkIndex": 51,
+      "groundingPageNumber": 30,
+      "groundingSnippet": "CONTRACT SPECIFIC RESPONSIBILTY FORM\nThis form is to be submitted after Contractor is notified that it is the low bidder, or has otherwise\nbeen selected for a contract award, or as directed by MTA. Significant Subcontractors that are\npropos",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-1be1940a-c26",
+      "bucket": "answer",
+      "query": "In A37806_GEN-027R00 - R&R - Subcontractor Approval Forms , what does GEN-027R00 say about percentage and ownership?",
+      "expectedFilePatterns": [
+        "A37806_GEN-027R00 - R&R - Subcontractor Approval Forms ",
+        "A37806",
+        "027R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "1be1940a-56bd-455e-a359-26afa18c76b3",
+      "acceptableAnswerContains": [
+        "percentage",
+        "ownership",
+        "partner",
+        "party"
+      ],
+      "notes": "contract | A37806_GEN-027R00 - R&R - Subcontractor Approval Forms - Crossroads JV, LLC.pdf (page 16)",
+      "groundingChunkId": "2bd7fe29-bd04-48fe-b717-f5b5339cb7f0",
+      "groundingChunkIndex": 26,
+      "groundingPageNumber": 16,
+      "groundingSnippet": "______________________________________________________________\n________________________________________________________________________\nIf the Contractor is a joint venture or partnership, please list all parties to the joint venture\nand pa",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-6068cbdd-c2",
+      "bucket": "answer",
+      "query": "In A37806 Transmittal 0014 -  MTA Personnel and PMC Suppli, what does Transmittal 0014 say about 01 50 00 and returned?",
+      "expectedFilePatterns": [
+        "A37806 Transmittal 0014 -  MTA Personnel and PMC Suppli",
+        "A37806",
+        "Transmittal"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "6068cbdd-220d-46a5-87f1-871fb72d66d9",
+      "acceptableAnswerContains": [
+        "01 50 00",
+        "returned",
+        "anodized",
+        "white"
+      ],
+      "notes": "correspondence | A37806 Transmittal 0014 -  MTA Personnel and PMC Supplies.pdf (page 1)",
+      "groundingChunkId": "892ab3ad-4b83-47d7-a700-bf1472fbb844",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "CC: Ravi Jain\n________________________\nPROJECT: A-37806 ADA Pkg 6 DATE: 04/24/2026\nTo: AECOM\n605 Third Avenue\n3rd Floor\nNew York, NY 10158\nRE: As per Spec 01 50 00 - MTA Personnel and PMC Supplies\nATTN: Ray Batmaz JOB: MLJTC2\nWE ARE SENDING",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-862d3b51-c2",
+      "bucket": "answer",
+      "query": "In 2026-03-03 Cary Winston Access pass 2026 signed, what does the document state about 1010 Northern Blvd Suite 200 Great Neck NY 11021 | (929) 800-1972?",
+      "expectedFilePatterns": [
+        "2026-03-03 Cary Winston Access pass 2026 signed"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "862d3b51-d9e3-400a-b54c-1fe029389851",
+      "acceptableAnswerContains": [
+        "construction",
+        "providence",
+        "corp.",
+        "upgrades"
+      ],
+      "notes": "correspondence | 2026-03-03 Cary Winston Access pass 2026 signed.pdf (page 1)",
+      "groundingChunkId": "9d944b5d-1c01-486b-ad13-8a5e47e167ad",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "1010 Northern Blvd Suite 200 Great Neck NY 11021 | (929) 800-1972 | rjain@mljcontracting.com\nMarch 3, 2026\nMTA C&D\n2 Broadway\nNew York, NY 10004\nAttn:\nRE:\nSubject:\nMichael Wilson, Program CEO\nA-37806 ADA Package 6: Accessibility Upgrades at",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-862d3b51-c3",
+      "bucket": "answer",
+      "query": "In 2026-03-03 Cary Winston Access pass 2026 signed, what does the document state about Attachment 4. List of Contractor Company Employees Requesting Access Passes?",
+      "expectedFilePatterns": [
+        "2026-03-03 Cary Winston Access pass 2026 signed"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "862d3b51-d9e3-400a-b54c-1fe029389851",
+      "acceptableAnswerContains": [
+        "access",
+        "pass",
+        "transportation",
+        "temporary"
+      ],
+      "notes": "correspondence | 2026-03-03 Cary Winston Access pass 2026 signed.pdf (page 3)",
+      "groundingChunkId": "04f43336-469c-47e7-811a-876818b46965",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 3,
+      "groundingSnippet": "Revised: 12/15/2022\nAttachment 4. List of Contractor Company Employees Requesting Access Passes\nNew York City Transit\nBuilding Access/System Access/Temporary Transportation Pass Request List\nCompany Name: _\nB/S/T* Non-employee Name SS#\n(las",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-fb1040ac-c2",
+      "bucket": "answer",
+      "query": "In A37806 Transmittal 0012 -  Masks KN95 01.09.2026, what does Transmittal 0012 say about 01 50 00 and returned?",
+      "expectedFilePatterns": [
+        "A37806 Transmittal 0012 -  Masks KN95 01.09.2026",
+        "A37806",
+        "Transmittal"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "fb1040ac-8d31-42a8-a377-f0fe021fc48d",
+      "acceptableAnswerContains": [
+        "01 50 00",
+        "returned",
+        "masks",
+        "submitted"
+      ],
+      "notes": "correspondence | A37806 Transmittal 0012 -  Masks KN95 01.09.2026.docx",
+      "groundingChunkId": "2e142f95-bc5e-4386-aaa7-10644d02f0b4",
+      "groundingChunkIndex": 2,
+      "groundingSnippet": "A-37806 ADA Pkg 6 Design-Build Services for Accessibility Upgrades at Five (5) Stations in\n\nNew York City\n\nTransmittal\n\nNo: 0012\n\n1010 Northern Blvd Suite 200 Great\n\nNeck NY 11021 | (929) 800-1972\n\nPROJECT: A-37806 ADA Pkg 6 DATE: 01/09/202",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-3ccd72b4-c2",
+      "bucket": "answer",
+      "query": "In A37806 - TC Electric Letter, what does the document state about Attn: Michael Wilson, Program CEO?",
+      "expectedFilePatterns": [
+        "A37806 - TC Electric Letter",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "3ccd72b4-9fb4-4832-9771-3fccd9beef56",
+      "acceptableAnswerContains": [
+        "access",
+        "your",
+        "employees",
+        "upgrades"
+      ],
+      "notes": "correspondence | A37806 - TC Electric Letter.pdf (page 1)",
+      "groundingChunkId": "0442e860-7c33-472a-b728-e96384d358d6",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "September 5, 2025\nMTA C&D\n2 Broadway\nNew York, NY 10004\nAttn: Michael Wilson, Program CEO\nRE: A-37806 ADA Package 6: Accessibility Upgrades at Five Stations with\nComponent Upgrades at One Station in the City of New York\nMr. Wilson,\nWe kindl",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-e19299ea-c6",
+      "bucket": "answer",
+      "query": "In A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundati, what does AVI-002R01 say about 8u1106 and elevator?",
+      "expectedFilePatterns": [
+        "A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundati",
+        "A37806",
+        "002R01"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "e19299ea-062a-4cdd-88b8-dea6638e18c3",
+      "acceptableAnswerContains": [
+        "8u1106",
+        "elevator",
+        "formsaver",
+        "type1"
+      ],
+      "notes": "drawing | A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundation Rebar Shop Drawings-MTA.pdf (page 4)",
+      "groundingChunkId": "bb4d8f72-3b0d-4d34-a7b0-8e269ce3ec1d",
+      "groundingChunkIndex": 6,
+      "groundingPageNumber": 4,
+      "groundingSnippet": "5\" 3'-5\"\n8'-3\" #9 6'-4\"\n#10 9'-4\" 7'-2\"\n#8 7'-4\" 5'-8\"\n#4 3'-0\" 2'-4\"\nSIZE\nLENGTH\nREF: GEN-CS-04 (5000 PSI)\n#11 10'-2\" 7'-10\"\nA REF: AVI-CS-601 (DTD.01.23.2026)\nELEVATOR PIT (EL1123) MAT MF2 REINFORCEMENT DETAIL BOTTOM BARS 2ND WAY\n1ST WAY\n",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-e19299ea-c3",
+      "bucket": "answer",
+      "query": "In A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundati, what does AVI-002R01 say about 03 20 00 and contract?",
+      "expectedFilePatterns": [
+        "A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundati",
+        "A37806",
+        "002R01"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "e19299ea-062a-4cdd-88b8-dea6638e18c3",
+      "acceptableAnswerContains": [
+        "03 20 00",
+        "contract",
+        "manager",
+        "nyct"
+      ],
+      "notes": "drawing | A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundation Rebar Shop Drawings-MTA.pdf (page 2)",
+      "groundingChunkId": "c4c0e69a-de10-4755-8d9c-0b0338eb1be5",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "For NYCT/MTA Review & Comment\nFor NYCT/MTA Approval\nFor Designer Approval\nFor NYCT/MTA Information Only\nFor Designer Information Only\nDate:\nContract Number: Contract Title:\nItem Description:\nSubmittal No.: Rev.:\nSpec./ PRDC Ref.:\nLocation (",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-b2f715c4-c4",
+      "bucket": "answer",
+      "query": "In A37806_14 24 00_BUR-009R00 - R&R - EL539 Cab and Entran, what does BUR-009R00 say about 08 80 00 and information?",
+      "expectedFilePatterns": [
+        "A37806_14 24 00_BUR-009R00 - R&R - EL539 Cab and Entran",
+        "A37806",
+        "009R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "b2f715c4-fb09-49ea-82ed-e12f6201fac6",
+      "acceptableAnswerContains": [
+        "08 80 00",
+        "information",
+        "submittal",
+        "contract"
+      ],
+      "notes": "drawing | A37806_14 24 00_BUR-009R00 - R&R - EL539 Cab and Entrance Drawings-MTA.pdf (page 3)",
+      "groundingChunkId": "d051f84c-ac12-47fa-873c-cabd18fa2dbf",
+      "groundingChunkIndex": 4,
+      "groundingPageNumber": 3,
+      "groundingSnippet": "MLJTC2 For NYCT/MTA Approval\nFor Designer Approval\nA37806 Contract Number: Contract Title: Design-Build Services for Accessibility Upgrades - Package 6\nEL539 Cab and Entrance DrawingsItem Description:\nA37806_14 24 00_BUR-009Submittal No.:\n1",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-b2f715c4-c2",
+      "bucket": "answer",
+      "query": "In A37806_14 24 00_BUR-009R00 - R&R - EL539 Cab and Entran, what does BUR-009R00 say about 14 24 00 and contract?",
+      "expectedFilePatterns": [
+        "A37806_14 24 00_BUR-009R00 - R&R - EL539 Cab and Entran",
+        "A37806",
+        "009R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "b2f715c4-fb09-49ea-82ed-e12f6201fac6",
+      "acceptableAnswerContains": [
+        "14 24 00",
+        "contract",
+        "manager",
+        "nyct"
+      ],
+      "notes": "drawing | A37806_14 24 00_BUR-009R00 - R&R - EL539 Cab and Entrance Drawings-MTA.pdf (page 1)",
+      "groundingChunkId": "e6040572-a1c2-4447-acc6-64c5ff6f24d2",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "For NYCT/MTA Review & Comment\nFor NYCT/MTA Approval\nFor Designer Approval\nFor NYCT/MTA Information Only\nFor Designer Information Only\nDate:\nContract Number: Contract Title:\nItem Description:\nSubmittal No.: Rev.:\nSpec./ PRDC Ref.:\nLocation (",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-8a793d89-c4",
+      "bucket": "answer",
+      "query": "In A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Stai, what does BUR-001R00 say about drawing and professional?",
+      "expectedFilePatterns": [
+        "A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Stai",
+        "A37806",
+        "001R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "8a793d89-9f5e-4113-9341-10c91306351a",
+      "acceptableAnswerContains": [
+        "drawing",
+        "professional",
+        "description",
+        "prepared"
+      ],
+      "notes": "drawing | A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Staircase Enclosure Shop Drawings.pdf (page 3)",
+      "groundingChunkId": "6dffe24f-95d4-4675-80f9-45bb78a966fd",
+      "groundingChunkIndex": 4,
+      "groundingPageNumber": 3,
+      "groundingSnippet": "DATE :\nDRAWING NO.\nDESIGN-BUILD SERVICES FOR ADA UPGRADES-PACKAGE 6\nCONTRACT A-37806\nPREPARED BY:\nPREPARED FOR:\nGENERAL CONTRACTOR\nCONSTRUCTION\n& DEVELOPMENT\nIT IS A VIOLATION OF THE PROFESSIONAL LICENSE LAW FOR ANY PERSON TO ALTER THIS DRA",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-8a793d89-c3",
+      "bucket": "answer",
+      "query": "In A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Stai, what does BUR-001R00 say about information and exceptions?",
+      "expectedFilePatterns": [
+        "A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Stai",
+        "A37806",
+        "001R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "8a793d89-9f5e-4113-9341-10c91306351a",
+      "acceptableAnswerContains": [
+        "information",
+        "exceptions",
+        "reviewed",
+        "rejected"
+      ],
+      "notes": "drawing | A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Staircase Enclosure Shop Drawings.pdf (page 2)",
+      "groundingChunkId": "526ffce3-210e-4794-8eab-6345b16c2187",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "AECOM\nSSA\nGGE\nHRM\nNET RSR AAN FIO AAR NRR Reviewed By / Discipline\nNET = No Exceptions Taken\nRSR = Rejected - See Remarks\nProject No.\nA37806\nSubmittal No. Date Reviewed\nNo Exceptions Taken\nRejected - See Remarks\nApproved as Noted\nFor Inform",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-afe123c6-c2",
+      "bucket": "answer",
+      "query": "In Invoice 11707, what does the document state about Service Locations: Middletown?",
+      "expectedFilePatterns": [
+        "Invoice 11707"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "afe123c6-218f-44fc-9d25-c996e53cee5d",
+      "acceptableAnswerContains": [
+        "service",
+        "order",
+        "mljcontracting.com",
+        "business"
+      ],
+      "notes": "invoice | Invoice 11707.pdf (page 1)",
+      "groundingChunkId": "f1f7f7ac-6274-4a43-a068-293ea9b346de",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "INVOICE11707\nPROJECT Package 6 -\nA37806\nService Locations: Middletown\nStations\nService Date: 2/5/2026\nService Order 8780\nService Date: 2/12/2026\nService Order 3029\nService Date: 2/19/2026\nService Order 3086\nBusiness name Joes Pest Control\nB",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-6a8f8474-c2",
+      "bucket": "answer",
+      "query": "In Invoice 11830, what does the document state about Service Locations: Middletown?",
+      "expectedFilePatterns": [
+        "Invoice 11830"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "6a8f8474-41a0-4f72-b1f6-955514ced5b5",
+      "acceptableAnswerContains": [
+        "service",
+        "order",
+        "mljcontracting.com",
+        "business"
+      ],
+      "notes": "invoice | Invoice 11830.pdf (page 1)",
+      "groundingChunkId": "c4e2a660-723c-4314-ab20-055aa0433073",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "INVOICE11830\nPROJECT Package 6 -\nA37806\nService Locations: Middletown\nStations\nService Date: 4/2/2026\nService Order 3421\nService Date: 4/9/2026\nService Order 3488\nService Date: 4/16/2026\nService Order 3548\nBusiness name Joes Pest Control Se",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-ce208562-c3",
+      "bucket": "answer",
+      "query": "In 2025 Lockton Invoice 0849812, what does the document state about Single Invoice: INV 123456*?",
+      "expectedFilePatterns": [
+        "2025 Lockton Invoice 0849812",
+        "0849812"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "ce208562-33c5-46b3-88ed-0a31b6a31ea9",
+      "acceptableAnswerContains": [
+        "lockton",
+        "email",
+        "clientpayments",
+        "lockton.com"
+      ],
+      "notes": "invoice | 2025 Lockton Invoice 0849812.pdf (page 1)",
+      "groundingChunkId": "75d45597-7916-49f7-88db-5f9745bee480",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "mple:\nSingle Invoice: INV 123456*\nMultiple Invoices: INV 123456/234445/344555*\nEmail remittance to: clientpayments@lockton.com\nc/o Bank of America\nPO Box 3207\nBoston, MA 02241-3207\nNortheast Series of Lockton Companies, LLC\nAvoid email scam",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-ce208562-c2",
+      "bucket": "answer",
+      "query": "In 2025 Lockton Invoice 0849812, what does the document state about Harco National Insurance Company?",
+      "expectedFilePatterns": [
+        "2025 Lockton Invoice 0849812",
+        "0849812"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "ce208562-33c5-46b3-88ed-0a31b6a31ea9",
+      "acceptableAnswerContains": [
+        "invoice",
+        "remittance",
+        "upgrades",
+        "number"
+      ],
+      "notes": "invoice | 2025 Lockton Invoice 0849812.pdf (page 1)",
+      "groundingChunkId": "2cb5f95c-1fd9-4f41-8db1-609ae671dfbc",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "Page 1 of 1\nINVOICE\nPolicy Number\nPolicy Term\nCarrier\n$14,990.00\nBill To:\nEffective Date\nHarco National Insurance Company\n0849812\n06/09/2025\nAmount Invoiced:\nInvoice Number:\nInvoice Date:\nTri-State Civil Construction, LLC\nSean Xu\n45 Whitney",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-5d538cd7-c3",
+      "bucket": "answer",
+      "query": "In Backup for Invoice#01, what does the document state about TIME AND MATERIAL (T&M) LOG SHEET Office: 516-605-1122?",
+      "expectedFilePatterns": [
+        "Backup for Invoice#01"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "5d538cd7-ee2c-4b40-b34e-126f3b5a940a",
+      "acceptableAnswerContains": [
+        "hrs.",
+        "rate",
+        "overtime",
+        "abatement"
+      ],
+      "notes": "invoice | Backup for Invoice#01.pdf (page 2)",
+      "groundingChunkId": "637fb5da-19d2-454f-b4f4-3f70b121aaa1",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "CROSSROADS JV, LLC\n25 Cain Drive\nPlainview, NY 11803\nTIME AND MATERIAL (T&M) LOG SHEET Office: 516-605-1122\nTICKET#: 6198\nJOB NAME & NUMBER: Burnside Street Station\nWORK LOCATION: Express track\nKEY WORDS: LEAD ABATEMENT\nDATE OF WORK: 12/06/",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-5d538cd7-c5",
+      "bucket": "answer",
+      "query": "In Backup for Invoice#01, what does the document state about TIME AND MATERIAL (T&M) LOG SHEET Office: 516-605-1122?",
+      "expectedFilePatterns": [
+        "Backup for Invoice#01"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "5d538cd7-ee2c-4b40-b34e-126f3b5a940a",
+      "acceptableAnswerContains": [
+        "hrs.",
+        "rate",
+        "overtime",
+        "abatement"
+      ],
+      "notes": "invoice | Backup for Invoice#01.pdf (page 4)",
+      "groundingChunkId": "dc844045-e6c8-4a7e-85a9-a82ace91b6f3",
+      "groundingChunkIndex": 5,
+      "groundingPageNumber": 4,
+      "groundingSnippet": "CROSSROADS JV, LLC\n25 Cain Drive\nPlainview, NY 11803\nTIME AND MATERIAL (T&M) LOG SHEET Office: 516-605-1122\nTICKET#: 6199\nJOB NAME & NUMBER: Burnside Street Station\nWORK LOCATION: Express track\nKEY WORDS: LEAD ABATEMENT\nDATE OF WORK: 12/07/",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-8683adfa-c2",
+      "bucket": "answer",
+      "query": "In A37806_01 30 20_GEN-042R00 - ORIG - A37806 & C49321R Co, what does GEN-042R00 say about 00\n01 30 and contract?",
+      "expectedFilePatterns": [
+        "A37806_01 30 20_GEN-042R00 - ORIG - A37806 & C49321R Co",
+        "A37806",
+        "042R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "8683adfa-f41a-48e3-b09f-5a8501419153",
+      "acceptableAnswerContains": [
+        "00\n01 30",
+        "contract",
+        "manager",
+        "a37806"
+      ],
+      "notes": "meeting_minutes | A37806_01 30 20_GEN-042R00 - ORIG - A37806 & C49321R Coordination Meeting Minutes 09.03.25.pdf (page 1)",
+      "groundingChunkId": "b7ba6d62-3088-4e29-92ff-02d7e3449e4f",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "For NYCT/MTA Review & Comment\nFor NYCT/MTA Approval\nFor Designer Approval\nFor NYCT/MTA Information Only\nFor Designer Information Only\nDate:\nContract Number: Contract Title:\nItem Description:\nSubmittal No.: Rev.:\nSpec./ PRDC Ref.:\nLocation (",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-8683adfa-c3",
+      "bucket": "answer",
+      "query": "In A37806_01 30 20_GEN-042R00 - ORIG - A37806 & C49321R Co, what does GEN-042R00 say about station and ahern?",
+      "expectedFilePatterns": [
+        "A37806_01 30 20_GEN-042R00 - ORIG - A37806 & C49321R Co",
+        "A37806",
+        "042R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "8683adfa-f41a-48e3-b09f-5a8501419153",
+      "acceptableAnswerContains": [
+        "station",
+        "ahern",
+        "meeting",
+        "a37806"
+      ],
+      "notes": "meeting_minutes | A37806_01 30 20_GEN-042R00 - ORIG - A37806 & C49321R Coordination Meeting Minutes 09.03.25.pdf (page 2)",
+      "groundingChunkId": "12130953-b6b4-48d6-a54a-311c192fde86",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "Page 1 of 1\nMeeting Minutes\nMeeting: A37806 - Coordination Field Meeting with Contract C34921R (Myrtle\nAve Station - Meet at Melrose and Broadway)\nContract: A37806 - ADA Package 6\nDate: 09/03/2025\nLocation: Myrtle Ave. Station (Street)\nAtte",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-83c4d024-c3646",
+      "bucket": "answer",
+      "query": "In A37806 Kick Off Pre-Work Conference MASTER FILE - 2.10., what does the document state about q��faX1�E_f�Xǰ\"�/�\u0017�\u001a��P\u0004�8w���$a<R\u0002��v\u0007`p\u0006\u0013`\u000f�u =��\b\u0012a R�u�v3��P�i�<4/��߱\u001f\u0006'�Gȓ\u001b������...?",
+      "expectedFilePatterns": [
+        "A37806 Kick Off Pre-Work Conference MASTER FILE - 2.10.",
+        "A37806",
+        "Conference"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "83c4d024-9f3a-488a-aa13-bc453474caa9",
+      "acceptableAnswerContains": [
+        "fax1",
+        "lmsc",
+        "sc-u",
+        "jrlk"
+      ],
+      "notes": "meeting_minutes | A37806 Kick Off Pre-Work Conference MASTER FILE - 2.10.25 - Rev. 3.pptx",
+      "groundingChunkId": "fb301d61-ad5b-4fcf-8e84-483b0045767a",
+      "groundingChunkIndex": 3646,
+      "groundingSnippet": "���?\nq��faX1�E_f�Xǰ\"�/�\u0017�\u001a��P\u0004�8w���$a<R\u0002��v\u0007`p\u0006\u0013`\u000f�u\f=��\b\u0012a R�u�v3��P�i�<4/��߱\u001f\u0006'�Gȓ\u001b��������m���=�7Q���2�=Ty�\u001a~��U��Y�#]�V]�d��\u0015VPR�I��s\n,=��2s��UXe\u0015NL�ɀ~�qh��/]�,\u0003�Iz���`���Ս�\u000bz\nV���>:ຎ�\u0018���o�nl���\u0012{���,&O��Ό��ok��\u0007g�dg�����LmsC\"w\u0002���K�",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-83c4d024-c3829",
+      "bucket": "answer",
+      "query": "In A37806 Kick Off Pre-Work Conference MASTER FILE - 2.10., what does the document state about X��u?:\u001fO½��m�f���Ʒ_�g� �y,�M�?",
+      "expectedFilePatterns": [
+        "A37806 Kick Off Pre-Work Conference MASTER FILE - 2.10.",
+        "A37806",
+        "Conference"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "83c4d024-9f3a-488a-aa13-bc453474caa9",
+      "acceptableAnswerContains": [
+        "psnp",
+        "22f3",
+        "o-xb"
+      ],
+      "notes": "meeting_minutes | A37806 Kick Off Pre-Work Conference MASTER FILE - 2.10.25 - Rev. 3.pptx",
+      "groundingChunkId": "c2d0ab47-1448-43dd-8aab-0f6b617f6850",
+      "groundingChunkIndex": 3829,
+      "groundingSnippet": "X��u?:\u001fO½��m�f���Ʒ_�g�\u000b�y,�M�\nZ��_ْH@{���Q�zW\u0015�\u0005\u001f��5�\u0012����\u000f��%��<+����S�O\u0012\u0012��\u001c�^~��O\u0003x���\n\u001b�6Zx��s.��+��~G��\u0006v���9G�\u0003���B��j~�u���\u001a>���\u001c\u001e9��y����~1�\u0004\nh}�ĺL��^Ӧ\u001be�e�_C�=3^�\u0013��ys�����;'\u0018&�\u0015H��\u0005F܁M�}(\u001e�x?)�#f�Zj�~�Ӏ\u0003�\f\u0018��֟Q���9\u001f¤\u0011 �f����4\u0013Ƞp",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-d270696a-c23",
+      "bucket": "answer",
+      "query": "In A37806 Monthly Job Progress Meeting Minutes 2025-07-24, what does the document state about /25, 11:33:11 AM 1h 21m 13s bjiang@mljcontracting.com bjiang@mljcontracting.com Presenter?",
+      "expectedFilePatterns": [
+        "A37806 Monthly Job Progress Meeting Minutes 2025-07-24",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "d270696a-a06d-4712-ac02-414c8b176506",
+      "acceptableAnswerContains": [
+        "mljcontracting.com",
+        "presenter",
+        "tcelect.net",
+        "fkastrati"
+      ],
+      "notes": "meeting_minutes | A37806 Monthly Job Progress Meeting Minutes 2025-07-24.pdf (page 9)",
+      "groundingChunkId": "409b1b40-1cc8-4122-b2f1-435e73f048da",
+      "groundingChunkIndex": 23,
+      "groundingPageNumber": 9,
+      "groundingSnippet": "/25, 11:33:11 AM 1h 21m 13s bjiang@mljcontracting.com bjiang@mljcontracting.com Presenter\nJohn Tiede 7/24/25, 10:12:35 AM 7/24/25, 11:33:12 AM 1h 20m 37s jtiede@mljcontracting.com jtiede@mljcontracting.com Presenter\nJaden Walker 7/24/25, 10",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-d270696a-c28",
+      "bucket": "answer",
+      "query": "In A37806 Monthly Job Progress Meeting Minutes 2025-07-24, what does the document state about Emmanuel Olagbaiye 7/24/25, 10:03:48 AM 7/24/25, 11:33:23 AM 1h 29m 34s EOlagbaiye@mljc...?",
+      "expectedFilePatterns": [
+        "A37806 Monthly Job Progress Meeting Minutes 2025-07-24",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "d270696a-a06d-4712-ac02-414c8b176506",
+      "acceptableAnswerContains": [
+        "presenter",
+        "mljcontracting.com",
+        "external",
+        "tylin.com"
+      ],
+      "notes": "meeting_minutes | A37806 Monthly Job Progress Meeting Minutes 2025-07-24.pdf (page 10)",
+      "groundingChunkId": "7ec2bb7d-a2b2-416d-b13e-95f6ae5be695",
+      "groundingChunkIndex": 28,
+      "groundingPageNumber": 10,
+      "groundingSnippet": "com Presenter\nEmmanuel Olagbaiye 7/24/25, 10:03:48 AM 7/24/25, 11:33:23 AM 1h 29m 34s EOlagbaiye@mljcontracting.com Presenter\nIsagani Puertollano 7/24/25, 10:04:45 AM 7/24/25, 11:33:10 AM 1h 28m 24s ipuertollano@mljcontracting.com Presenter",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-46885e53-c8",
+      "bucket": "answer",
+      "query": "In A37806 Monthly Job Progress Meeting Minutes 2026-05-28, what does the document state about CPR-003 R2 issued on 5/6/26.?",
+      "expectedFilePatterns": [
+        "A37806 Monthly Job Progress Meeting Minutes 2026-05-28",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "46885e53-cb08-4e11-b416-8bd121062b8b",
+      "acceptableAnswerContains": [
+        "mljtc2",
+        "open",
+        "provided",
+        "ongoing"
+      ],
+      "notes": "meeting_minutes | A37806 Monthly Job Progress Meeting Minutes 2026-05-28.docx",
+      "groundingChunkId": "b0c90367-d55d-4b00-8add-006a297fd2b7",
+      "groundingChunkIndex": 8,
+      "groundingSnippet": "23/26.\n\nCPR-003 R2 issued on 5/6/26.\n\nMLJTC2 cost proposal in progress based on GO’s scheduled to date.\n\nMLJTC2\n\n05/31/26\n\nOpen\n\n7.2\n\nBurnside Avenue DOT Option Work\n\nFollow-up meeting held on 10/21/25 with DOT & DDC\n\nMLJTC2 sent clarificat",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-46885e53-c4",
+      "bucket": "answer",
+      "query": "In A37806 Monthly Job Progress Meeting Minutes 2026-05-28, what does the document state about ace from 3/2-9/20/26 on Track J4?",
+      "expectedFilePatterns": [
+        "A37806 Monthly Job Progress Meeting Minutes 2026-05-28",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "46885e53-cb08-4e11-b416-8bd121062b8b",
+      "acceptableAnswerContains": [
+        "week",
+        "approved",
+        "myrtle",
+        "middletown"
+      ],
+      "notes": "meeting_minutes | A37806 Monthly Job Progress Meeting Minutes 2026-05-28.docx",
+      "groundingChunkId": "d2c46896-a458-4e0a-a6c3-e6e65ab89393",
+      "groundingChunkIndex": 4,
+      "groundingSnippet": "ace from 3/2-9/20/26 on Track J4 \n\n The latest GO Diversion Plan Schedule 2026-2027 was sent 5/19 (Rev.22). \n\nTo date, 15 - GOs have been completed (8 at Myrtle & 4 at Burnside & 3 at Avenue I) including the make-up GO at Myrtle. We current",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-4b8950a6-c3",
+      "bucket": "answer",
+      "query": "In 37135_02FF_181ST_001R00 - (NET) - Monitoring Plan, what does the document state about Date Received Reviewed By?",
+      "expectedFilePatterns": [
+        "37135_02FF_181ST_001R00 - (NET) - Monitoring Plan",
+        "001R00",
+        "Monitoring"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "4b8950a6-6b6a-426b-88a1-27af3feb2e90",
+      "acceptableAnswerContains": [
+        "reviewed",
+        "submittal",
+        "received",
+        "york"
+      ],
+      "notes": "unknown | 37135_02FF_181ST_001R00 - (NET) - Monitoring Plan.pdf (page 1)",
+      "groundingChunkId": "b8d3e426-07c6-44e3-8d9a-8b5720004f98",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "eet\nNew York, NY 10004\nTel (212)377-8400\nFax (212) 377-8410\nProj. Name:\nDate Received Reviewed By\nSubmittal No. Project Code:\nDate Returned\nFor Information Only Not Required for Review\nMTA LIRR JCC 60577087\nDate Reviewed\nProject Name\nMoynih",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-4b8950a6-c2",
+      "bucket": "answer",
+      "query": "In 37135_02FF_181ST_001R00 - (NET) - Monitoring Plan, what does the document state about For NYCT/MTA Review & Comment?",
+      "expectedFilePatterns": [
+        "37135_02FF_181ST_001R00 - (NET) - Monitoring Plan",
+        "001R00",
+        "Monitoring"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "4b8950a6-6b6a-426b-88a1-27af3feb2e90",
+      "acceptableAnswerContains": [
+        "review",
+        "information",
+        "submittal",
+        "only"
+      ],
+      "notes": "unknown | 37135_02FF_181ST_001R00 - (NET) - Monitoring Plan.pdf (page 1)",
+      "groundingChunkId": "977e33de-7961-447b-9327-b59eb0d3c15b",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "For NYCT/MTA Review & Comment\nFor NYCT/MTA Approval\nFor Designer Approval\nFor NYCT/MTA Information Only\nFor Designer Information Only\nDate:\nContract Number: Contract Title:\nItem Description:\nSubmittal No.: Rev.:\nSpec./ PRDC Ref.:\nLocation (",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-ae1aafb0-c7",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and , what does GEN-001R00 say about coordination and .................................................................................................................?",
+      "expectedFilePatterns": [
+        "A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and ",
+        "A37806",
+        "001R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "ae1aafb0-f91a-432a-804f-e8ec65e2043e",
+      "acceptableAnswerContains": [
+        "coordination",
+        ".................................................................................................................",
+        "upgrades",
+        "revision"
+      ],
+      "notes": "permit | A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and Agency Coordination and Permitting Implementation Plan.pdf (page 5)",
+      "groundingChunkId": "d0149060-30dd-447b-b3ad-8bde49da1191",
+      "groundingChunkIndex": 7,
+      "groundingPageNumber": 5,
+      "groundingSnippet": "THIRD PARTY AND AGENCY COORDINATION AND\nPERMITTING IMPLEMENTATION PLAN\nREV #\n0\nCONTRACT A37806\nDESIGN-BUILD SERVICES FOR ADA UPGRADES PACKAGE 6:\nACCESSIBILITY UPGRADES AT FIVE STATIONS\nRevision # 0 Revision Date 01/23/2025 Page 2 of 22\nTabl",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-ae1aafb0-c19",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and , what does GEN-001R00 say about coordination and design?",
+      "expectedFilePatterns": [
+        "A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and ",
+        "A37806",
+        "001R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "ae1aafb0-f91a-432a-804f-e8ec65e2043e",
+      "acceptableAnswerContains": [
+        "coordination",
+        "design",
+        "third-party",
+        "agencies"
+      ],
+      "notes": "permit | A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and Agency Coordination and Permitting Implementation Plan.pdf (page 13)",
+      "groundingChunkId": "801786a7-11c2-49f2-98fc-ff8ae76a3d6e",
+      "groundingChunkIndex": 19,
+      "groundingPageNumber": 13,
+      "groundingSnippet": "THIRD PARTY AND AGENCY COORDINATION AND\nPERMITTING IMPLEMENTATION PLAN\nREV #\n0\nCONTRACT A37806\nDESIGN-BUILD SERVICES FOR ADA UPGRADES PACKAGE 6:\nACCESSIBILITY UPGRADES AT FIVE STATIONS\nRevision # 0 Revision Date 01/23/2025 Page 10 of 22\nRic",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-6235c6e0-c33",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10., what does BUR-003R00 say about permit and street?",
+      "expectedFilePatterns": [
+        "A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10.",
+        "A37806",
+        "003R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "6235c6e0-aaf5-4e7f-8831-fdc249ee91ac",
+      "acceptableAnswerContains": [
+        "permit",
+        "street",
+        "sidewalk",
+        "location"
+      ],
+      "notes": "permit | A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10.21.25-MJ-LT-x6702.pdf (page 16)",
+      "groundingChunkId": "568da0b8-206b-4db5-abc2-d637605aae80",
+      "groundingChunkIndex": 33,
+      "groundingPageNumber": 16,
+      "groundingSnippet": "ISSUED DATE: 7/17/2025 PERMIT VALID FROM: 7/30/2025 TO: 10/21/2025\nBOROUGH: BRONX PERMIT TYPE: 0215 - OCCUPANCY OF SIDEWALK AS STIPULATED\nFEES (NON-REFUNDABLE):\nADMINISTRATION FEE $50.00\nTOTAL : $50.00 FEE\nWAIVED/CON\nTRACT\nROADWAY TYPE: ASP",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-6235c6e0-c71",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10., what does BUR-003R00 say about mitigation and within?",
+      "expectedFilePatterns": [
+        "A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10.",
+        "A37806",
+        "003R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "6235c6e0-aaf5-4e7f-8831-fdc249ee91ac",
+      "acceptableAnswerContains": [
+        "mitigation",
+        "within",
+        "school",
+        "noise"
+      ],
+      "notes": "permit | A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10.21.25-MJ-LT-x6702.pdf (page 32)",
+      "groundingChunkId": "a23956b8-abb5-43eb-955a-2e99a0a0d544",
+      "groundingChunkIndex": 71,
+      "groundingPageNumber": 32,
+      "groundingSnippet": "ORK WITH ANY\nONGOING CONSTRUCTION AND/OR WITH THE PROJECT/RESIDENT ENGINEER FOR ANY ONGOING\nCAPITAL PROJECTS OCCURRING WITHIN AND/OR ADJACENT TO THE STREET\nSEGMENT/INTERSECTION.\n102 WORK 10PM - 6AM NIGHTLY. SECTION 24-224 ADMINISTRATIVE COD",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-8bf2aca9-c9",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work, what does 01 33 10 say about branch and branches?",
+      "expectedFilePatterns": [
+        "A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work",
+        "A37806",
+        "005R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "8bf2aca9-642f-428d-b98c-e7c94329785c",
+      "acceptableAnswerContains": [
+        "branch",
+        "branches",
+        "pruning",
+        "directed"
+      ],
+      "notes": "permit | A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work Permit.pdf (page 4)",
+      "groundingChunkId": "b1336fbc-1a72-4531-8906-218e8a1e7505",
+      "groundingChunkIndex": 9,
+      "groundingPageNumber": 4,
+      "groundingSnippet": "y and vehicles.\nAs directed by the Borough Forestry Manager or the designated representative, pruning shall consist of the removal of dead, broken, damaged (storm- or otherwise), fungus-\nor insect-infected limbs; dead or decaying stubs; suc",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-8bf2aca9-c16",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work, what does 01 33 10 say about tree and standards?",
+      "expectedFilePatterns": [
+        "A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work",
+        "A37806",
+        "005R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "8bf2aca9-642f-428d-b98c-e7c94329785c",
+      "acceptableAnswerContains": [
+        "tree",
+        "standards",
+        "material",
+        "applying"
+      ],
+      "notes": "permit | A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work Permit.pdf (page 4)",
+      "groundingChunkId": "42911083-8903-463f-b51c-af85ed78d1a7",
+      "groundingChunkIndex": 16,
+      "groundingPageNumber": 4,
+      "groundingSnippet": "ize according to the most recent American\nAssociation of Nurserymen Standards and securely held in place by burlap and sisal twine. All rejected material shall be immediately removed from the site and replaced with\nacceptable material at no",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-aa934827-c2",
+      "bucket": "answer",
+      "query": "In FATMIR KASTRATI, what does the document state about Attachment 8. Access Pass Application?",
+      "expectedFilePatterns": [
+        "FATMIR KASTRATI"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "aa934827-ef81-45a4-9830-5d3545c43210",
+      "acceptableAnswerContains": [
+        "access",
+        "department",
+        "security",
+        "contract"
+      ],
+      "notes": "permit | FATMIR KASTRATI.pdf (page 1)",
+      "groundingChunkId": "58002407-5af7-43db-b92f-94d7f08558ca",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "Revised: 12/15/2022\nAttachment 8. Access Pass Application\nDEPARTMENT OF SECURITY\nNON-EMPLOYEE ACCESS PASS APPLICATION\nBe Advised that authorized requestors are required to complete the online Security Access Authorization Request Form (SAAR",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-aa934827-c3",
+      "bucket": "answer",
+      "query": "In FATMIR KASTRATI, what does the document state about ntract to New York City Transit, cannot be performed without the use?",
+      "expectedFilePatterns": [
+        "FATMIR KASTRATI"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "aa934827-ef81-45a4-9830-5d3545c43210",
+      "acceptableAnswerContains": [
+        "pass",
+        "stolen",
+        "lost",
+        "administrative"
+      ],
+      "notes": "permit | FATMIR KASTRATI.pdf (page 1)",
+      "groundingChunkId": "0264bb30-41a7-4d72-99c3-b5bea549811f",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "ntract to New York City Transit, cannot be performed without the use of a System or MetroCard Temporary Transportation pass. If\nthe contract language is not clear, but there is a business need for these passes, a “Letter of Approval” signed",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-92056c6f-c4",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_BUR-081R00 - FIO - January 2026  Constr, what does BUR-081R00 say about burnside and side?",
+      "expectedFilePatterns": [
+        "A37806_01 32 10_BUR-081R00 - FIO - January 2026  Constr",
+        "A37806",
+        "081R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "92056c6f-1d3d-4cbc-a251-b9ed9120689d",
+      "acceptableAnswerContains": [
+        "burnside",
+        "side",
+        "shielding",
+        "relocation"
+      ],
+      "notes": "photo | A37806_01 32 10_BUR-081R00 - FIO - January 2026  Construction Photos.pdf (page 2)",
+      "groundingChunkId": "2fc3f335-0e1a-4060-a62c-9d1e0c2b2da3",
+      "groundingChunkIndex": 4,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "ess\n1/20/2026 16 Burnside Ave NB side demo shielding installation in progress\n1/20/2026 17 Burnside Ave NB side demo shielding installation in progress\n1/20/2026 18 Burnside Ave NB side demo shielding installation in progress\n1/20/2026 19 B",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-92056c6f-c3",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_BUR-081R00 - FIO - January 2026  Constr, what does BUR-081R00 say about burnside and side?",
+      "expectedFilePatterns": [
+        "A37806_01 32 10_BUR-081R00 - FIO - January 2026  Constr",
+        "A37806",
+        "081R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "92056c6f-1d3d-4cbc-a251-b9ed9120689d",
+      "acceptableAnswerContains": [
+        "burnside",
+        "side",
+        "relocation",
+        "protection"
+      ],
+      "notes": "photo | A37806_01 32 10_BUR-081R00 - FIO - January 2026  Construction Photos.pdf (page 2)",
+      "groundingChunkId": "81f74bc2-8f08-4a66-ad46-4803db8550a3",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "Date Image Number Description\n1/20/2026 1 Burnside Ave NB side MPT\n1/20/2026 2 Burnside Ave NB side MPT\n1/20/2026 3 Burnside Ave NB side MPT\n1/20/2026 4 Burnside Ave NB side MPT\n1/20/2026 5 Burnside ave NB side Coned utility relocation work",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-be82ab58-c5",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_BUR-080R00 - FIO - Burnside December 20, what does BUR-080R00 say about side and installation?",
+      "expectedFilePatterns": [
+        "A37806_01 32 10_BUR-080R00 - FIO - Burnside December 20",
+        "A37806",
+        "080R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "be82ab58-79bc-4993-ae31-8d26ec56029b",
+      "acceptableAnswerContains": [
+        "side",
+        "installation",
+        "preperation",
+        "shielding"
+      ],
+      "notes": "photo | A37806_01 32 10_BUR-080R00 - FIO - Burnside December 2025  Construction Photos.pdf (page 2)",
+      "groundingChunkId": "fb79156b-f6a1-4d2e-95ca-8b14caac1b85",
+      "groundingChunkIndex": 5,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "llation\n12/22/2025 32 NB side MPT area and preperation for J4 shielding installation\n12/22/2025 33 NB side MPT area and preperation for J4 shielding installation\n12/22/2025 34 NB side MPT area and preperation for J4 shielding installation\n1",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-be82ab58-c4",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_BUR-080R00 - FIO - Burnside December 20, what does BUR-080R00 say about area and installation?",
+      "expectedFilePatterns": [
+        "A37806_01 32 10_BUR-080R00 - FIO - Burnside December 20",
+        "A37806",
+        "080R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "be82ab58-79bc-4993-ae31-8d26ec56029b",
+      "acceptableAnswerContains": [
+        "area",
+        "installation",
+        "preperation",
+        "shielding"
+      ],
+      "notes": "photo | A37806_01 32 10_BUR-080R00 - FIO - Burnside December 2025  Construction Photos.pdf (page 2)",
+      "groundingChunkId": "f957b40b-4c66-4a05-bb8f-d9779c76b735",
+      "groundingChunkIndex": 4,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "T area and preperation for J4 shielding installation\n12/22/2025 17 NB side MPT area and preperation for J4 shielding installation\n12/22/2025 18 NB side MPT area and preperation for J4 shielding installation\n12/22/2025 19 NB side MPT area an",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-f1878087-c4",
+      "bucket": "answer",
+      "query": "In 2025-05-13 A37806 Burnside Ave VECP Presentation, what does the document state about VALUE ENGINEERING BACKGROUND?",
+      "expectedFilePatterns": [
+        "2025-05-13 A37806 Burnside Ave VECP Presentation",
+        "A37806",
+        "Presentation"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "f1878087-4de5-4d15-a4bf-b5bd2b700941",
+      "acceptableAnswerContains": [
+        "engineering",
+        "received",
+        "concept",
+        "value"
+      ],
+      "notes": "report | 2025-05-13 A37806 Burnside Ave VECP Presentation.pdf (page 3)",
+      "groundingChunkId": "8f80c284-2bbd-42c3-a6f8-c5720aa2ec95",
+      "groundingChunkIndex": 4,
+      "groundingPageNumber": 3,
+      "groundingSnippet": "OVERPASS\nEMR\nCOMBINED\nHEADHOUSE\nEL-1 EL-2\nVALUE ENGINEERING BACKGROUND\n• Submissions to MTA via ASITE,\npost-award\n• 2/6/25\n• 3/18/25\n• 4/28/25, received comments 5/9/25\n• Discussed with NYC DOT during\nKickoff Meeting on 2/26/25, verbal\nappr",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-f1878087-c2",
+      "bucket": "answer",
+      "query": "In 2025-05-13 A37806 Burnside Ave VECP Presentation, what does the document state about May 13, 2025| 12:00 PM?",
+      "expectedFilePatterns": [
+        "2025-05-13 A37806 Burnside Ave VECP Presentation",
+        "A37806",
+        "Presentation"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "f1878087-4de5-4d15-a4bf-b5bd2b700941",
+      "acceptableAnswerContains": [
+        "upgrades",
+        "accessibility",
+        "design-build",
+        "presentation"
+      ],
+      "notes": "report | 2025-05-13 A37806 Burnside Ave VECP Presentation.pdf (page 1)",
+      "groundingChunkId": "5c608bea-5595-4fc7-9c55-4343ad802f02",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "May 13, 2025| 12:00 PM\nDESIGN-BUILD SERVICES FOR ADA UPGRADES PACKAGE 6:\nACCESSIBILITY UPGRADES AT FIVE STATIONS WITH\nCOMPONENT UPGRADES AT ONE STATION IN THE CITY OF\nNEW YORK\nBurnside Ave Value Engineering Presentation (FINAL)",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-f1dd6e34-c25",
+      "bucket": "answer",
+      "query": "In PRO 26-01 Control of Project Nonconforming Items-JS.202, what does the document state about NONCONFORMING ITEMS PROCEDURE?",
+      "expectedFilePatterns": [
+        "PRO 26-01 Control of Project Nonconforming Items-JS.202",
+        "Nonconforming",
+        "20260109"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "f1dd6e34-2953-4edd-ba1f-433b2c813ac5",
+      "acceptableAnswerContains": [
+        "disposition",
+        "acceptable",
+        "reviews",
+        "comments"
+      ],
+      "notes": "report | PRO 26-01 Control of Project Nonconforming Items-JS.20260109.pdf (page 11)",
+      "groundingChunkId": "cbfb06a0-5408-4093-986b-06603f6a6f3e",
+      "groundingChunkIndex": 25,
+      "groundingPageNumber": 11,
+      "groundingSnippet": "CONTROL OF PROJECT\nNONCONFORMING ITEMS PROCEDURE\nPRO 26-01 Rev 0\nPage 10 of 10\nAppendix A – NCR Process Flowchart\nNonconformance (NCR) Process\nContractor\nQM\nPMT QM\nDOR\n \nOriginator\n(Contractor QM, MTAC&D\nQuality, and PMT)\nPMT Implementation",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-f1dd6e34-c23",
+      "bucket": "answer",
+      "query": "In PRO 26-01 Control of Project Nonconforming Items-JS.202, what requirements does spec section 01 40 10 include for 01 40 10?",
+      "expectedFilePatterns": [
+        "PRO 26-01 Control of Project Nonconforming Items-JS.202",
+        "Nonconforming",
+        "20260109"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "f1dd6e34-2953-4edd-ba1f-433b2c813ac5",
+      "acceptableAnswerContains": [
+        "01 40 10",
+        "quality",
+        "ncrs",
+        "inspection"
+      ],
+      "notes": "report | PRO 26-01 Control of Project Nonconforming Items-JS.20260109.pdf (page 9)",
+      "groundingChunkId": "e5be0c71-9f91-4022-b64f-fc9c65fdee50",
+      "groundingChunkIndex": 23,
+      "groundingPageNumber": 9,
+      "groundingSnippet": "r’s NCR Log format, the following data is recommended to\nbe tracked: the assigned NCR number, a brief description of the nonconformance, the\nresponsible organization (contractor, sub-contractor, etc.), estimated value to resolve NCR, the\nva",
+      "generatedQueryTemplate": "spec_section"
+    },
+    {
+      "id": "chunk-22a58e99-c2",
+      "bucket": "answer",
+      "query": "In A37806_DRFI-0079 - MDT NB Stair Foundation Rebar Interf, what does DRFI-0079 say about 05 12 00 and anchor?",
+      "expectedFilePatterns": [
+        "A37806_DRFI-0079 - MDT NB Stair Foundation Rebar Interf",
+        "A37806",
+        "Foundation"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "22a58e99-fe80-4e26-bcca-1b7d731653bb",
+      "acceptableAnswerContains": [
+        "05 12 00",
+        "anchor",
+        "rebar",
+        "bolts"
+      ],
+      "notes": "rfi | A37806_DRFI-0079 - MDT NB Stair Foundation Rebar Interference.pdf (page 1)",
+      "groundingChunkId": "47a3db02-9cd5-47b0-806f-bcaba8b82e91",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "Request For Information - RFI\nA37806 – DESIGN BUILD SERVICES FOR ACCESSIBILITY UPGRADES – PACKAGE 6\nPage 1 of 1 Rev.0 03/27/2026\nSubject: DRFI-0079 MDT NB Stair Foundation Rebar Interference DRFI# 0079\nDate: 03/27/2026 From: MLJTC2\nReason f",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-7f545dae-c2",
+      "bucket": "answer",
+      "query": "In A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+0, what does RFI098 say about conductor and platform?",
+      "expectedFilePatterns": [
+        "A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+0",
+        "A37806",
+        "RFI098"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "7f545dae-dad3-4d7f-911d-45dbcf047f0f",
+      "acceptableAnswerContains": [
+        "conductor",
+        "platform",
+        "boarding",
+        "drawing"
+      ],
+      "notes": "rfi | A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+00.pdf (page 1)",
+      "groundingChunkId": "3764de90-1611-4d4d-b192-0cf9f3088264",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "Request For Information - RFI\nA37806 – Design-Build Services for ADA Upgrades Package 6\nPage 1 of 3 Rev. 0 12/29/2022\nSubject: Avenue I – Conductor Board at Station 489+00 (Northbound\nPlatform / Track B2)\nRFI # 098\nDate: 12.04.2025 From: AE",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-7f545dae-c4",
+      "bucket": "answer",
+      "query": "In A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+0, what does RFI098 say about conductor and figure?",
+      "expectedFilePatterns": [
+        "A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+0",
+        "A37806",
+        "RFI098"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "7f545dae-dad3-4d7f-911d-45dbcf047f0f",
+      "acceptableAnswerContains": [
+        "conductor",
+        "figure",
+        "board",
+        "approximately"
+      ],
+      "notes": "rfi | A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+00.pdf (page 2)",
+      "groundingChunkId": "9f897054-b87b-49b2-bd82-4c11a29b7257",
+      "groundingChunkIndex": 4,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "Request For Information - RFI\nA37806 – Design-Build Services for ADA Upgrades Package 6\nPage 2 of 3 Rev. 0 12/29/2022\nFigure 1: Conductor board at approximately Sta 490+00\nFigure 2: Conductor board at Sta 489+00\nFigure 3: Conductor board fo",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-2e21cbdc-c17",
+      "bucket": "answer",
+      "query": "In A37806_ADA P6_RFI096, what does RFI096 say about platform and exit?",
+      "expectedFilePatterns": [
+        "A37806_ADA P6_RFI096",
+        "A37806",
+        "RFI096"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "2e21cbdc-ec01-4eba-85c7-94cde86a3797",
+      "acceptableAnswerContains": [
+        "platform",
+        "exit",
+        "southbound",
+        "northbound"
+      ],
+      "notes": "rfi | A37806_ADA P6_RFI096.pdf (page 8)",
+      "groundingChunkId": "781ed3b7-e02c-4efd-a789-6be032ff1e80",
+      "groundingChunkIndex": 17,
+      "groundingPageNumber": 8,
+      "groundingSnippet": "IR S3 TO SOUTHBOUND PLATFORM\nTO NORTHBOUND PLATFORM\nSTAIR S4\n(NORTHBOUND PLATFORM)\nEL 541\nTO NORTHBOUND PLATFORM\nEXISTING STAIR S2/M2\nTO SOUTHBOUND PLATFORM\nEXISTING STAIR S1\nCURB LINE\n(SOUTHBOUND PLATFORM)\nEL 542\nWESTCHESTER AVENUE\nEXIT\nR\n",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-2e21cbdc-c18",
+      "bucket": "answer",
+      "query": "In A37806_ADA P6_RFI096, what does RFI096 say about upgrades and mcdonald?",
+      "expectedFilePatterns": [
+        "A37806_ADA P6_RFI096",
+        "A37806",
+        "RFI096"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "2e21cbdc-ec01-4eba-85c7-94cde86a3797",
+      "acceptableAnswerContains": [
+        "upgrades",
+        "mcdonald",
+        "avenue",
+        "drawing"
+      ],
+      "notes": "rfi | A37806_ADA P6_RFI096.pdf (page 9)",
+      "groundingChunkId": "5babb326-4f3a-407f-a9b0-4f3630cacb5f",
+      "groundingChunkIndex": 18,
+      "groundingPageNumber": 9,
+      "groundingSnippet": "DN\nUP\nDN\nUP\n282930313233 34353637383940414243444546474849505152 \nDN \n910111213141516171819 202122232425 282930313233 34353637383940414243444546474849505152 \nDN \n910111213141516171819 202122232425\n18'-0\"\n1 2\n1 2 3 4 5 6 7 8 9 101112131415\nMH",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-f5c380d3-c2",
+      "bucket": "answer",
+      "query": "In MYR-A-444A, what does DRFI-0078 say about level and construction?",
+      "expectedFilePatterns": [
+        "MYR-A-444A"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "f5c380d3-f014-4cb5-bd00-e7633f09a768",
+      "acceptableAnswerContains": [
+        "level",
+        "construction",
+        "upgrades",
+        "enlarged"
+      ],
+      "notes": "rfi | MYR-A-444A.pdf (page 1)",
+      "groundingChunkId": "3c8eb4cd-7f33-40c1-8984-2cb410245121",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "1/28/2026 LiH PRINT AS OF\nREVISION\nDRAWN BY\nAPPROVED BY\nDATE :\nDRAWING NO.\nDESIGNED BY\nCHECKED BY\n.../\nPROJECT 12750 CONTRACT A-37806\nACCESSIBILITY UPGRADES AT FIVE STATIONS WITH COMPONENT UPGRADES AT ONE\nDESIGN-BUILD SERVICES FOR ADA UPGRA",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-f5c380d3-c3",
+      "bucket": "answer",
+      "query": "In MYR-A-444A, what does DRFI-0078 say about lcd-a-525 and panel?",
+      "expectedFilePatterns": [
+        "MYR-A-444A"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "f5c380d3-f014-4cb5-bd00-e7633f09a768",
+      "acceptableAnswerContains": [
+        "lcd-a-525",
+        "panel",
+        "honeycomb",
+        "stainless"
+      ],
+      "notes": "rfi | MYR-A-444A.pdf (page 1)",
+      "groundingChunkId": "462501e6-ca69-40bf-b1d2-8bc9122edeec",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "PLATFORM LEVEL\n7'-0\"\nDOOR HEIGHT\n7'-0\"\nDOOR HEIGHT\nSST PANEL FOR SIGNAGE\nENLARGED SECTS 1 OF 2\nEL1121/EL1122\nMYRTLE AVENUE\n10/23/2025\nE. CLARK R.A.\nMYR-A-444A\nARCHITECTURE P.CAMPANELLA, R.A.\nY. GAO\nA. SANCHEZ\n4 3 4 3\nEL. 93.54'\nEL. 107.67'\n",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-a7e7e464-c3",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-096R04 - APP - SWP-016 - Elevator S, what does GEN-096R04 say about 01 35 10 and submittal?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-096R04 - APP - SWP-016 - Elevator S",
+        "A37806",
+        "096R04"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "a7e7e464-b4d4-429d-a8c1-c0b3ef7ae095",
+      "acceptableAnswerContains": [
+        "01 35 10",
+        "submittal",
+        "associated",
+        "package"
+      ],
+      "notes": "safety | A37806_01 35 10_GEN-096R04 - APP - SWP-016 - Elevator Steel & Enclosure..pdf (page 2)",
+      "groundingChunkId": "50225999-ff9b-47b8-842c-eb984f09bc42",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "Coordination\nUse\nFinal\nCoordi\nnation\nRevie\nw\nStep?:\nYes Respo\nnse\nCalen\ndar\nDays\nDue:\n0 Respo\nnse\nDue\nDate:\n06/03/2026\nSubmittal Package\nInformation about the Submittal Package\nSubmittal Package: Submittal Package\nName:\nContract Record - Ti",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-a7e7e464-c52",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-096R04 - APP - SWP-016 - Elevator S, what does GEN-096R04 say about rcny and outrigger?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-096R04 - APP - SWP-016 - Elevator S",
+        "A37806",
+        "096R04"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "a7e7e464-b4d4-429d-a8c1-c0b3ef7ae095",
+      "acceptableAnswerContains": [
+        "rcny",
+        "outrigger",
+        "dunnage",
+        "option"
+      ],
+      "notes": "safety | A37806_01 35 10_GEN-096R04 - APP - SWP-016 - Elevator Steel & Enclosure..pdf (page 28)",
+      "groundingChunkId": "f339337b-e369-4f11-b366-b7a8bf56347a",
+      "groundingChunkIndex": 52,
+      "groundingPageNumber": 28,
+      "groundingSnippet": "operations are to be conducted in accordance with\nA.N.S.I./A.S.M.E. B30.5a - latest edition, appropriate OSHA rules and\nthe 2022 NYC Building Code Chapter 33: 1 RCNY § 3319-01, 1 RCNY\n§ 3319-02 & 1 RCNY 104-20.\n6. Crane is to be operated on",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-b6b3128f-c17",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-041R01 - R&R - SWP-011 - Platform C, what does GEN-041R01 say about dust and control?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-041R01 - R&R - SWP-011 - Platform C",
+        "A37806",
+        "041R01"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "b6b3128f-ca62-4e0d-9b02-4850c8b69f70",
+      "acceptableAnswerContains": [
+        "dust",
+        "control",
+        "ensure",
+        "blade"
+      ],
+      "notes": "safety | A37806_01 35 10_GEN-041R01 - R&R - SWP-011 - Platform Concrete Demo.pdf (page 9)",
+      "groundingChunkId": "061d2840-1d4e-4e05-9cce-e35a33ce3881",
+      "groundingChunkIndex": 17,
+      "groundingPageNumber": 9,
+      "groundingSnippet": "d throughout the day as not to pose any Safety\nrisk.\n• All concrete debris will be collected on demo shield and loaded\nto dumpsters at street level.\n8.Concrete Demolition –\nUse of Demo-Saw, Hell\nDogs, walk behind Saw\nand Hammer Drills\n• Sil",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-b6b3128f-c31",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-041R01 - R&R - SWP-011 - Platform C, what does GEN-041R01 say about machine and specification?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-041R01 - R&R - SWP-011 - Platform C",
+        "A37806",
+        "041R01"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "b6b3128f-ca62-4e0d-9b02-4850c8b69f70",
+      "acceptableAnswerContains": [
+        "machine",
+        "specification",
+        "notification.",
+        "configuration"
+      ],
+      "notes": "safety | A37806_01 35 10_GEN-041R01 - R&R - SWP-011 - Platform Concrete Demo.pdf (page 15)",
+      "groundingChunkId": "7e771837-4982-48f5-ad4a-b19400ef0ed7",
+      "groundingChunkIndex": 31,
+      "groundingPageNumber": 15,
+      "groundingSnippet": "nd cover all specified major structural\ncomponents for five (5) years. Due to continuous product improvements, we\nreserve the right to make specification and/or equipment changes without\nprior notification. This machine meets or exceeds app",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-3157502c-c15",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General fo, what does GEN-055R01 say about tools and electrical?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General fo",
+        "A37806",
+        "055R01"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "3157502c-8c9e-4db5-af5e-e2710c587367",
+      "acceptableAnswerContains": [
+        "tools",
+        "electrical",
+        "damage",
+        "extension"
+      ],
+      "notes": "safety | A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General formwork rebar and concrete.pdf (page 9)",
+      "groundingChunkId": "f1c7a4ad-057b-4b8f-ba21-29f1a19f2bc8",
+      "groundingChunkIndex": 15,
+      "groundingPageNumber": 9,
+      "groundingSnippet": "SAFE WORK PLAN SWP - 032\nSWP – 032 – General formwork, rebar and concrete– Rev. 1 8/6/25\nSTEP RISK PREVENTION/MITIGATION COMMENT\n• Rubber-insulated gloves with leather covers.\n• Third rail to be tested with approved tester prior to\ninstalla",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-3157502c-c2",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General fo, what does GEN-055R01 say about 01 35 10 and transmittal?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General fo",
+        "A37806",
+        "055R01"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "3157502c-8c9e-4db5-af5e-e2710c587367",
+      "acceptableAnswerContains": [
+        "01 35 10",
+        "transmittal",
+        "approved",
+        "letter"
+      ],
+      "notes": "safety | A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General formwork rebar and concrete.pdf (page 1)",
+      "groundingChunkId": "3c99dd39-30cf-4766-a9bf-b68a0005f184",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "2 Broadway, 8th Floor\nNew York, NY 10004-2207\nLETTER OF TRANSMITTAL\nFROM: MICHAEL WILSON, MBA, CCM\nSenior Director, PCEO\n2 Broadway, B6.131\nNew York, NY 10004\nDATE: 08/20/2025\nRe: CONTRACT NO. A-37806\nDESCRIPTION: ADA-Upgrade Package 6\nSubm",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-1f653e39-c16",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine St, what does GEN-116R00 say about lifting and hearing?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine St",
+        "A37806",
+        "116R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "1f653e39-99b8-4fb7-b812-e5b8f7aed445",
+      "acceptableAnswerContains": [
+        "lifting",
+        "hearing",
+        "stored",
+        "panels"
+      ],
+      "notes": "safety | A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine Stair Barricade.pdf (page 7)",
+      "groundingChunkId": "884d5440-8507-4c08-b87d-0ebacff58b2a",
+      "groundingChunkIndex": 16,
+      "groundingPageNumber": 7,
+      "groundingSnippet": "of 6:00AM and 9:30 AM\nand 3:00 PM and 8PM. - No flammable/combustible materials shall be\nstored inside enclosures.\n● Two weeks’ notice (posting signs) must be given before long term closure\nof a staircase\n● Barricade plans must be submitted",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-1f653e39-c5",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine St, what does GEN-116R00 say about available and safety?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine St",
+        "A37806",
+        "116R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "1f653e39-99b8-4fb7-b812-e5b8f7aed445",
+      "acceptableAnswerContains": [
+        "available",
+        "safety",
+        "evacuation",
+        "personnel"
+      ],
+      "notes": "safety | A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine Stair Barricade.pdf (page 4)",
+      "groundingChunkId": "946179d5-2fdd-4527-9fd0-630f854a4d69",
+      "groundingChunkIndex": 5,
+      "groundingPageNumber": 4,
+      "groundingSnippet": "SAFE WORK PLAN SWP – 052 - BUR\nSWP 052 – Installation & Removal of Mezzanine Stair Barricades - Burnside Rev. 0 02/12/2026\nSTEP RISK PREVENTION/MITIGATION COMMENT\n1. Entering Worksite  Work Area Protection\n Improper ID,\n Invalid certific",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-eb10b48b-c12",
+      "bucket": "answer",
+      "query": "In 21 12 00 - Fire-Suppression Standpipes, what does EDU02 say about supports and hangers?",
+      "expectedFilePatterns": [
+        "21 12 00 - Fire-Suppression Standpipes",
+        "Suppression",
+        "Standpipes"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "eb10b48b-bcb3-4caf-8da8-55a284f068ea",
+      "acceptableAnswerContains": [
+        "supports",
+        "hangers",
+        "provide",
+        "piping"
+      ],
+      "notes": "spec | 21 12 00 - Fire-Suppression Standpipes.pdf (page 5)",
+      "groundingChunkId": "32f7e271-60ea-4905-96f2-f6be54c9eb1c",
+      "groundingChunkIndex": 12,
+      "groundingPageNumber": 5,
+      "groundingSnippet": "ontract Drawings. The finish shall be\npolished brass.\n2.12 PIPE HANGERS AND SUPPORTS\nA. Design, fabricate, and provide all pipe hangers and supports adequate to\nsupport and guide the piping, allow for forces imposed by expansion joints,\nsat",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-eb10b48b-c19",
+      "bucket": "answer",
+      "query": "In 21 12 00 - Fire-Suppression Standpipes, what does EDU02 say about 21 12 00 and hose?",
+      "expectedFilePatterns": [
+        "21 12 00 - Fire-Suppression Standpipes",
+        "Suppression",
+        "Standpipes"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "eb10b48b-bcb3-4caf-8da8-55a284f068ea",
+      "acceptableAnswerContains": [
+        "21 12 00",
+        "hose",
+        "fittings",
+        "install"
+      ],
+      "notes": "spec | 21 12 00 - Fire-Suppression Standpipes.pdf (page 9)",
+      "groundingChunkId": "1e722c0d-a7c7-4ad7-84e0-be36bfb7d2d7",
+      "groundingChunkIndex": 19,
+      "groundingPageNumber": 9,
+      "groundingSnippet": "SECTION – 21 12 00 FIRE-SUPPRESSION STANDPIPES\nADA UPGRADES PACKAGE 6 21 12 00 – 9\nCONTRACT NOTE: A37806 90% SUBMISSION MAY 22, 2025\npipe shall be pitched a minimum of 1/4\" per 10 feet. Wherever pipes cross the\ntracks, they shall be install",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-fe353658-c275",
+      "bucket": "answer",
+      "query": "In A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) , what does BUR-042R01 say about water and leaks?",
+      "expectedFilePatterns": [
+        "A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) ",
+        "A37806",
+        "042R01"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "fe353658-9ebf-421c-a700-93724578bbb3",
+      "acceptableAnswerContains": [
+        "water",
+        "leaks",
+        "structural",
+        "repaired"
+      ],
+      "notes": "spec | A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) - SOGR at Burnside Avenue.pdf (page 57)",
+      "groundingChunkId": "163c712b-30d0-4286-8b18-8c4e5957f043",
+      "groundingChunkIndex": 275,
+      "groundingPageNumber": 57,
+      "groundingSnippet": "AND REMOVED.\nLEAD ABATEMENT IS REQUIRED FOR ALL AREAS WHERE PAINT IS TO 19.\nAND PATHCING OF STAIR OVER HEAD CONCRETE CEILINGS.\nFIX ANY/ALL WATER LEAKS OBSERVED DURING SCRAPING, PAINTING, 18.\nSURVEY PROGRAM.\nACCORDINGLY, AS AGREED WITH MTA C",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-fe353658-c395",
+      "bucket": "answer",
+      "query": "In A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) , what does BUR-042R01 say about repair and steel?",
+      "expectedFilePatterns": [
+        "A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) ",
+        "A37806",
+        "042R01"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "fe353658-9ebf-421c-a700-93724578bbb3",
+      "acceptableAnswerContains": [
+        "repair",
+        "steel",
+        "concrete",
+        "reinforcement"
+      ],
+      "notes": "spec | A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) - SOGR at Burnside Avenue.pdf (page 79)",
+      "groundingChunkId": "9c56bd80-0e9b-4332-b8ea-bbbe6a6f642b",
+      "groundingChunkIndex": 395,
+      "groundingPageNumber": 79,
+      "groundingSnippet": "10/22/2025\nE. CLARK, R.A.\nBUR-CS-011\nCIVIL/STRUCTURAL T. SYKU, P.E.\nD. MOSCOSO\nM. ELMORSI, P.E.\nGENERAL NOTES - STRUCTURAL\nREINFORCED CONCRETE\nSTRUCTURAL STEEL\nSTATE OF GOOD REPAIR (SOGR)\nLEGEND\nABBREVIATIONS\nTHE RETURN OF THE ELEMENT TO A ",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-bca6afd2-c2",
+      "bucket": "answer",
+      "query": "In Transmittal 212-NOR Xfer Girder inspection, what does Transmittal 212-NOR say about aecom and mljtc?",
+      "expectedFilePatterns": [
+        "Transmittal 212-NOR Xfer Girder inspection",
+        "Transmittal",
+        "inspection"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "bca6afd2-67d9-4b08-a75a-68b96f5cd080",
+      "acceptableAnswerContains": [
+        "aecom",
+        "mljtc",
+        "number",
+        "a37806"
+      ],
+      "notes": "spec | Transmittal 212-NOR Xfer Girder inspection.pdf (page 1)",
+      "groundingChunkId": "f6a609c3-7df7-4c58-b1e3-73c5c6b25926",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "Letter of Transmittal\nTo: Ravi Jain\nProject Manager\nMLJTC 2\n1010 Northern Boulevard Suite 202\nGreat Neck, NY 10021\nDate: 04/17/2026\nContract Number: A37806\nRe: MTA Contract A37806\nDesign-Build Services for Accessibility\nUpgrades – Package 6",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-c60c1183-c4",
+      "bucket": "answer",
+      "query": "In A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Ins, what does NOR-010R00 say about contract and manager?",
+      "expectedFilePatterns": [
+        "A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Ins",
+        "A37806",
+        "010R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "c60c1183-b5b0-4fa6-a170-f209b5e2d72f",
+      "acceptableAnswerContains": [
+        "contract",
+        "manager",
+        "nyct",
+        "information"
+      ],
+      "notes": "spec | A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Inspection Findings 11-20-2025.pdf (page 3)",
+      "groundingChunkId": "f00af828-d5d4-4f6d-a4d5-97346933aa46",
+      "groundingChunkIndex": 4,
+      "groundingPageNumber": 3,
+      "groundingSnippet": "For NYCT/MTA Review & Comment\nFor NYCT/MTA Approval\nFor Designer Approval\nFor NYCT/MTA Information Only\nFor Designer Information Only\nDate:\nContract Number: Contract Title:\nItem Description:\nSubmittal No.: Rev.:\nSpec./ PRDC Ref.:\nLocation (",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-c60c1183-c7",
+      "bucket": "answer",
+      "query": "In A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Ins, what does NOR-010R00 say about m3071513 and m3083356?",
+      "expectedFilePatterns": [
+        "A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Ins",
+        "A37806",
+        "010R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "c60c1183-b5b0-4fa6-a170-f209b5e2d72f",
+      "acceptableAnswerContains": [
+        "m3071513",
+        "m3083356",
+        "sewer",
+        "inspected"
+      ],
+      "notes": "spec | A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Inspection Findings 11-20-2025.pdf (page 6)",
+      "groundingChunkId": "943b71a9-0227-4245-9356-c1f86adf9a93",
+      "groundingChunkIndex": 7,
+      "groundingPageNumber": 6,
+      "groundingSnippet": "\u0016\u0014\u0014\u001b\u0003)XOWRQ\u00036W\u0003 . \u00031<&\u0010'(3\u0003%:62\u0010&6,\n6285&(\u001d\u00031<&\u00032SHQ\u0003'DWD\u0003_\u0003(VUL\n\u0014\u0015\u0012\u0015\u001c\u0012\u0015\u0013\u0015\u0018\u000f\u0003\u0014\u001d\u0018\u001a\u001d\u0018\u0016\u000330\n\u0013 \u0013\u0011\u0013\u0014 \u0013\u0011\u0013\u0015 \u0013\u0011\u0013\u0014 PL\n\u0013 \u0013\u0011\u0013\u0015 \u0013\u0011\u0013\u0017 \u0013\u0011\u0013\u0014 NP\n\u0014\u001d\u001a\u0019\u0018\nField Sketch\nDFO# 25-408\nPrepared By: MDS\nDate: 12/26/2025\nChecked By: ____\nSewer CCTV inspected sections:",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-639c329f-c6",
+      "bucket": "answer",
+      "query": "In A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and, what does GEN-014R00 say about 01 40 10 and survey?",
+      "expectedFilePatterns": [
+        "A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and",
+        "A37806",
+        "014R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "639c329f-39df-4ef9-9737-104dda5e539c",
+      "acceptableAnswerContains": [
+        "01 40 10",
+        "survey",
+        "platform",
+        "station"
+      ],
+      "notes": "submittal | A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and Certification Report- May 2025.pdf (page 5)",
+      "groundingChunkId": "9fa9389a-6bdb-43c7-b2a6-981d7ba4d4df",
+      "groundingChunkIndex": 6,
+      "groundingPageNumber": 5,
+      "groundingSnippet": "MONTHLY QUALITY REPORT\n(May, 2025)\nGeneral Requirements: Section 01 40 10, Quality Management QMP\nElement No. 3.03.A: Monthly Quality Report MLJTC2/A-37135/QMP/F24, REV. 03\nUpdated:4/23/2025\n3.0 Construction Activities Summary\nAve I:\n• Dug ",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-639c329f-c2",
+      "bucket": "answer",
+      "query": "In A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and, what does GEN-014R00 say about nyct and information?",
+      "expectedFilePatterns": [
+        "A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and",
+        "A37806",
+        "014R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "639c329f-39df-4ef9-9737-104dda5e539c",
+      "acceptableAnswerContains": [
+        "nyct",
+        "information",
+        "approval",
+        "designer"
+      ],
+      "notes": "submittal | A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and Certification Report- May 2025.pdf (page 1)",
+      "groundingChunkId": "6cecab5b-742c-4720-aa7b-f61dfb0c9caa",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "For NYCT/MTA Review & Comment\nFor NYCT/MTA Approval\nFor Designer Approval\nFor NYCT/MTA Information Only\nFor Designer Information Only\nDate:\nContract Number: Contract Title:\nItem Description:\nSubmittal No.: Rev.:\nSpec./ PRDC Ref.:\nLocation (",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-39a5d5d5-c10",
+      "bucket": "answer",
+      "query": "In A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC, what does GEN-001R00 say about safety and application?",
+      "expectedFilePatterns": [
+        "A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC",
+        "A37806",
+        "001R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "39a5d5d5-cf45-4f1d-91b4-4e1bd1650787",
+      "acceptableAnswerContains": [
+        "safety",
+        "application",
+        "methods",
+        "actual"
+      ],
+      "notes": "submittal | A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC comments.pdf (page 5)",
+      "groundingChunkId": "f7cc0548-d39d-4e77-ab21-62f6b1b73957",
+      "groundingChunkIndex": 10,
+      "groundingPageNumber": 5,
+      "groundingSnippet": "an overlay in unconfined spaces ▪\nNot to be used as a patch repair ▪\nAvoid application in direct sun and/or strong wind ▪\nApply only to sound, prepared substrate ▪\nDo not add additional water after application as this\nmay cause cracking\n▪\nP",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-39a5d5d5-c5",
+      "bucket": "answer",
+      "query": "In A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC, what does GEN-001R00 say about packaging and certifiable?",
+      "expectedFilePatterns": [
+        "A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC",
+        "A37806",
+        "001R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "39a5d5d5-cf45-4f1d-91b4-4e1bd1650787",
+      "acceptableAnswerContains": [
+        "packaging",
+        "certifiable",
+        "information",
+        "accordance"
+      ],
+      "notes": "submittal | A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC comments.pdf (page 3)",
+      "groundingChunkId": "631ffe2b-878a-485e-b34e-50c2c660e3b1",
+      "groundingChunkIndex": 5,
+      "groundingPageNumber": 3,
+      "groundingSnippet": "C-1107 (Grade C) ▪\nShows positive expansion when tested in accordance\nwith ASTM C-827\n▪\nSikaGrout®-212 is USDA certifiable ▪\nPRODUCT INFORMATION\nChemical Base Cement, selected fillers and aggregates, special additives\nPackaging 50 lb (22.7 ",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-f50ff9f5-c100",
+      "bucket": "answer",
+      "query": "In A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burns, what does PRDC12-012R02 say about area and cutting?",
+      "expectedFilePatterns": [
+        "A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burns",
+        "A37806",
+        "PRDC12"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "f50ff9f5-0a2c-4e61-91e1-ba53c4fd2521",
+      "acceptableAnswerContains": [
+        "area",
+        "cutting",
+        "paint",
+        "containment"
+      ],
+      "notes": "submittal | A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burnside.pdf (page 60)",
+      "groundingChunkId": "66d00cbb-95df-4f1f-bc2c-6b95657ac955",
+      "groundingChunkIndex": 100,
+      "groundingPageNumber": 60,
+      "groundingSnippet": "1010 Northern Blvd. Ste 202, Great Neck, NY 11021  P. 718.554.2760\n2 of 3\nthe area of the cut lines six (6) inches on either side to keep the lead paint intact during the\ncutting phase. The work area will be contained with SSPC Class 3P co",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-4b1f7d74-c5",
+      "bucket": "answer",
+      "query": "In MLJTC2-MTACD-XXXX - MTA System Access Passes, what does the document state about �r���\u001a����: f����@�\u0001���1nLg)��xs+ʍmWm��Q݋b�o�f}��?",
+      "expectedFilePatterns": [
+        "MLJTC2-MTACD-XXXX - MTA System Access Passes",
+        "MLJTC2"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "4b1f7d74-6622-4ed0-9b12-72dcb3f9127b",
+      "acceptableAnswerContains": [
+        "1nlg",
+        ".9lt"
+      ],
+      "notes": "unknown | MLJTC2-MTACD-XXXX - MTA System Access Passes.docx",
+      "groundingChunkId": "9dd257c3-877b-45e6-9a1c-06d483fde535",
+      "groundingChunkIndex": 5,
+      "groundingSnippet": "�r���\u001a����:\u000bf����@�\u0001���1nLg)��xs+ʍmWm��Q݋b�o�f}��\n��\u001dڳCy<\f&�\u0019+l�NC3[�Zm�;^�d4�s��7��ؙ\u0012�Ru=��\u0012\u0003��.%z'+|$mF��(Һ��}*هMr�O��\u001eD��aA�Li���̘p<�\u0003\u000e���t\u001b\u001ch9^\u0004��9�u��]m5F���ñ����`\u001dp,��\u0013��\u0016���,�Cmֳl�N�e�.\u0017|\u0007���dj\u0019�5�.Od���e\u0014ݪ��` \u0014:��8\u001c�f\u001f\u000eV\u001b�Oɦ��լ\u001d4�\u001c",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-4b1f7d74-c21",
+      "bucket": "answer",
+      "query": "In MLJTC2-MTACD-XXXX - MTA System Access Passes, what does the document state about �\u001c&��{D!�8�\u0018~49l��&��\u0013A��?",
+      "expectedFilePatterns": [
+        "MLJTC2-MTACD-XXXX - MTA System Access Passes",
+        "MLJTC2"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "4b1f7d74-6622-4ed0-9b12-72dcb3f9127b",
+      "acceptableAnswerContains": [
+        "g.h8",
+        "8gba",
+        "won8",
+        ".tp8"
+      ],
+      "notes": "unknown | MLJTC2-MTACD-XXXX - MTA System Access Passes.docx",
+      "groundingChunkId": "874c56f8-f0db-4525-9511-0678e033bf0d",
+      "groundingChunkIndex": 21,
+      "groundingSnippet": "�\u001c&��{D!�8�\u0018~49l��&��\u0013A��\n����a\u0010\u0005���\u001dxB�^;6\u0012\u000eA�\u0012�\bD�i\u001b\u00066�\"�3���\u0015�\u00138��\u0019�*�\u000e�1\u0001�\u0005{c�1z>bn\u0010E0\u0004�\f\u0004[a\u000b!(CI�P�@zU\u0002�[\u0001�^���vHg�S�!�2��\u000eI*#��J��\u001d<�\"\u001f�\\\u0007�g����I���n�\u0006\u0003o��yt\\'~�����X���E�p�\f��V�\b��\u0005+�J�\u0014%x\u0018�B����']����%k��f�ŏ3\u0004�\u001c�Q��\n�pǚ�\u0003{�!?�� !r",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-dd522ca1-c42",
+      "bucket": "answer",
+      "query": "In A37806 Org Chart r1 2025-01-02, what does the document state about �Y��N��O\u0006]��b�^nUw\u0012�O�\u0015��\u0007%\u001b�#�I.�s�Q���\u0012;\u0015�p�|b5?",
+      "expectedFilePatterns": [
+        "A37806 Org Chart r1 2025-01-02",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "dd522ca1-eea5-4085-8804-d22b2857c297",
+      "acceptableAnswerContains": [
+        "rels",
+        "customxml",
+        "slidemaster1.xml.rels",
+        "notesmaster1.xml.rels"
+      ],
+      "notes": "unknown | A37806 Org Chart r1 2025-01-02.pptx",
+      "groundingChunkId": "e99f80dd-d179-4102-bbf1-0e7617ac9947",
+      "groundingChunkIndex": 42,
+      "groundingSnippet": "�Y��N��O\u0006]��b�^nUw\u0012�O�\u0015��\u0007%\u001b�#�I.�s�Q���\u0012;\u0015�p�|b5\nt/��伡�p�^� ��^o\u0005+��#�>Q��K@;�\u0001�/��\u0003PK\u0003\u0004\u0014\u0006\b!t?9z�(\u0001\u001ecustomXml/_rels/item1.xml.rels�ϱ��0\f\u0006�����ho��P�\u0011�K)t;J\u000e�\u001aGILc�Xji߾�+t�(���Q���E]1��h��jP\u0018\u001d\n>N\u0006~��j\u0003����.\u0014��\u001d\u0019���G{��J ��\u0013��D60��o���\u0018,W�0�",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-dd522ca1-c30",
+      "bucket": "answer",
+      "query": "In A37806 Org Chart r1 2025-01-02, what does the document state about \u001f�k�i��fI�X���H�\u001dF2O8�5\u0019_�Z|��Z2MS��鬷�mhz�����jk+�{ԏL�_2�E�)2�\u00122\u000f\u001d\u0007�*/\u0014���7������,\u0013j��\u0014...?",
+      "expectedFilePatterns": [
+        "A37806 Org Chart r1 2025-01-02",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "dd522ca1-eea5-4085-8804-d22b2857c297",
+      "acceptableAnswerContains": [
+        "f2o8",
+        "z2ms",
+        "jx2l",
+        "xyvj"
+      ],
+      "notes": "unknown | A37806 Org Chart r1 2025-01-02.pptx",
+      "groundingChunkId": "6c168156-af12-45c0-952c-7fe9d3b8c731",
+      "groundingChunkIndex": 30,
+      "groundingSnippet": "\u001f�k�i��fI�X���H�\u001dF2O8�5\u0019_�Z|��Z2MS��鬷�mhz�����jk+�{ԏL�_2�E�)2�\u00122\u000f\u001d\u0007�*/\u0014���7������,\u0013j��\u0014��푀9�$��F1���FH~\"j��Q���\fJx2l��~�]�dy�޾��<i�]Mfi��>�.2�o\u000f�� �7u\u0019��W�繥\\�\n��XyVJ�Q���gf���G����\\��N��e+��\u0012�� �6�\u0002���V\u0012��s�\u0005�l'\u000b�\b\u0019�2sZ�\u0010�\u0010�I��<J���O(]}�1��",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-767ec6c6-c2",
+      "bucket": "answer",
+      "query": "In 2025-09-10 - T12_31_26-FedEx-Shipping-Label_Xin, what does the document state about ORIGIN ID:RMEA (718) 571-9596?",
+      "expectedFilePatterns": [
+        "2025-09-10 - T12_31_26-FedEx-Shipping-Label_Xin"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "767ec6c6-aa6c-4d57-b2b7-af5308e8994d",
+      "acceptableAnswerContains": [
+        "j253025062301uv",
+        "enterprises",
+        "department",
+        "overnight"
+      ],
+      "notes": "unknown | 2025-09-10 - T12_31_26-FedEx-Shipping-Label_Xin.pdf (page 1)",
+      "groundingChunkId": "6139be99-b7e0-4f49-b90b-21eaca546655",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "TRK#\nSHIP DATE: 10SEP25\nACTWGT: 1.00 LB\nREF: PACKAGE 6 M017\nINV:\nPO: DEPT:\n0201\nORIGIN ID:RMEA (718) 571-9596\nPAYROLL DEPARTMENT\nIOVINO ENTERPRISES\n1010 NORTHERN BLVD\nSUITE 200\nGREAT NECK, NY 11021\nUNITED STATES US\nCAD: 114561334/INET4535\nT",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-92a1d852-c11",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator , what does GEN-021R00 say about safety and hazards?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator ",
+        "A37806",
+        "021R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "92a1d852-5356-4826-98ba-c95089cb01ac",
+      "acceptableAnswerContains": [
+        "safety",
+        "hazards",
+        "ensure",
+        "employees"
+      ],
+      "notes": "safety | A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator - Diego Gonzalez.pdf (page 5)",
+      "groundingChunkId": "54d6e05a-67d9-40ca-b838-561bb0e9dbd1",
+      "groundingChunkIndex": 11,
+      "groundingPageNumber": 5,
+      "groundingSnippet": "sure all employees wear personal\nprotective equipment (PPE) appropriate to the work being performed. Prior to start of work,\nreview SDS and maintain documents onsite readily available for review. Develop safety work\nplans by detailing hazar",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-92a1d852-c6",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator , what does GEN-021R00 say about contract and east?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator ",
+        "A37806",
+        "021R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "92a1d852-5356-4826-98ba-c95089cb01ac",
+      "acceptableAnswerContains": [
+        "contract",
+        "east",
+        "manhattan",
+        "access"
+      ],
+      "notes": "safety | A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator - Diego Gonzalez.pdf (page 3)",
+      "groundingChunkId": "f8cee550-fe4d-44d9-85f9-91bd417d6430",
+      "groundingChunkIndex": 6,
+      "groundingPageNumber": 3,
+      "groundingSnippet": "ily\n• Conduct accident / incident investigations and distribute to GC and MTA CPM safety division.\n• Ensure Track safety regulations are adhered to and MTA flagging Is in place prior to allowing track access and\ncoordinating with MTA during",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-9efaf435-c1709",
+      "bucket": "answer",
+      "query": "In A37806 Test Pit MPT for Community Relations Use, what does the document state about ��l�Dt�q����Hj[�:3\u000f/��\u001b^W�\u0019b=��\u001e�~\u001e�\u001d\\��\u000e\u0005�'�����~��~W�a����ײ�^��)A�k�\u0007��\u0003~^\u001e�7�c[��N�...?",
+      "expectedFilePatterns": [
+        "A37806 Test Pit MPT for Community Relations Use",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "9efaf435-8509-4dda-b878-1c88137be64a",
+      "acceptableAnswerContains": [
+        "zc9a9",
+        "uxbw"
+      ],
+      "notes": "correspondence | A37806 Test Pit MPT for Community Relations Use.msg",
+      "groundingChunkId": "b1c06bc2-4c27-4030-a8f6-14047c4df9e8",
+      "groundingChunkIndex": 1709,
+      "groundingSnippet": "��l�Dt�q����Hj[�:3\u000f/��\u001b^W�\u0019b=��\u001e�~\u001e�\u001d\\��\u000e\u0005�'�����~��~W�a����ײ�^��)A�k�\u0007��\u0003~^\u001e�7�c[��N����r�F��S5��X�*CU\u001aS��|��9�y�`l4m�\u0011.���{~r���\u000f)aƸ\u0004\u0016M��#+o曐�97�k�|�w��\"��|�(�q�����p\u0002J������ӣG\u0005��\"y�|��0W�qo��m�4���\u0007�\u0003F�\u00010�;\u0014X��ܷ${mIR?U�m����\u001c��]ǐh'��O",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-9efaf435-c4249",
+      "bucket": "answer",
+      "query": "In A37806 Test Pit MPT for Community Relations Use, what does the document state about �s�_��s���\\�/�)\u000eԦ�7K}�\u001f��\u001f�?!���[̜�V\u001a��t�ߒ:\u0004z���K��������(�b��Q���|;�;K$ã�'$�\u001a簄��Z���g�...?",
+      "expectedFilePatterns": [
+        "A37806 Test Pit MPT for Community Relations Use",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "9efaf435-8509-4dda-b878-1c88137be64a",
+      "acceptableAnswerContains": [
+        "asms",
+        "z0cm",
+        "yrsx"
+      ],
+      "notes": "correspondence | A37806 Test Pit MPT for Community Relations Use.msg",
+      "groundingChunkId": "9103ee38-2556-4132-9ca1-c802922ca838",
+      "groundingChunkIndex": 4249,
+      "groundingSnippet": "�s�_��s���\\�/�)\u000eԦ�7K}�\u001f��\u001f�?!���[̜�V\u001a��t�ߒ:\u0004z���K��������(�b��Q���|;�;K$ã�'$�\u001a簄��Z���g�� J?�˞�}�4ҋ�\u0011�\n��us�r�޸���T�K�k�W\u001f1v\n\u0019~>-�\u0015Dm.�~��A��T�+L��]��@�!Jk�;��\u000f\u001e�?�\u001a���)�T�r���c ��������\u0015�>ňy���\u0011�C-���|��v����u�\b��^*f6�F���c�b�6\f�\n��\u001b+�#\u0006j�",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-bf3c1064-c92",
+      "bucket": "answer",
+      "query": "In EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead, what does EDU05B say about calculation and name?",
+      "expectedFilePatterns": [
+        "EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead",
+        "EDU05B",
+        "Electrical"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "bf3c1064-84b0-4d1a-8719-466faa95f9cd",
+      "acceptableAnswerContains": [
+        "calculation",
+        "name",
+        "signature",
+        "coordination"
+      ],
+      "notes": "spec | EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead.pdf (page 39)",
+      "groundingChunkId": "a98f6849-74c6-4ca3-bd41-7c88649d590c",
+      "groundingChunkIndex": 92,
+      "groundingPageNumber": 39,
+      "groundingSnippet": "© AECOM Restricted\nCalculation Cover Page Template (Q2[DCS]-351-FM5)\nRevision 2 December 6, 2021\n1/1\nDCS\nCalculation Cover Page ADA Upgrade Pkg 6 Q2[DCS]-351-FM5\nProject Job No.\nNorwood Avenue Station Contract A37806\nClient\nMLJTC\nDepartment",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-bf3c1064-c62",
+      "bucket": "answer",
+      "query": "In EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead, what does EDU05B say about 12 14 10 and 25 43 18?",
+      "expectedFilePatterns": [
+        "EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead",
+        "EDU05B",
+        "Electrical"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "bf3c1064-84b0-4d1a-8719-466faa95f9cd",
+      "acceptableAnswerContains": [
+        "12 14 10",
+        "25 43 18",
+        "25 41 18",
+        "used"
+      ],
+      "notes": "spec | EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead.pdf (page 23)",
+      "groundingChunkId": "f9923775-6ad8-4009-93b0-2cb91e056d9b",
+      "groundingChunkIndex": 62,
+      "groundingPageNumber": 23,
+      "groundingSnippet": "2.93 6.02 2.66 0.0437 0.0000 PNL VCB 12 14 10 25 7 18 0.29 # 0007 5.00\n8 LP-EL1123 80A MCB 0.208 4.49 1.91 4.49 1.91 0.0491 0.0000 PNL VCB 12 14 10 25 6 18 0.21 # 0006\n9 LP-EL1124 80A MCB0 0.208 5.81 2.53 5.81 2.53 0.0465 0.0000 PNL VCB 12 ",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-14c18906-c2",
+      "bucket": "answer",
+      "query": "In Attachment 4 Blank, what does the document state about Attachment 4. List of Contractor Company Employees Requesting Access Passes?",
+      "expectedFilePatterns": [
+        "Attachment 4 Blank",
+        "Attachment"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "14c18906-806f-46a7-b432-642220490b42",
+      "acceptableAnswerContains": [
+        "access",
+        "pass",
+        "transportation",
+        "temporary"
+      ],
+      "notes": "unknown | Attachment 4 Blank.pdf (page 1)",
+      "groundingChunkId": "eb6e8ef4-d6bd-4443-ba2c-bf2f64af3511",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "Revised: 12/15/2022\nAttachment 4. List of Contractor Company Employees Requesting Access Passes\nNew York City Transit\nBuilding Access/System Access/Temporary Transportation Pass Request List\nCompany Name: _\nB/S/T* Non-employee Name SS#\n(las",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-21a5c069-c2",
+      "bucket": "answer",
+      "query": "In 806-RFI-009 - Myrtle Avenue UPS Backup Requirements, what does RFI-009 say about 27 33 01 and nicholas?",
+      "expectedFilePatterns": [
+        "806-RFI-009 - Myrtle Avenue UPS Backup Requirements",
+        "Requirements"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "21a5c069-810a-428b-ab5f-3e7009c5f041",
+      "acceptableAnswerContains": [
+        "27 33 01",
+        "nicholas",
+        "york",
+        "zito"
+      ],
+      "notes": "rfi | 806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf (page 1)",
+      "groundingChunkId": "9975c737-08fd-477b-9046-70da9445c5b1",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "TCE, LLC\n1010 Northern Blvd., Suite 203\nGreat Neck, New York 11021\nP: +16468136400\nProject: A37806 ADA Package 6\n235 W 23rd st\nNew York, New York 10011\nRFI #806-RFI-009: Myrtle Avenue UPS Backup Requirements\nRevision 0 Status Open\nTo Andy L",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-21a5c069-c3",
+      "bucket": "answer",
+      "query": "In 806-RFI-009 - Myrtle Avenue UPS Backup Requirements, what does RFI-009 say about systems and communications?",
+      "expectedFilePatterns": [
+        "806-RFI-009 - Myrtle Avenue UPS Backup Requirements",
+        "Requirements"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "21a5c069-810a-428b-ab5f-3e7009c5f041",
+      "acceptableAnswerContains": [
+        "systems",
+        "communications",
+        "existing",
+        "backup"
+      ],
+      "notes": "rfi | 806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf (page 1)",
+      "groundingChunkId": "e2ad67ba-fb6c-48ff-be6e-5cf273c78938",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "m to support the full load from both\nexisting and new communications systems, plus an additional 40% or higher of its capacity available for future use. Ensure\nthat the existing and the new communications systems and supporting systems can ",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-3422bcbf-c3",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025, what does MYR-076R00 say about upgrades and accessibility?",
+      "expectedFilePatterns": [
+        "A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025",
+        "A37806",
+        "076R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "3422bcbf-e1f7-42a7-bbf4-c06f223fa397",
+      "acceptableAnswerContains": [
+        "upgrades",
+        "accessibility",
+        "myrtle",
+        "design-build"
+      ],
+      "notes": "photo | A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025 Construction Photos.pdf (page 3)",
+      "groundingChunkId": "1df4db6d-dbb1-4817-b79b-fb51cc7e3677",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 3,
+      "groundingSnippet": "001_MG_0752 - December 19, 2025 09:16:34 MTA C&D Contract A-37806: Design-Build Services for Accessibility Upgrades Package\n6: Accessibility Upgrades at Five Stations with Compnent Upgrades at One Station in the City of New York - Photo by ",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-3422bcbf-c2",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025, what does MYR-076R00 say about nyct and information?",
+      "expectedFilePatterns": [
+        "A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025",
+        "A37806",
+        "076R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "3422bcbf-e1f7-42a7-bbf4-c06f223fa397",
+      "acceptableAnswerContains": [
+        "nyct",
+        "information",
+        "approval",
+        "designer"
+      ],
+      "notes": "photo | A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025 Construction Photos.pdf (page 1)",
+      "groundingChunkId": "ddcecbad-7b43-406e-8041-4eddd2db3827",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "For NYCT/MTA Review & Comment\nFor NYCT/MTA Approval\nFor Designer Approval\nFor NYCT/MTA Information Only\nFor Designer Information Only\nDate:\nContract Number: Contract Title:\nItem Description:\nSubmittal No.: Rev.:\nSpec./ PRDC Ref.:\nLocation (",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-f19a9963-c2",
+      "bucket": "answer",
+      "query": "In A37806 MOWE Joint Survey 04.08.25  04.09.25, what does the document state about REQUEST FOR INFRASTRUCTURE INSPECTIONS?",
+      "expectedFilePatterns": [
+        "A37806 MOWE Joint Survey 04.08.25  04.09.25",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "f19a9963-7262-4229-980b-91a738b8bf3d",
+      "acceptableAnswerContains": [
+        "items",
+        "infrastructure",
+        "inspection",
+        "indicated"
+      ],
+      "notes": "report | A37806 MOWE Joint Survey 04.08.25  04.09.25.pdf (page 1)",
+      "groundingChunkId": "1a3fa1e4-f716-499a-9587-4a8a14b02fb2",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "Revision 4/2023\nREQUEST FOR INFRASTRUCTURE INSPECTIONS\nPlease note that:\n1) MOWE needs a minimum of 5 business days to process requests.\n2) Requests must be signed by the CM\n------------------------------------------------------------------",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-f19a9963-c3",
+      "bucket": "answer",
+      "query": "In A37806 MOWE Joint Survey 04.08.25  04.09.25, what does the document state about forwarded to the MOWE Capital Contracts Office within five (5) working days?",
+      "expectedFilePatterns": [
+        "A37806 MOWE Joint Survey 04.08.25  04.09.25",
+        "A37806"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "f19a9963-7262-4229-980b-91a738b8bf3d",
+      "acceptableAnswerContains": [
+        "approved",
+        "burnside",
+        "station",
+        "gurung"
+      ],
+      "notes": "report | A37806 MOWE Joint Survey 04.08.25  04.09.25.pdf (page 1)",
+      "groundingChunkId": "e8683be9-2271-462b-91d2-5d1d30c54681",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "forwarded to the MOWE Capital Contracts Office within five (5) working days of the\ninspection (Rm. 8010F, 130 Livingston St. Tel. 718-694-1265 - Fax 1139)\n_____________________________________________________________________________________",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-b05eba48-c8",
+      "bucket": "answer",
+      "query": "In Actual - ALl Station 4.6.26 - N, what does the document state about Activity ID Activity Name Original?",
+      "expectedFilePatterns": [
+        "Actual - ALl Station 4.6.26 - N"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "b05eba48-eb20-4024-9f22-fe0523dc41d1",
+      "acceptableAnswerContains": [
+        "11-sep-26",
+        "enclosure",
+        "rated",
+        "glass"
+      ],
+      "notes": "schedule | Actual - ALl Station 4.6.26 - N.pdf (page 2)",
+      "groundingChunkId": "c221c6f6-2fd2-466c-8482-80a0105174ce",
+      "groundingChunkIndex": 8,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "Activity ID Activity Name Original\nDuration\nStart Finish Total\nFloat\nElevator 541-Enclosure Elevator 541-Enclosure 30 29-Jul-26 11-Sep-26 82\nMR-C-1250 MR-NB-Install Enclosure/ Framing + Non Fire Rated Glass 20 29-Jul-26 26-Aug-26 60\nMR-C-12",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-b05eba48-c7",
+      "bucket": "answer",
+      "query": "In Actual - ALl Station 4.6.26 - N, what does the document state about EL1121- Install Elevator Enclosure Framing ( Outage)?",
+      "expectedFilePatterns": [
+        "Actual - ALl Station 4.6.26 - N"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "b05eba48-eb20-4024-9f22-fe0523dc41d1",
+      "acceptableAnswerContains": [
+        "enclosure",
+        "elevator",
+        "avenue",
+        "glass"
+      ],
+      "notes": "schedule | Actual - ALl Station 4.6.26 - N.pdf (page 1)",
+      "groundingChunkId": "ad341fc4-8fc3-4f94-9c40-a0118700a382",
+      "groundingChunkIndex": 7,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "EL1121- Install Elevator Enclosure Framing ( Outage)\n28-Feb-27, Myrtle-Elevator 1122\n28-Feb-27, Elevator 1122-Enclosure\nMA-EL1122-Glass Enclosure at Local Track - GO12-13\n05-Aug-27, Myrtle- Melrose St\n13-May-27, Myrtle- Elevator 1119\n13-May",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-82296656-c12",
+      "bucket": "answer",
+      "query": "In M017_IMP_Draft Subcontract_20260227, what does the document state about re applicable, the incorporation specifically excludes any payment provisions contained...?",
+      "expectedFilePatterns": [
+        "M017_IMP_Draft Subcontract_20260227",
+        "Subcontract",
+        "20260227"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "82296656-3f8c-4115-8118-043676a2f94c",
+      "acceptableAnswerContains": [
+        "provisions",
+        "subcontract",
+        "subcontractor",
+        "payment"
+      ],
+      "notes": "contract | M017_IMP_Draft Subcontract_20260227.docx",
+      "groundingChunkId": "38a29fe3-59b2-420f-9212-e3c5e8c0a021",
+      "groundingChunkIndex": 12,
+      "groundingSnippet": "re applicable, the incorporation specifically excludes any payment provisions contained therein and no provision of the Subcontract Documents shall be interpreted so as to create any conflict, inconsistency, or ambiguity in the contingent p",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-82296656-c10",
+      "bucket": "answer",
+      "query": "In M017_IMP_Draft Subcontract_20260227, what does the document state about ontract represents the entire Subcontract between the parties and supersedes all prior?",
+      "expectedFilePatterns": [
+        "M017_IMP_Draft Subcontract_20260227",
+        "Subcontract",
+        "20260227"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "82296656-3f8c-4115-8118-043676a2f94c",
+      "acceptableAnswerContains": [
+        "subcontract",
+        "subcontractor",
+        "documents",
+        "represents"
+      ],
+      "notes": "contract | M017_IMP_Draft Subcontract_20260227.docx",
+      "groundingChunkId": "0b8b65b5-304d-4e7c-b36d-8ed8d49a4405",
+      "groundingChunkIndex": 10,
+      "groundingSnippet": "ontract represents the entire Subcontract between the parties and supersedes all prior agreements whether written or oral.\n\nSubcontractor represents and acknowledges that it has received and reviewed a full and complete copy of the followin",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-be4768ff-c2",
+      "bucket": "answer",
+      "query": "In SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025, what does the document state about ACTION ITEMS -SDI Co-ordination?",
+      "expectedFilePatterns": [
+        "SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "be4768ff-4ad8-4f4f-8aec-1e709bf5c0ae",
+      "acceptableAnswerContains": [
+        "package",
+        "cor-ordination",
+        "co-ordination",
+        "contract"
+      ],
+      "notes": "meeting_minutes | SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx",
+      "groundingChunkId": "28369133-3b0c-4e67-8e9b-d42ddc07b4e7",
+      "groundingChunkIndex": 2,
+      "groundingSnippet": "ACTION ITEMS -SDI Co-ordination \n\nMeeting: SDI Cor-ordination \n\nContract: ADA Upgrades package 6 (A37806- Package 6) \n\nDate: 12/19/2025 \n\nDATE: 12/19/2025",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-be4768ff-c5",
+      "bucket": "answer",
+      "query": "In SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025, what does the document state about OCIP and Sub approval for surveyor?",
+      "expectedFilePatterns": [
+        "SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "be4768ff-4ad8-4f4f-8aec-1e709bf5c0ae",
+      "acceptableAnswerContains": [
+        "general",
+        "middletown",
+        "material",
+        "roofing"
+      ],
+      "notes": "meeting_minutes | SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx",
+      "groundingChunkId": "5470ca88-63b7-4f2a-b139-8c72cd0a01a8",
+      "groundingChunkIndex": 5,
+      "groundingSnippet": "TARGET DATES\n\nGeneral \n\nSubcontract\n\nSDI\n\n12/19/2025\n\nGeneral \n\nOCIP Approval\n\nMTA\n\nGeneral\n\nOCIP and Sub approval for surveyor \n\nSDI\n\n12/22/2025\n\nGeneral \n\nSWPs and QWPs/CWPs \n\nSDI/MLJ\n\n01/14/2026\n\nGeneral \n\nQuality Management Plan\n\nSDI/ML",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-7ffe0fdb-c5",
+      "bucket": "answer",
+      "query": "In A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Form, what does GEN-001R02 say about pilot and excavate?",
+      "expectedFilePatterns": [
+        "A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Form",
+        "A37806",
+        "001R02"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "7ffe0fdb-53e2-4608-a73e-4e58a46c7e1b",
+      "acceptableAnswerContains": [
+        "pilot",
+        "excavate",
+        "elevator",
+        "requirements"
+      ],
+      "notes": "drawing | A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Formwork Drawing.pdf (page 2)",
+      "groundingChunkId": "d9a8022d-dabd-420c-a1ae-bc6732441f6e",
+      "groundingChunkIndex": 5,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "ED BY THE ENGINEER.\n8.) CONTROLLED FILLS MUST BE COMPLIANT WITH SECTION BC 1804.2.2 OF THE NEW YORK CITY\nBUILDING CODE OR MTA SPECIFICATION SECTION 2B CONTROLLED AND UNCONTROLLED FILLS\nAND BACKFILLS, WHICHEVER IS MORE STRINGENT.\n9.) THE CON",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-7ffe0fdb-c2",
+      "bucket": "answer",
+      "query": "In A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Form, what does GEN-001R02 say about nyct and information?",
+      "expectedFilePatterns": [
+        "A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Form",
+        "A37806",
+        "001R02"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "7ffe0fdb-53e2-4608-a73e-4e58a46c7e1b",
+      "acceptableAnswerContains": [
+        "nyct",
+        "information",
+        "approval",
+        "designer"
+      ],
+      "notes": "drawing | A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Formwork Drawing.pdf (page 1)",
+      "groundingChunkId": "defee6ad-a209-42cd-b2df-d701244437b4",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "For NYCT/MTA Review & Comment\nFor NYCT/MTA Approval\nFor Designer Approval\nFor NYCT/MTA Information Only\nFor Designer Information Only\nDate:\nContract Number: Contract Title:\nItem Description:\nSubmittal No.: Rev.:\nSpec./ PRDC Ref.:\nLocation (",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-997cb89d-c4",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-044R00 - ORIG - List of Competent P, what does GEN-044R00 say about 01 35 10 and station?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-044R00 - ORIG - List of Competent P",
+        "A37806",
+        "044R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "997cb89d-3806-46fa-b1c7-572fe5f9faff",
+      "acceptableAnswerContains": [
+        "01 35 10",
+        "station",
+        "tcelect.net",
+        "general"
+      ],
+      "notes": "submittal | A37806_01 35 10_GEN-044R00 - ORIG - List of Competent Persons.pdf (page 2)",
+      "groundingChunkId": "aa34fbb7-4454-4dd5-8b25-9039a700da42",
+      "groundingChunkIndex": 4,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "347-267-2919 jtroiano@tcelect.net\nKsenofon Gjerko Project Engineer Civil, Misc. Metals, HVAC, MEP 646-236-5473 kgjerko@mljcontracting.com\nGenci Cullhaj General Foreman Electrical 347-257-9087 gcullhaj@tcelect.net\nNicholas Zito Communication",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-997cb89d-c3",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-044R00 - ORIG - List of Competent P, what does GEN-044R00 say about 01 35 10 and civil?",
+      "expectedFilePatterns": [
+        "A37806_01 35 10_GEN-044R00 - ORIG - List of Competent P",
+        "A37806",
+        "044R00"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "997cb89d-3806-46fa-b1c7-572fe5f9faff",
+      "acceptableAnswerContains": [
+        "01 35 10",
+        "civil",
+        "mljcontracting.com",
+        "station"
+      ],
+      "notes": "submittal | A37806_01 35 10_GEN-044R00 - ORIG - List of Competent Persons.pdf (page 2)",
+      "groundingChunkId": "6379320b-879a-4276-a894-1b9e2868e4ad",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 2,
+      "groundingSnippet": "MLJTC2 01 35 10 - Construction Safety Requirements\nCompetent Persons\nDate Printed: 5/27/2025\nName Title Trade Phone Email\nPeter Moosbrugger General Superintendent Heavy Civil 929-390-6703 pmoosbrugger@mljcontracting.com\nAl Lombardi Bronx Su",
+      "generatedQueryTemplate": "identifier_content"
+    },
+    {
+      "id": "chunk-29df6b3d-c3",
+      "bucket": "answer",
+      "query": "In WINDY KEANE, what does the document state about ntract to New York City Transit, cannot be performed without the use?",
+      "expectedFilePatterns": [
+        "WINDY KEANE"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "29df6b3d-ffdb-49d0-8350-d8067e69a126",
+      "acceptableAnswerContains": [
+        "pass",
+        "stolen",
+        "lost",
+        "administrative"
+      ],
+      "notes": "permit | WINDY KEANE.pdf (page 1)",
+      "groundingChunkId": "f73b651d-67d1-4882-9249-81948bdd22fa",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "ntract to New York City Transit, cannot be performed without the use of a System or MetroCard Temporary Transportation pass. If\nthe contract language is not clear, but there is a business need for these passes, a “Letter of Approval” signed",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-29df6b3d-c2",
+      "bucket": "answer",
+      "query": "In WINDY KEANE, what does the document state about Attachment 8. Access Pass Application?",
+      "expectedFilePatterns": [
+        "WINDY KEANE"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "29df6b3d-ffdb-49d0-8350-d8067e69a126",
+      "acceptableAnswerContains": [
+        "access",
+        "department",
+        "security",
+        "contract"
+      ],
+      "notes": "permit | WINDY KEANE.pdf (page 1)",
+      "groundingChunkId": "57f18531-6ba2-402f-93a4-89e8b925b257",
+      "groundingChunkIndex": 2,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "Revised: 12/15/2022\nAttachment 8. Access Pass Application\nDEPARTMENT OF SECURITY\nNON-EMPLOYEE ACCESS PASS APPLICATION\nBe Advised that authorized requestors are required to complete the online Security Access Authorization Request Form (SAAR",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-ebd3b55a-c4",
+      "bucket": "answer",
+      "query": "In Invoice#01_12-31-2025, what does the document state about Total changes approved Application and onthe Continuation Sheet that are changed to?",
+      "expectedFilePatterns": [
+        "Invoice#01_12-31-2025"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "ebd3b55a-6b8c-402c-92d3-2d15a7343b6d",
+      "acceptableAnswerContains": [
+        "payment",
+        "certification",
+        "application",
+        "approved"
+      ],
+      "notes": "invoice | Invoice#01_12-31-2025.pdf (page 1)",
+      "groundingChunkId": "7c4fd67f-15b0-446e-a048-1c48d2e9cd8c",
+      "groundingChunkIndex": 4,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "gures on this\nTotal changes approved Application and onthe Continuation Sheet that are changed to conform with the amount certified.)\nin previous months by Owner ARCHITECT:\nTotal approved this Month By: Date:\nTOTALS $0.00 $0.00 This Certifi",
+      "generatedQueryTemplate": "filename_topic"
+    },
+    {
+      "id": "chunk-ebd3b55a-c3",
+      "bucket": "answer",
+      "query": "In Invoice#01_12-31-2025, what does the document state about G on G703) By: Date:?",
+      "expectedFilePatterns": [
+        "Invoice#01_12-31-2025"
+      ],
+      "expectedInTopK": 1,
+      "groundingFileId": "ebd3b55a-6b8c-402c-92d3-2d15a7343b6d",
+      "acceptableAnswerContains": [
+        "line",
+        "retainage",
+        "architect",
+        "payment"
+      ],
+      "notes": "invoice | Invoice#01_12-31-2025.pdf (page 1)",
+      "groundingChunkId": "a9d97012-5844-488f-b385-762a272379d7",
+      "groundingChunkIndex": 3,
+      "groundingPageNumber": 1,
+      "groundingSnippet": "G on G703) By: Date:\n5. RETAINAGE:\na. 5 % of Completed Work $ $2,244.90 State of: County of:\n(Column D + E on G703) Subscribed and sworn to before me this day of\nb. % of Stored Material $Included in above Notary Public:\n(Column F on G703) M",
+      "generatedQueryTemplate": "filename_topic"
+    }
+  ]
+}

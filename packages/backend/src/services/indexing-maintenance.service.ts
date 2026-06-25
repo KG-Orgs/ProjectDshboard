@@ -383,6 +383,9 @@ export const indexingMaintenanceService = {
           tags: insights.classification.tags,
           extractedFields: insights.classification
             .extractedFields as unknown as Record<string, unknown>,
+          extractionProvenance: insights.extractionProvenance as
+            | Record<string, unknown>
+            | undefined,
           specSection: insights.classification.extractedFields.specSection,
           sheetNumber: insights.classification.extractedFields.sheetNumber,
           revision: insights.classification.extractedFields.revision,

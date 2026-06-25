@@ -49,3 +49,11 @@ Thumbs.db
 # Temporary files
 *.tmp
 .DS_Store
+
+# Eval run outputs (question fixtures stay tracked)
+packages/backend/eval/*-report.json
+packages/backend/eval/*-audit-report.json
+packages/backend/eval/*-search-report.json
+
+# Local test corpus (binary fixtures)
+test-data/

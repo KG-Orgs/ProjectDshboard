@@ -4,6 +4,7 @@ import { getEnv } from "../config/env";
 import { logger } from "../lib/logger";
 import { interpretationService } from "./interpretation.service";
 import { projectService } from "./project.service";
+import type { IdentifierLookupResult } from "./identifier-lookup.service";
 import { retrievalService } from "./retrieval.service";
 import { keywordHitScore, tokenizeQuery } from "./text-ranking.utils";
 
@@ -116,7 +117,7 @@ interface IndexedProjectSnapshot {
   indexingPercent: number;
   categoryBreakdown: Record<string, number>;
   openRfis: Array<{ fileName: string; rfiNumber?: string }>;
-  pendingSubmittals: Array<{ fileName: string; submittarNumber?: string; status?: string }>;
+  pendingSubmittals: Array<{ fileName: string; submittalNumber?: string; status?: string }>;
   recentChangeOrders: Array<{ fileName: string; coNumber?: string }>;
 }
 
@@ -153,10 +154,143 @@ interface ResponseCacheEntry {
 
 const RESPONSE_CACHE_TTL_MS = 5 * 60 * 1000;
 const RESPONSE_CACHE_MAX_ENTRIES = 800;
-const ROUTED_CONTEXT_TOKEN_BUDGET = 1000;
-const MAX_GRAPH_NODES = 6;
-const AGENT_CALL_TIMEOUT_MS = 8_000;
+// Context window for the LLM. Sized for depth on factual/spec queries within a
+// ~3-4s latency budget (more chunks + longer excerpts = more complete answers).
+const ROUTED_CONTEXT_TOKEN_BUDGET = 3000;
+const MAX_GRAPH_NODES = 10;
+const AGENT_CALL_TIMEOUT_MS = 12_000;
+// Cap generated output so a single reply cannot run away on tokens/latency.
+const AGENT_MAX_OUTPUT_TOKENS = 1_024;
+// Depth mode lifts the output cap so multi-item factual answers aren't truncated.
+const AGENT_DEPTH_OUTPUT_TOKENS = 2_048;
+const DETAILED_EXTRACTION_MAX_OUTPUT_TOKENS = 768;
+// Only the most recent turns are sent to the LLM; older context is summarized in
+// the prompt, so unbounded history would just waste tokens.
+const MAX_HISTORY_TURNS = 8;
 const responseCache = new Map<string, ResponseCacheEntry>();
+
+type ChatLlmMessage = { role: "system" | "user" | "assistant"; content: string };
+
+/**
+ * Provider-agnostic chat transport. Tries the primary OpenAI-compatible endpoint
+ * (Gemini, then OpenAI/DeepSeek) first, then falls back to the Anthropic Messages
+ * API when an `ANTHROPIC_API_KEY` is configured. Returns null when every configured
+ * provider fails so callers can fall back to deterministic evidence text.
+ */
+async function callChatLlm(
+  messages: ChatLlmMessage[],
+  options: { temperature: number; maxTokens: number; timeoutMs?: number }
+): Promise<string | null> {
+  const env = getEnv();
+  const timeoutMs = options.timeoutMs ?? AGENT_CALL_TIMEOUT_MS;
+
+  const primaryApiKey = env.geminiApiKey ?? env.openAiApiKey;
+  if (primaryApiKey) {
+    const chatEndpoint =
+      env.geminiChatEndpoint ??
+      env.openAiChatEndpoint ??
+      "https://api.openai.com/v1/chat/completions";
+    const chatModel = env.geminiChatModel ?? env.openAiChatModel ?? "gemini-2.5-flash";
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(chatEndpoint, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${primaryApiKey}`,
+        },
+        body: JSON.stringify({
+          model: chatModel,
+          temperature: options.temperature,
+          max_tokens: options.maxTokens,
+          messages,
+        }),
+      });
+      if (response.ok) {
+        const payload = (await response.json()) as {
+          choices?: Array<{ message?: { content?: string } }>;
+        };
+        const completion = payload.choices?.[0]?.message?.content?.trim();
+        if (completion) return completion;
+      } else {
+        const body = await response.text();
+        logger.warn("chat.coordinator.primary_llm_failed", { reason: body || response.statusText });
+      }
+    } catch (error) {
+      logger.warn("chat.coordinator.primary_llm_error", {
+        reason:
+          error instanceof Error && error.name === "AbortError"
+            ? `primary_llm_timeout_${timeoutMs}ms`
+            : error instanceof Error
+              ? error.message
+              : "unknown_error",
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  if (env.anthropicApiKey) {
+    const systemPrompt = messages
+      .filter((message) => message.role === "system")
+      .map((message) => message.content)
+      .join("\n\n");
+    const conversation = messages
+      .filter((message) => message.role !== "system")
+      .map((message) => ({ role: message.role as "user" | "assistant", content: message.content }));
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(env.anthropicChatEndpoint, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": env.anthropicApiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: env.anthropicChatModel,
+          max_tokens: options.maxTokens,
+          temperature: options.temperature,
+          ...(systemPrompt ? { system: systemPrompt } : {}),
+          messages: conversation,
+        }),
+      });
+      if (response.ok) {
+        const payload = (await response.json()) as {
+          content?: Array<{ type?: string; text?: string }>;
+        };
+        const completion = (payload.content ?? [])
+          .filter((block) => block.type === "text" && typeof block.text === "string")
+          .map((block) => block.text as string)
+          .join("")
+          .trim();
+        if (completion) return completion;
+      } else {
+        const body = await response.text();
+        logger.warn("chat.coordinator.anthropic_llm_failed", { reason: body || response.statusText });
+      }
+    } catch (error) {
+      logger.warn("chat.coordinator.anthropic_llm_error", {
+        reason:
+          error instanceof Error && error.name === "AbortError"
+            ? `anthropic_llm_timeout_${timeoutMs}ms`
+            : error instanceof Error
+              ? error.message
+              : "unknown_error",
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  return null;
+}
 
 function getChatCoordinatorFeatureFlags(): ChatCoordinatorFeatureFlags {
   const env = getEnv();
@@ -340,6 +474,19 @@ const STATIC_SYSTEM_PROMPT = [
   "NEVER provide legal advice. Flag legal risk and recommend counsel.",
 ].join("\n");
 
+// Appended for factual / spec / extraction queries. Overrides the terse default
+// formatting so the model extracts complete, specific, grounded detail.
+const DEPTH_MODE_ADDENDUM = [
+  "",
+  "DEPTH MODE (this is a factual / specification / extraction query)",
+  "- Extract and list EVERY matching item found in the retrieved context; do not stop after the first.",
+  "- Quote concrete specifics: numbers, dimensions, dates, names, spec/section numbers, and page references.",
+  "- Do NOT merely restate section headers, document titles, or generic category labels — give the underlying requirement or value.",
+  "- Synthesize across multiple chunks when several contain relevant detail.",
+  "- The 'under 18 words per bullet' limit does NOT apply here; prefer complete, precise bullets over brevity.",
+  "- Still ground every statement in the retrieved context. If a detail is not present, say so explicitly rather than guessing.",
+].join("\n");
+
 function normalizeText(input: string): string {
   return input.trim().toLowerCase();
 }
@@ -426,8 +573,9 @@ function deriveShortFormName(
 ): string {
   const base = sanitizeAlias(fileName);
 
-  if (docCategory === "submittal" && extractedFields?.submittarNumber) {
-    return sanitizeAlias(extractedFields.submittarNumber);
+  const submittalNumber = extractedFields?.submittalNumber ?? extractedFields?.submittarNumber;
+  if (docCategory === "submittal" && submittalNumber) {
+    return sanitizeAlias(submittalNumber);
   }
 
   if (docCategory === "rfi" && extractedFields?.rfiNumber) {
@@ -764,9 +912,48 @@ function isFileLookupQuery(input: string): boolean {
   return explicitPatterns.some((pattern) => pattern.test(normalized));
 }
 
+function isContentRetrievalQuery(input: string): boolean {
+  const normalized = normalizeText(input);
+  if (!normalized) return false;
+
+  if (
+    /^(what|which|when|where|why|how|who|list|summarize|outline|tell|describe|explain)\b/.test(
+      normalized
+    )
+  ) {
+    if (
+      /\b(file|files|document|documents|folder|folders)\b/.test(normalized) &&
+      /\b(find|have|locate|show)\b/.test(normalized)
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  const hasSpecVocabulary =
+    /\b(spec|specs|specification|specifications|requirement|requirements|clause|standard|standards|procedure|procedures)\b/.test(
+      normalized
+    );
+  if (!hasSpecVocabulary || isFileLookupQuery(normalized)) {
+    return false;
+  }
+
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const subjectTokens = tokens.filter(
+    (token) =>
+      token.length >= 4 &&
+      !FILE_LOOKUP_STOP_WORDS.has(token) &&
+      !GENERIC_QUERY_FOCUS_STOP_WORDS.has(token) &&
+      !GENERIC_EVIDENCE_TOKENS.has(token)
+  );
+
+  return subjectTokens.length >= 1 && tokens.length >= 3;
+}
+
 function isFileLookupFragmentQuery(input: string): boolean {
   const normalized = normalizeText(input);
   if (!normalized) return false;
+  if (isContentRetrievalQuery(normalized)) return false;
   if (isFileLookupQuery(normalized)) return false;
 
   if (/\b(review|show|display|read|quote|exact(?:ly)?|verbatim)\b/.test(normalized)) {
@@ -910,6 +1097,10 @@ async function resolveFileLookupAnswer(projectId: UUID, query: string): Promise<
   content: string;
   sources: SendChatMessageResponse["sources"];
 } | null> {
+  if (isContentRetrievalQuery(query)) {
+    return null;
+  }
+
   const isExplicitLookup = isFileLookupQuery(query);
   const isFragmentLookup = isFileLookupFragmentQuery(query);
   if (!isExplicitLookup && !isFragmentLookup) {
@@ -3255,7 +3446,7 @@ async function answerFromDocumentDetail(
           return [...aligned, ...unaligned];
         })()
       : primaryChunkPool
-  ).slice(0, 6);
+  ).slice(0, MAX_GRAPH_NODES);
 
   const activeNodes: GraphNodeContext[] = selectedChunks.map((chunk) => ({
     chunkId: `${detail.fileId}:${chunk.chunkIndex}`,
@@ -3378,7 +3569,9 @@ async function answerFromDocumentDetail(
     isFactualIntent(rawQuery) && citations.length === 0
       ? featureFlags.strictFactualActiveDocMode
         ? buildNoExactEvidenceContent(detail.fileName)
-        : withUncertaintyMarker(content)
+        : shouldAppendUncertaintyMarker(rawQuery, citations, activeNodes)
+          ? withUncertaintyMarker(content)
+          : content
       : content;
   const contentWithGuardrail = enforceAliasAndEvidenceFormatting(guardedContent, sources);
   const telemetry = buildTelemetry(startedAt, { agentMs });
@@ -4028,7 +4221,8 @@ function buildGraphContextBlock(nodes: GraphNodeContext[]): string {
 
   return nodes
     .map((node, index) => {
-      const excerpt = node.chunkText.slice(0, 260).replace(/\s+/g, " ").trim();
+      // Wider excerpt so tables / multi-row content survive into the prompt.
+      const excerpt = node.chunkText.slice(0, 900).replace(/\s+/g, " ").trim();
       const tags = node.tags?.length ? ` tags=${node.tags.join(",")}` : "";
       const category = node.docCategory ? ` category=${node.docCategory}` : "";
       const page = typeof node.pageNumber === "number" ? ` page=${node.pageNumber}` : "";
@@ -4058,7 +4252,7 @@ function buildIndexedSnapshotBlock(snapshot?: IndexedProjectSnapshot): string {
 
   const pendingSubmittals = snapshot.pendingSubmittals
     .slice(0, 3)
-    .map((sub) => `${deriveShortFormName(sub.fileName)}${sub.submittarNumber ? ` [${sub.submittarNumber}]` : ""}${sub.status ? ` status=${sub.status}` : ""}`)
+    .map((sub) => `${deriveShortFormName(sub.fileName)}${sub.submittalNumber ? ` [${sub.submittalNumber}]` : ""}${sub.status ? ` status=${sub.status}` : ""}`)
     .join("; ");
 
   const recentChangeOrders = snapshot.recentChangeOrders
@@ -4289,6 +4483,20 @@ function buildValidatedCitations(
     .slice(0, 8);
 }
 
+function shouldAppendUncertaintyMarker(
+  query: string,
+  citations: NonNullable<SendChatMessageResponse["citations"]>,
+  contextNodes: GraphNodeContext[]
+): boolean {
+  if (!isFactualIntent(query) || citations.length > 0) {
+    return false;
+  }
+
+  // Only warn when retrieval produced no chunk context. Chunks may still be
+  // sent to the agent while strict citation verification rejects formal cites.
+  return contextNodes.length === 0;
+}
+
 function withUncertaintyMarker(content: string): string {
   return `${content.trim()}\n\nNote: I could not validate direct chunk-level evidence for all factual claims in this response.`;
 }
@@ -4424,15 +4632,6 @@ async function callDetailedExtractionLlm(
   fileName: string,
   matchedChunks: RankedDocumentChunk[]
 ): Promise<string | null> {
-  const env = getEnv();
-  const apiKey = env.geminiApiKey ?? env.openAiApiKey;
-  if (!apiKey) return null;
-
-  const chatEndpoint =
-    env.geminiChatEndpoint ??
-    env.openAiChatEndpoint ??
-    "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-  const chatModel = env.geminiChatModel ?? env.openAiChatModel ?? "gemini-2.5-flash";
   const alias = deriveShortFormName(fileName);
 
   const passageBlocks = matchedChunks
@@ -4458,45 +4657,13 @@ async function callDetailedExtractionLlm(
 
   const userMessage = `Query: ${rawQuery}\nDocument: ${alias}\n\n${passageBlocks}`;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), AGENT_CALL_TIMEOUT_MS);
-  try {
-    const response = await fetch(chatEndpoint, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: chatModel,
-        temperature: 0.1,
-        messages: [
-          { role: "system", content: systemInstruction },
-          { role: "user", content: userMessage },
-        ],
-      }),
-    });
-
-    if (response.ok) {
-      const payload = (await response.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
-      };
-      const completion = payload.choices?.[0]?.message?.content?.trim();
-      if (completion) return completion;
-    } else {
-      logger.warn("chat.coordinator.detailed_extraction_llm_failed", {
-        reason: response.statusText,
-      });
-    }
-  } catch (error) {
-    logger.warn("chat.coordinator.detailed_extraction_llm_error", {
-      reason: error instanceof Error ? error.message : "unknown_error",
-    });
-  } finally {
-    clearTimeout(timeout);
-  }
-  return null;
+  return callChatLlm(
+    [
+      { role: "system", content: systemInstruction },
+      { role: "user", content: userMessage },
+    ],
+    { temperature: 0.1, maxTokens: DETAILED_EXTRACTION_MAX_OUTPUT_TOKENS }
+  );
 }
 
 async function callSingleAgent(
@@ -4508,73 +4675,30 @@ async function callSingleAgent(
   openDocs?: OpenDocContext[],
   activeDocFileName?: string
 ): Promise<string> {
-  const env = getEnv();
   const userPrompt = buildUserPrompt(query, domains, nodes, snapshot, openDocs, activeDocFileName);
-  const chatEndpoint =
-    env.geminiChatEndpoint ??
-    env.openAiChatEndpoint ??
-    "https://api.openai.com/v1/chat/completions";
-  const chatModel = env.geminiChatModel ?? env.openAiChatModel ?? "gemini-2.5-flash";
-  const apiKey = env.geminiApiKey ?? env.openAiApiKey;
 
-  if (apiKey) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), AGENT_CALL_TIMEOUT_MS);
-    try {
-      const historyMessages = (history ?? []).map((turn) => ({
-        role: turn.role,
-        content: turn.content,
-      }));
-      const response = await fetch(chatEndpoint, {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: chatModel,
-          temperature: 0.2,
-          messages: [
-            {
-              role: "system",
-              content: STATIC_SYSTEM_PROMPT,
-            },
-            ...historyMessages,
-            {
-              role: "user",
-              content: userPrompt,
-            },
-          ],
-        }),
-      });
+  const historyMessages: ChatLlmMessage[] = (history ?? [])
+    .slice(-MAX_HISTORY_TURNS)
+    .map((turn) => ({ role: turn.role, content: turn.content }));
 
-      if (response.ok) {
-        const payload = (await response.json()) as {
-          choices?: Array<{ message?: { content?: string } }>;
-        };
-        const completion = payload.choices?.[0]?.message?.content?.trim();
-        if (completion) {
-          return completion;
-        }
-      } else {
-        const body = await response.text();
-        logger.warn("chat.coordinator.agent_call_failed", {
-          reason: body || response.statusText,
-        });
-      }
-    } catch (error) {
-      logger.warn("chat.coordinator.agent_call_error", {
-        reason:
-          error instanceof Error && error.name === "AbortError"
-            ? `agent_call_timeout_${AGENT_CALL_TIMEOUT_MS}ms`
-            : error instanceof Error
-              ? error.message
-              : "unknown_error",
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
+  // Depth mode: factual/spec/extraction queries get a fuller prompt + higher
+  // output budget so multi-item answers aren't compressed into header bullets.
+  const depthMode = isFactualIntent(query);
+  const systemPrompt = depthMode
+    ? `${STATIC_SYSTEM_PROMPT}\n${DEPTH_MODE_ADDENDUM}`
+    : STATIC_SYSTEM_PROMPT;
+  const maxTokens = depthMode ? AGENT_DEPTH_OUTPUT_TOKENS : AGENT_MAX_OUTPUT_TOKENS;
+
+  const completion = await callChatLlm(
+    [
+      { role: "system", content: systemPrompt },
+      ...historyMessages,
+      { role: "user", content: userPrompt },
+    ],
+    { temperature: 0.2, maxTokens }
+  );
+  if (completion) {
+    return completion;
   }
 
   if (nodes.length === 0) {
@@ -4738,6 +4862,81 @@ function shouldSplitSpecialists(domains: QueryDomain[], nodeCount: number, sourc
   return Array.from(new Set(reasons));
 }
 
+function buildRetrievalInterpretation(
+  interpreted: ChatInterpretation
+): ChatInterpretation | undefined {
+  if (interpreted.confidence >= 0.8) {
+    return interpreted;
+  }
+  if (interpreted.confidence >= 0.65) {
+    return { ...interpreted, confidence: Math.min(interpreted.confidence, 0.72) };
+  }
+  return undefined;
+}
+
+function finalizeInterpretation(
+  interpreted: ChatInterpretation,
+  retrievalInterpretation: ChatInterpretation | undefined
+): ChatInterpretation {
+  return retrievalInterpretation
+    ? interpreted
+    : {
+        ...interpreted,
+        fallbackReason: interpreted.fallbackReason ?? "low_confidence_no_hinting",
+      };
+}
+
+async function tryExactIdentifierDocumentAnswer(
+  projectId: UUID,
+  trimmedQuery: string,
+  rawQuery: string,
+  startedAt: number,
+  interpretation: ChatInterpretation,
+  exact: IdentifierLookupResult | null,
+  history?: ChatHistoryTurn[],
+  openDocs?: OpenDocContext[]
+): Promise<CoordinatorResult | null> {
+  if (!interpretation.retrievalHints?.exactIdentifierFirst || !exact) {
+    return null;
+  }
+  if (!isContentRetrievalQuery(trimmedQuery)) {
+    return null;
+  }
+
+  const detail = await retrievalService.getDocumentDetail(exact.fileId, projectId);
+  if (detail && detail.chunks.length > 0) {
+    const result = await answerFromDocumentDetail(
+      detail,
+      rawQuery,
+      startedAt,
+      history,
+      openDocs,
+      detail.fileName
+    );
+    return { ...result, interpretation };
+  }
+
+  const domains: QueryDomain[] = ["documents"];
+  const telemetry = buildTelemetry(startedAt);
+  const fallbackSource = buildSingleSource(exact.fileId, exact.fileName, {
+    displayName: deriveShortFormName(exact.fileName),
+  });
+
+  return {
+    content: [
+      `## ${exact.identifier.valueNormalized}`,
+      `- I found ${deriveShortFormName(exact.fileName)}, but I do not have indexed text for a precise answer.`,
+      "- Re-run indexing on that file, then ask again.",
+    ].join("\n"),
+    sources: fallbackSource,
+    interpretation,
+    domains,
+    coordinator: buildCoordinatorMetadata(domains, telemetry),
+    cacheHit: false,
+    autoOpenFileName: exact.fileName,
+  };
+}
+
 export const chatCoordinatorService = {
   async previewRoute(projectId: UUID, query: string): Promise<RoutePreviewResult> {
     const trimmedQuery = query.trim();
@@ -4784,7 +4983,8 @@ export const chatCoordinatorService = {
     const THIS_DOC_PATTERN = /\b(this|the)\s+(pdf|doc|document|file|report|drawing|plan|schedule|spec)\b/i;
     const DEICTIC_CONTENT_PATTERN = /\b(it|this|that)\b/i;
     const isFileLookupIntent =
-      isFileLookupQuery(rawQuery) || isFileLookupFragmentQuery(rawQuery);
+      !isContentRetrievalQuery(rawQuery) &&
+      (isFileLookupQuery(rawQuery) || isFileLookupFragmentQuery(rawQuery));
     const hasActiveDocNameReference = queryMentionsActiveDocument(rawQuery, activeDocFileName);
     const hasExplicitSectionReviewIntent = isExplicitSectionReviewQuery(rawQuery);
 
@@ -4835,6 +5035,56 @@ export const chatCoordinatorService = {
         coordinator: buildCoordinatorMetadata(domains, telemetry),
         cacheHit: false,
       };
+    }
+
+    const interpretationStartedAt = Date.now();
+    const interpreted = await interpretationService.interpret({
+      query: trimmedQuery,
+      activeDocFileName,
+      openDocs,
+    });
+    const interpretationLatencyMs = Date.now() - interpretationStartedAt;
+    const retrievalInterpretation = buildRetrievalInterpretation(interpreted);
+    const interpretation = finalizeInterpretation(interpreted, retrievalInterpretation);
+    const exactIdentifierFirst = Boolean(interpreted.retrievalHints?.exactIdentifierFirst);
+    const exactIdentifierLookup = exactIdentifierFirst
+      ? await retrievalService.lookupExactIdentifier(projectId, trimmedQuery)
+      : null;
+
+    if (interpreted.intent === "file_lookup" || isFileLookupIntent) {
+      const fileLookup = await resolveFileLookupAnswer(projectId, trimmedQuery);
+      if (fileLookup) {
+        const telemetry = buildTelemetry(startedAt);
+        const domains: QueryDomain[] = ["documents"];
+
+        return {
+          content: fileLookup.content,
+          sources: fileLookup.sources,
+          interpretation,
+          domains,
+          coordinator: buildCoordinatorMetadata(domains, telemetry, {
+            interpretationLatencyMs,
+            interpretationFallbackReason: interpretation.fallbackReason,
+          }),
+          cacheHit: false,
+        };
+      }
+    }
+
+    if (!isActiveDocQuestion) {
+      const exactIdentifierAnswer = await tryExactIdentifierDocumentAnswer(
+        projectId,
+        trimmedQuery,
+        rawQuery,
+        startedAt,
+        interpretation,
+        exactIdentifierLookup,
+        history,
+        openDocs
+      );
+      if (exactIdentifierAnswer) {
+        return exactIdentifierAnswer;
+      }
     }
 
     if (featureFlags.activeDocBoostEnabled && isActiveDocQuestion && (activeDocFileId || activeDocFileName)) {
@@ -4912,7 +5162,9 @@ export const chatCoordinatorService = {
       }
     }
 
-    const directDocumentCandidate = await resolveDirectDocumentCandidate(projectId, trimmedQuery);
+    const directDocumentCandidate = exactIdentifierFirst
+      ? null
+      : await resolveDirectDocumentCandidate(projectId, trimmedQuery);
     if (directDocumentCandidate) {
       const detail = await retrievalService.getDocumentDetail(
         directDocumentCandidate.fileId,
@@ -4951,20 +5203,6 @@ export const chatCoordinatorService = {
         coordinator: buildCoordinatorMetadata(domains, telemetry),
         cacheHit: false,
         autoOpenFileName: directDocumentCandidate.fileName,
-      };
-    }
-
-    const fileLookup = await resolveFileLookupAnswer(projectId, trimmedQuery);
-    if (fileLookup) {
-      const telemetry = buildTelemetry(startedAt);
-      const domains: QueryDomain[] = ["documents"];
-
-      return {
-        content: fileLookup.content,
-        sources: fileLookup.sources,
-        domains,
-        coordinator: buildCoordinatorMetadata(domains, telemetry),
-        cacheHit: false,
       };
     }
 
@@ -5010,32 +5248,18 @@ export const chatCoordinatorService = {
       }
     }
 
-    const interpretationStartedAt = Date.now();
-    const interpreted = await interpretationService.interpret({
-      query: rawQuery,
-      activeDocFileName,
-      openDocs,
-    });
-    const interpretationLatencyMs = Date.now() - interpretationStartedAt;
-    const retrievalInterpretation =
-      interpreted.confidence >= 0.8
-        ? interpreted
-        : interpreted.confidence >= 0.65
-          ? { ...interpreted, confidence: Math.min(interpreted.confidence, 0.72) }
-          : undefined;
-
-    const interpretation: ChatInterpretation = retrievalInterpretation
-      ? interpreted
-      : {
-          ...interpreted,
-          fallbackReason: interpreted.fallbackReason ?? "low_confidence_no_hinting",
-        };
+    let preferredFileIdFromIdentifier = exactIdentifierLookup?.fileId;
 
     const routeStartedAt = Date.now();
     const [routed, contextSnapshotRaw] = await Promise.all([
       routeGraphContext(projectId, trimmedQuery, retrievalInterpretation, {
-        preferredFileId: enforceSelectedFileScope ? activeDocFileId : undefined,
-        requirePreferredFile: Boolean(enforceSelectedFileScope && activeDocFileId),
+        preferredFileId:
+          enforceSelectedFileScope && activeDocFileId
+            ? activeDocFileId
+            : preferredFileIdFromIdentifier,
+        requirePreferredFile: Boolean(
+          (enforceSelectedFileScope && activeDocFileId) || preferredFileIdFromIdentifier
+        ),
       }),
       retrievalService.getProjectContext(projectId),
     ]);
@@ -5059,7 +5283,7 @@ export const chatCoordinatorService = {
       })),
       pendingSubmittals: contextSnapshotRaw.pendingSubmittals.map((item) => ({
         fileName: item.fileName,
-        submittarNumber: item.submittarNumber,
+        submittalNumber: item.submittalNumber,
         status: item.status,
       })),
       recentChangeOrders: contextSnapshotRaw.recentChangeOrders.map((item) => ({
@@ -5078,10 +5302,9 @@ export const chatCoordinatorService = {
         isFactualIntent(rawQuery) && featureFlags.strictCitationVerificationEnabled,
       strictTokens: strictQueryTokens,
     });
-    const guardedContent =
-      isFactualIntent(rawQuery) && citations.length === 0
-        ? withUncertaintyMarker(content)
-        : content;
+    const guardedContent = shouldAppendUncertaintyMarker(rawQuery, citations, graphNodes)
+      ? withUncertaintyMarker(content)
+      : content;
     const contentWithGuardrail = enforceAliasAndEvidenceFormatting(guardedContent, sources);
 
     const telemetry = buildTelemetry(startedAt, {

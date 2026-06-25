@@ -12,7 +12,7 @@
  */
 
 import type { ChatInterpretation, SendChatMessageResponse, UUID } from "@contractor/shared";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql, type SQL } from "drizzle-orm";
 import { getEnv } from "../config/env";
 import { embeddingsService } from "./embeddings.service";
 import { featureService } from "./feature.service";
@@ -20,7 +20,20 @@ import { projectService } from "./project.service";
 import { retrievalRerankerService } from "./retrieval-reranker.service";
 import { getDbIfInitialized, fileRecords, fileChunks, documentRelationships } from "../db";
 import { logger } from "../lib/logger";
-import { tokenizeQuery, keywordHitScore } from "./text-ranking.utils";
+import {
+  tokenizeQuery,
+  keywordHitScore,
+  deriveFileIdentity,
+  identityMatchScore,
+  isLikelyGarbageText,
+} from "./text-ranking.utils";
+import {
+  identifierLookupService,
+  parseIdentifierQuery,
+  type IdentifierLookupResult,
+  type MatchReason,
+} from "./identifier-lookup.service";
+import { documentFamilyKey } from "./identifier-extraction.utils";
 
 // ============================================================
 // Types
@@ -53,6 +66,20 @@ export interface SearchResult {
   }>;
   topRelevance: number;
   tags?: string[];
+  /** Openable source/deep link captured at ingestion (D7). */
+  deepLinkUrl?: string;
+  /** Structured "why it matched" reasons for display (1d). */
+  matchReasons?: MatchReason[];
+  /**
+   * Set when this result came from the deterministic exact-id route (1c): the
+   * identifier matched and the revision/status family was resolved to this file.
+   */
+  exactIdentifier?: {
+    type: string;
+    value: string;
+    raw: string;
+    totalFamilyMembers: number;
+  };
 }
 
 export interface ProjectContextSnapshot {
@@ -66,7 +93,7 @@ export interface ProjectContextSnapshot {
   indexingPercent: number;
   // Construction state
   openRfis: Array<{ fileId: string; fileName: string; rfiNumber?: string; summary?: string }>;
-  pendingSubmittals: Array<{ fileId: string; fileName: string; submittarNumber?: string; status?: string }>;
+  pendingSubmittals: Array<{ fileId: string; fileName: string; submittalNumber?: string; status?: string }>;
   recentChangeOrders: Array<{ fileId: string; fileName: string; coNumber?: string; summary?: string }>;
   recentlyModifiedFiles: Array<{ fileId: string; fileName: string; updatedAt: Date }>;
   categoryBreakdown: Record<string, number>;
@@ -161,6 +188,7 @@ interface RetrievalCandidate {
   chunkId: string;
   fileId: string;
   fileName: string;
+  filePath?: string;
   chunkIndex: number;
   chunkText: string;
   relevance: number;
@@ -173,6 +201,7 @@ interface RetrievalCandidate {
   priorityScore?: number;
   updatedAt?: Date;
   extractedFields?: Record<string, unknown>;
+  confidence?: number;
   vectorScore?: number;
   lexicalScore?: number;
 }
@@ -200,45 +229,104 @@ function blendWeights(profile: HybridBlendProfile): { semanticWeight: number; le
   return { semanticWeight: 0.5, lexicalWeight: 0.5 };
 }
 
+// Reciprocal Rank Fusion constant. The standard k=60 (Cormack et al.) damps the
+// influence of any single retriever's absolute score and is robust without
+// per-query calibration — unlike weighted-score blending, which is sensitive to
+// the very different score distributions of cosine similarity vs. ts_rank_cd.
+const RRF_K = 60;
+
+// HNSW ef_search controls how many candidates the index explores per query.
+// Postgres defaults to 40, which is below our vector LIMIT (topK*3 = 150), so
+// the tail of the candidate pool is poor quality. 200 gives good recall at the
+// pool depth that fusion/rerank rely on, with negligible latency cost.
+const HNSW_EF_SEARCH = 200;
+
+/**
+ * Fuse the vector and lexical candidate lists with Reciprocal Rank Fusion.
+ *
+ * Each retriever contributes weight / (RRF_K + rank) for a chunk, where rank is
+ * its 1-based position in that retriever's own ordering. The blend profile is
+ * applied as a per-retriever weight so intent-based bias (lexical_heavy, etc.)
+ * still works. Fused scores are min-max normalized to [0,1] so the additive
+ * boosts applied later (identity, interpretation, freshness) remain on the same
+ * scale they were tuned for.
+ *
+ * vectorScore / lexicalScore are preserved as each retriever's original
+ * relevance for downstream heuristics that inspect them.
+ */
 function mergeHybridCandidates(
   vectorCandidates: RetrievalCandidate[],
   lexicalCandidates: RetrievalCandidate[],
   profile: HybridBlendProfile
 ): RetrievalCandidate[] {
   const { semanticWeight, lexicalWeight } = blendWeights(profile);
-  const merged = new Map<string, RetrievalCandidate>();
 
-  for (const candidate of vectorCandidates) {
-    merged.set(candidate.chunkId, {
-      ...candidate,
-      vectorScore: candidate.relevance,
-      lexicalScore: 0,
-      relevance: Number((candidate.relevance * semanticWeight).toFixed(6)),
-    });
+  const base = new Map<string, RetrievalCandidate>();
+  const vectorRank = new Map<string, number>();
+  const lexicalRank = new Map<string, number>();
+
+  vectorCandidates.forEach((candidate, index) => {
+    vectorRank.set(candidate.chunkId, index);
+    if (!base.has(candidate.chunkId)) base.set(candidate.chunkId, candidate);
+  });
+  lexicalCandidates.forEach((candidate, index) => {
+    lexicalRank.set(candidate.chunkId, index);
+    if (!base.has(candidate.chunkId)) base.set(candidate.chunkId, candidate);
+  });
+
+  let maxScore = 0;
+  const fused: RetrievalCandidate[] = [];
+  for (const [chunkId, candidate] of base) {
+    const vIndex = vectorRank.get(chunkId);
+    const lIndex = lexicalRank.get(chunkId);
+    const vectorScore = vIndex !== undefined ? vectorCandidates[vIndex].relevance : 0;
+    const lexicalScore = lIndex !== undefined ? lexicalCandidates[lIndex].relevance : 0;
+    const rrf =
+      (vIndex !== undefined ? semanticWeight / (RRF_K + vIndex + 1) : 0) +
+      (lIndex !== undefined ? lexicalWeight / (RRF_K + lIndex + 1) : 0);
+    if (rrf > maxScore) maxScore = rrf;
+    fused.push({ ...candidate, vectorScore, lexicalScore, relevance: rrf });
   }
 
-  for (const candidate of lexicalCandidates) {
-    const existing = merged.get(candidate.chunkId);
-    if (!existing) {
-      merged.set(candidate.chunkId, {
-        ...candidate,
-        vectorScore: 0,
-        lexicalScore: candidate.relevance,
-        relevance: Number((candidate.relevance * lexicalWeight).toFixed(6)),
-      });
-      continue;
+  const norm = maxScore > 0 ? maxScore : 1;
+  for (const candidate of fused) {
+    candidate.relevance = Number((candidate.relevance / norm).toFixed(6));
+  }
+
+  return fused.sort((left, right) => right.relevance - left.relevance);
+}
+
+/**
+ * Drop extraction-garbage chunks (mojibake from binary .pptx/.docx/.msg bytes)
+ * so they stop occupying candidate slots and polluting results. ~18% of the
+ * live corpus matches this profile; until those rows are purged/re-extracted
+ * this keeps them out of retrieval. Falls back to the original list on the rare
+ * all-garbage query so we never return an empty result for a real match.
+ */
+function filterLowQualityChunks(candidates: RetrievalCandidate[]): RetrievalCandidate[] {
+  const clean = candidates.filter((candidate) => !isLikelyGarbageText(candidate.chunkText));
+  return clean.length > 0 ? clean : candidates;
+}
+
+/**
+ * Collapse near-duplicate copies of the same document so one logical document
+ * never consumes multiple result slots. Input must already be sorted by
+ * relevance (desc); the first member seen per family — the best match for the
+ * query — is kept and later members are dropped. Files whose name yields no
+ * family key (too short / no discriminator) are always kept.
+ */
+function collapseDocumentFamilies(results: SearchResult[]): SearchResult[] {
+  const seenFamilies = new Set<string>();
+  const collapsed: SearchResult[] = [];
+  for (const result of results) {
+    const key = documentFamilyKey(result.fileName);
+    if (key) {
+      if (seenFamilies.has(key)) continue;
+      seenFamilies.add(key);
     }
-
-    const vectorScore = existing.vectorScore ?? 0;
-    const lexicalScore = candidate.relevance;
-    merged.set(candidate.chunkId, {
-      ...existing,
-      lexicalScore,
-      relevance: Number((vectorScore * semanticWeight + lexicalScore * lexicalWeight).toFixed(6)),
-    });
+    collapsed.push(result);
   }
-
-  return Array.from(merged.values()).sort((left, right) => right.relevance - left.relevance);
+  return collapsed;
 }
 
 async function maybeApplyRerank(
@@ -321,8 +409,14 @@ function applyInterpretationBoost(
       }
 
       if (recencyBias && candidate.updatedAt) {
-        const ageDays = Math.max(1, (now - candidate.updatedAt.getTime()) / (24 * 60 * 60 * 1000));
-        score += Math.min(0.05, 0.05 / ageDays) * confidenceWeight;
+        const updatedAtMs =
+          candidate.updatedAt instanceof Date
+            ? candidate.updatedAt.getTime()
+            : new Date(candidate.updatedAt as string | number).getTime();
+        if (Number.isFinite(updatedAtMs)) {
+          const ageDays = Math.max(1, (now - updatedAtMs) / (24 * 60 * 60 * 1000));
+          score += Math.min(0.05, 0.05 / ageDays) * confidenceWeight;
+        }
       }
 
       if (typeof candidate.priorityScore === "number") {
@@ -393,37 +487,27 @@ function applySourceTypePolicy(candidates: RetrievalCandidate[], query: string):
     .sort((a, b) => b.relevance - a.relevance);
 }
 
-function applyFileIdentityBoost(candidates: RetrievalCandidate[], query: string): RetrievalCandidate[] {
-  const normalizedQuery = query.toLowerCase();
-  const volumeMatch = normalizedQuery.match(/\bvolume\s*(\d{1,2})\b/i);
-  const volume = volumeMatch?.[1] ? Number.parseInt(volumeMatch[1], 10) : undefined;
-  const paddedVolume = typeof volume === "number" ? String(volume).padStart(2, "0") : undefined;
-  const hasPrdcHint = /\bprdc\b/i.test(normalizedQuery);
-  const hasConformedHint = /\bconformed\b/i.test(normalizedQuery);
+// Weight for the filename/path identity overlap boost. The score from
+// identityMatchScore is already normalized to [0,1], so this caps the bonus.
+const IDENTITY_BOOST_WEIGHT = 0.3;
 
-  if (typeof volume !== "number" && !hasPrdcHint && !hasConformedHint) {
-    return candidates;
-  }
+/**
+ * Boosts candidates whose filename / folder-path tokens overlap the query. This
+ * generalizes the old hardcoded "volume"/"prdc"/"conformed" heuristics: any query
+ * that names a document or its location (e.g. "structural submittal log",
+ * "division 03 spec") now lifts the matching file's chunks.
+ */
+function applyFileIdentityBoost(candidates: RetrievalCandidate[], query: string): RetrievalCandidate[] {
+  const queryTokens = tokenizeQuery(query, 2, 12);
+  if (queryTokens.length === 0) return candidates;
 
   return candidates
     .map((candidate) => {
-      const fileIdentity = candidate.fileName.toLowerCase();
-      const hasVolumeMatch =
-        typeof volume === "number" &&
-        (new RegExp(`\\bvolume[\\s._-]*0?${volume}\\b`, "i").test(fileIdentity) ||
-          (typeof paddedVolume === "string" && new RegExp(`\\bvol(?:ume)?[\\s._-]*${paddedVolume}\\b`, "i").test(fileIdentity)));
-      const hasPrdcMatch = /\bprdc\b/i.test(fileIdentity);
-      const hasPrdcFamilyMatch =
-        hasPrdcMatch ||
-        (fileIdentity.includes("requirements") && fileIdentity.includes("design") && fileIdentity.includes("criteria"));
-      const hasConformedMatch = /\bconformed\b/i.test(fileIdentity);
+      const identity = deriveFileIdentity(candidate.fileName, candidate.filePath);
+      const overlap = identityMatchScore(queryTokens, identity);
+      if (overlap <= 0) return candidate;
 
-      let score = candidate.relevance;
-      if (hasVolumeMatch) score += 0.22;
-      if (hasPrdcHint && hasPrdcFamilyMatch) score += 0.12;
-      if (hasConformedHint && hasConformedMatch) score += 0.08;
-      if (hasPrdcHint && !hasPrdcFamilyMatch) score -= 0.06;
-
+      const score = candidate.relevance + IDENTITY_BOOST_WEIGHT * overlap;
       return {
         ...candidate,
         relevance: Number(Math.max(0, Math.min(1, score)).toFixed(6)),
@@ -432,11 +516,21 @@ function applyFileIdentityBoost(candidates: RetrievalCandidate[], query: string)
     .sort((left, right) => right.relevance - left.relevance);
 }
 
+/**
+ * Generic specification-section boost. When the query targets a CSI-style section
+ * (either by number like "03 30 00"/"3.52" or by spec intent words), lift chunks
+ * whose section label matches that number, and modestly lift spec-structural cues
+ * (submittals/warranty/samples). No document- or section-specific constants.
+ */
 function applySpecificationChunkBoost(candidates: RetrievalCandidate[], query: string): RetrievalCandidate[] {
   const normalizedQuery = query.toLowerCase();
   const specIntent = /\b(spec|specs|specification|specifications|requirement|requirements)\b/i.test(normalizedQuery);
-  const expansionJointIntent = /\bexpansion\b/i.test(normalizedQuery) && /\bjoint\b/i.test(normalizedQuery);
-  if (!specIntent && !expansionJointIntent) {
+  const sectionNumbers = Array.from(
+    normalizedQuery.matchAll(/\b\d{1,2}(?:[.\s]\d{2}){1,3}\b/g),
+    (match) => match[0].replace(/\s+/g, " ").trim()
+  );
+
+  if (!specIntent && sectionNumbers.length === 0) {
     return candidates;
   }
 
@@ -444,17 +538,23 @@ function applySpecificationChunkBoost(candidates: RetrievalCandidate[], query: s
     .map((candidate) => {
       let score = candidate.relevance;
       const text = candidate.chunkText.toLowerCase();
+      const sectionLabel = (candidate.sectionLabel ?? "").toLowerCase();
 
-      if (expansionJointIntent && /\bexpansion\s+joints?\b/i.test(text)) {
-        score += 0.2;
+      for (const sectionNumber of sectionNumbers) {
+        const collapsed = sectionNumber.replace(/[.\s]/g, "");
+        const labelCollapsed = sectionLabel.replace(/[.\s]/g, "");
+        if (sectionLabel.includes(sectionNumber) || labelCollapsed.includes(collapsed)) {
+          score += 0.2;
+          break;
+        }
+        if (text.includes(sectionNumber)) {
+          score += 0.08;
+          break;
+        }
       }
 
       if (specIntent && /\bsubmittals?\b|\bwarranty\b|\bsamples?\b/i.test(text)) {
-        score += 0.1;
-      }
-
-      if (/\b3\.52\b/i.test(text) || /\b3\.52\b/i.test(candidate.sectionLabel ?? "")) {
-        score += 0.2;
+        score += 0.08;
       }
 
       return {
@@ -556,6 +656,7 @@ async function inMemorySearch(
         priorityScore: (chunk as { priorityScore?: number }).priorityScore,
         updatedAt: (chunk as { updatedAt?: Date }).updatedAt,
         extractedFields: (chunk as { extractedFields?: Record<string, unknown> }).extractedFields,
+        confidence: (chunk as { confidence?: number }).confidence,
       } as RetrievalCandidate;
     })
     .sort((a, b) => b.relevance - a.relevance)
@@ -609,10 +710,17 @@ async function pgvectorSearch(
       ? sql`AND fr.doc_category = ${categoryFilter}`
       : sql``;
 
-    const rows = await db.execute<{
+    const efSearch = Math.max(topK * 3, HNSW_EF_SEARCH);
+    const rows = await db.transaction(async (tx) => {
+      // SET LOCAL only applies inside a transaction. efSearch is a derived
+      // integer (no injection risk), so sql.raw is safe here; SET does not
+      // accept bind parameters.
+      await tx.execute(sql.raw(`SET LOCAL hnsw.ef_search = ${efSearch}`));
+      return tx.execute<{
       id: string;
       file_id: string;
       file_name: string;
+      file_path: string | null;
       chunk_index: number;
       chunk_text: string;
       source_type: ChunkSourceType;
@@ -624,18 +732,21 @@ async function pgvectorSearch(
       priority_score: number | null;
       updated_at: Date | null;
       extracted_fields: Record<string, unknown> | null;
+      confidence: number | null;
       similarity: number;
     }>(sql`
       SELECT
         fc.id,
         fc.file_id,
         fc.file_name,
+        fr.file_path,
         fc.chunk_index,
         fc.chunk_text,
         fc.source_type,
         fc.page_number,
         fc.section_label,
         fc.metadata,
+        fc.confidence,
         fr.doc_category,
         fr.tags,
         fr.priority_score,
@@ -650,11 +761,13 @@ async function pgvectorSearch(
       ORDER BY fc.embedding_vector <=> ${vectorStr}::vector
       LIMIT ${topK * 3}
     `);
+    });
 
-    return Array.from(rows as unknown as Array<{ id: string; file_id: string; file_name: string; chunk_index: number; chunk_text: string; source_type: ChunkSourceType; page_number: number | null; section_label: string | null; metadata: Record<string, unknown> | null; doc_category: string | null; tags: string[] | null; priority_score: number | null; updated_at: Date | null; extracted_fields: Record<string, unknown> | null; similarity: number }>).map((r) => ({
+    return Array.from(rows as unknown as Array<{ id: string; file_id: string; file_name: string; file_path: string | null; chunk_index: number; chunk_text: string; source_type: ChunkSourceType; page_number: number | null; section_label: string | null; metadata: Record<string, unknown> | null; confidence: number | null; doc_category: string | null; tags: string[] | null; priority_score: number | null; updated_at: Date | null; extracted_fields: Record<string, unknown> | null; similarity: number }>).map((r) => ({
       chunkId: r.id,
       fileId: r.file_id,
       fileName: r.file_name,
+      filePath: r.file_path ?? undefined,
       chunkIndex: r.chunk_index,
       chunkText: r.chunk_text,
       relevance: Number(r.similarity ?? 0),
@@ -667,6 +780,7 @@ async function pgvectorSearch(
       priorityScore: r.priority_score ?? undefined,
       updatedAt: r.updated_at ?? undefined,
       extractedFields: r.extracted_fields ?? undefined,
+      confidence: r.confidence ?? undefined,
     }));
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -697,8 +811,12 @@ async function keywordSearch(
   if (baseTokens.length === 0) return [];
 
   const tokenClauses = baseTokens.map((token) => {
+    // ILIKE on the raw columns is served by the pg_trgm GIN indexes (migration 0014);
+    // LOWER(col) LIKE would not be index-eligible. file_path is intentionally
+    // omitted: it lives on the joined file_records table with no trigram index,
+    // so including it forces a full seq scan over every chunk.
     const like = `%${token}%`;
-    return sql`(LOWER(fc.chunk_text) LIKE ${like} OR LOWER(fc.file_name) LIKE ${like})`;
+    return sql`(fc.chunk_text ILIKE ${like} OR fc.file_name ILIKE ${like})`;
   });
 
   const categoryClause = categoryFilter
@@ -721,12 +839,14 @@ async function keywordSearch(
     id: string;
     file_id: string;
     file_name: string;
+    file_path: string | null;
     chunk_index: number;
     chunk_text: string;
     source_type: ChunkSourceType;
     page_number: number | null;
     section_label: string | null;
     metadata: Record<string, unknown> | null;
+    confidence: number | null;
     doc_category: string | null;
     tags: string[] | null;
     priority_score: number | null;
@@ -737,12 +857,14 @@ async function keywordSearch(
       fc.id,
       fc.file_id,
       fc.file_name,
+      fr.file_path,
       fc.chunk_index,
       fc.chunk_text,
       fc.source_type,
       fc.page_number,
       fc.section_label,
       fc.metadata,
+      fc.confidence,
       fr.doc_category,
       fr.tags,
       fr.priority_score,
@@ -766,14 +888,18 @@ async function keywordSearch(
     }))
   );
 
-  return Array.from(rows as unknown as Array<{ id: string; file_id: string; file_name: string; chunk_index: number; chunk_text: string; source_type: ChunkSourceType; page_number: number | null; section_label: string | null; metadata: Record<string, unknown> | null; doc_category: string | null; tags: string[] | null; priority_score: number | null; updated_at: Date | null; extracted_fields: Record<string, unknown> | null }>).map((row) => {
+  return Array.from(rows as unknown as Array<{ id: string; file_id: string; file_name: string; file_path: string | null; chunk_index: number; chunk_text: string; source_type: ChunkSourceType; page_number: number | null; section_label: string | null; metadata: Record<string, unknown> | null; confidence: number | null; doc_category: string | null; tags: string[] | null; priority_score: number | null; updated_at: Date | null; extracted_fields: Record<string, unknown> | null }>).map((row) => {
+    // Filename/path tokens count toward lexical relevance, not just chunk text, so a
+    // query that names the document or its folder still scores even on body-light chunks.
+    const identityText = `${row.file_name ?? ""} ${row.file_path ?? ""}`;
     const relevance = effectiveTokens.length > 0
-      ? keywordHitScore(effectiveTokens, row.chunk_text) / effectiveTokens.length
+      ? keywordHitScore(effectiveTokens, `${row.chunk_text} ${identityText}`) / effectiveTokens.length
       : 0;
     return {
       chunkId: row.id,
       fileId: row.file_id,
       fileName: row.file_name,
+      filePath: row.file_path ?? undefined,
       chunkIndex: row.chunk_index,
       chunkText: row.chunk_text,
       relevance,
@@ -781,6 +907,7 @@ async function keywordSearch(
       pageNumber: row.page_number ?? undefined,
       sectionLabel: row.section_label ?? undefined,
       metadata: row.metadata ?? undefined,
+      confidence: row.confidence ?? undefined,
       docCategory: row.doc_category ?? undefined,
       tags: row.tags ?? undefined,
       priorityScore: row.priority_score ?? undefined,
@@ -816,57 +943,95 @@ async function ftsSearch(
       )`
     : sql``;
 
-  try {
-    const rows = await db.execute<{
-      id: string;
-      file_id: string;
-      file_name: string;
-      chunk_index: number;
-      chunk_text: string;
-      source_type: ChunkSourceType;
-      page_number: number | null;
-      section_label: string | null;
-      metadata: Record<string, unknown> | null;
-      doc_category: string | null;
-      tags: string[] | null;
-      priority_score: number | null;
-      updated_at: Date | null;
-      extracted_fields: Record<string, unknown> | null;
-      fts_rank: number;
-    }>(sql`
+  // websearch_to_tsquery ANDs every term, so a long natural-language question
+  // ("In <file>, what does it say about <address>, <city>, <zip> ...") almost
+  // never matches a single chunk and the lexical arm silently returns 0,
+  // collapsing the hybrid blend to vector-only. When the strict match is empty
+  // we fall back to an AND over only the most distinctive salient tokens
+  // (longest first ~ rarest), which restores lexical recall for exact terms
+  // (names, numbers, IDs) that vectors handle poorly. AND (not OR) is used
+  // deliberately: its cost is bounded by the rarest token's posting list, so
+  // ranking runs on a small intersection — an OR of common words like
+  // "service"/"document" matched hundreds of thousands of chunks and took ~40s.
+  const fallbackQuery = tokenizeQuery(query, 3)
+    .sort((left, right) => right.length - left.length)
+    .slice(0, 4)
+    .join(" & ");
+
+  type FtsRow = {
+    id: string;
+    file_id: string;
+    file_name: string;
+    file_path: string | null;
+    chunk_index: number;
+    chunk_text: string;
+    source_type: ChunkSourceType;
+    page_number: number | null;
+    section_label: string | null;
+    metadata: Record<string, unknown> | null;
+    doc_category: string | null;
+    tags: string[] | null;
+    priority_score: number | null;
+    updated_at: Date | null;
+    extracted_fields: Record<string, unknown> | null;
+    confidence: number | null;
+    fts_rank: number;
+  };
+
+  const runFts = (tsquery: SQL) =>
+    db.execute<FtsRow>(sql`
       SELECT
         fc.id,
         fc.file_id,
         fc.file_name,
+        fr.file_path,
         fc.chunk_index,
         fc.chunk_text,
         fc.source_type,
         fc.page_number,
         fc.section_label,
         fc.metadata,
+        fc.confidence,
         fr.doc_category,
         fr.tags,
         fr.priority_score,
         fr.updated_at,
         fr.extracted_fields,
-        ts_rank_cd(
-          to_tsvector('english', COALESCE(fc.chunk_text, '')),
-          websearch_to_tsquery('english', ${normalizedQuery})
+        (
+          ts_rank_cd(to_tsvector('english', COALESCE(fc.chunk_text, '')), ${tsquery})
+          + ts_rank_cd(to_tsvector('english', COALESCE(fc.file_name, '')), ${tsquery})
+          + ts_rank_cd(to_tsvector('english', COALESCE(fr.file_path, '')), ${tsquery})
         ) AS fts_rank
       FROM file_chunks fc
       JOIN file_records fr ON fr.id = fc.file_id
       WHERE fc.project_id = ${projectId}
         ${categoryClause}
         ${tagsClause}
-        AND to_tsvector('english', COALESCE(fc.chunk_text, '')) @@ websearch_to_tsquery('english', ${normalizedQuery})
+        AND (
+          -- Only predicates backed by GIN expression indexes on file_chunks
+          -- (chunk_text, file_name) so the planner uses a BitmapOr index scan
+          -- instead of a full seq scan over every chunk. file_path lives on the
+          -- joined file_records table with no FTS index; including it here forced
+          -- a 1.18M-row seq scan (~117s). file_path still contributes to ranking
+          -- above, and filename/path targeting is handled by exact-id routing.
+          to_tsvector('english', COALESCE(fc.chunk_text, '')) @@ ${tsquery}
+          OR to_tsvector('english', COALESCE(fc.file_name, '')) @@ ${tsquery}
+        )
       ORDER BY fts_rank DESC
       LIMIT ${Math.max(topK * 5, 50)}
     `);
+
+  try {
+    let rows = await runFts(sql`websearch_to_tsquery('english', ${normalizedQuery})`);
+    if ((rows as unknown as unknown[]).length === 0 && fallbackQuery.length > 0) {
+      rows = await runFts(sql`to_tsquery('english', ${fallbackQuery})`);
+    }
 
     return Array.from(rows as unknown as Array<{
       id: string;
       file_id: string;
       file_name: string;
+      file_path: string | null;
       chunk_index: number;
       chunk_text: string;
       source_type: ChunkSourceType;
@@ -878,6 +1043,7 @@ async function ftsSearch(
       priority_score: number | null;
       updated_at: Date | null;
       extracted_fields: Record<string, unknown> | null;
+      confidence: number | null;
       fts_rank: number;
     }>).map((row) => {
       const normalizedRank = Number(Math.max(0, Math.min(1, row.fts_rank ?? 0.0)).toFixed(6));
@@ -885,6 +1051,7 @@ async function ftsSearch(
         chunkId: row.id,
         fileId: row.file_id,
         fileName: row.file_name,
+        filePath: row.file_path ?? undefined,
         chunkIndex: row.chunk_index,
         chunkText: row.chunk_text,
         relevance: normalizedRank,
@@ -892,6 +1059,7 @@ async function ftsSearch(
         pageNumber: row.page_number ?? undefined,
         sectionLabel: row.section_label ?? undefined,
         metadata: row.metadata ?? undefined,
+        confidence: row.confidence ?? undefined,
         docCategory: row.doc_category ?? undefined,
         tags: row.tags ?? undefined,
         priorityScore: row.priority_score ?? undefined,
@@ -908,10 +1076,153 @@ async function ftsSearch(
 }
 
 // ============================================================
+// Match-reason + exact-id helpers (1c/1d)
+// ============================================================
+
+/**
+ * Build a SearchResult from a deterministic exact-identifier lookup. File
+ * targeting is exact; matched chunks are ranked within that file for the query.
+ */
+function toExactIdentifierResult(
+  lookup: IdentifierLookupResult,
+  matchedChunks: SearchResult["matchedChunks"]
+): SearchResult {
+  return {
+    fileId: lookup.fileId,
+    fileName: lookup.fileName,
+    filePath: lookup.filePath,
+    docCategory: lookup.docCategory,
+    extractedFields: lookup.extractedFields as Record<string, string | undefined> | undefined,
+    matchedChunks,
+    topRelevance: matchedChunks[0]?.relevance ?? 1,
+    deepLinkUrl: lookup.deepLinkUrl,
+    matchReasons: lookup.matchReasons,
+    exactIdentifier: {
+      type: lookup.identifier.type,
+      value: lookup.identifier.valueNormalized,
+      raw: lookup.identifier.queryRaw,
+      totalFamilyMembers: lookup.totalFamilyMembers,
+    },
+  };
+}
+
+/**
+ * Rank chunks within a single file for an exact-identifier hit. Strips
+ * identifier tokens so content terms (e.g. "hold points") drive scoring.
+ */
+async function rankChunksWithinFile(
+  fileId: UUID,
+  query: string,
+  topK: number
+): Promise<SearchResult["matchedChunks"]> {
+  const db = getDbIfInitialized();
+  if (!db) return [];
+
+  const rows = await db
+    .select({
+      id: fileChunks.id,
+      chunkIndex: fileChunks.chunkIndex,
+      chunkText: fileChunks.chunkText,
+      sourceType: fileChunks.sourceType,
+      pageNumber: fileChunks.pageNumber,
+      sectionLabel: fileChunks.sectionLabel,
+      metadata: fileChunks.metadata,
+      confidence: fileChunks.confidence,
+    })
+    .from(fileChunks)
+    .where(eq(fileChunks.fileId, fileId))
+    .orderBy(fileChunks.chunkIndex);
+
+  if (rows.length === 0) return [];
+
+  const idTokens = new Set(
+    parseIdentifierQuery(query).flatMap((candidate) => [
+      candidate.raw.toLowerCase(),
+      candidate.valueNormalized.toLowerCase(),
+    ])
+  );
+  const contentQuery = query
+    .split(/\s+/)
+    .filter((word) => !idTokens.has(word.toLowerCase()))
+    .join(" ");
+  const tokens = tokenizeQuery(contentQuery || query);
+
+  return rows
+    .map((row) => ({
+      chunkId: String(row.id),
+      chunkText: row.chunkText,
+      chunkIndex: row.chunkIndex,
+      relevance: keywordHitScore(tokens, row.chunkText),
+      sourceType: row.sourceType as "content" | "summary" | "metadata_stub",
+      pageNumber: row.pageNumber ?? undefined,
+      sectionLabel: row.sectionLabel ?? undefined,
+      metadata: row.metadata ?? undefined,
+      confidence: row.confidence ?? undefined,
+    }))
+    .filter((chunk) => chunk.relevance > 0)
+    .sort(
+      (a, b) =>
+        b.relevance - a.relevance ||
+        (b.confidence ?? 0) - (a.confidence ?? 0) ||
+        a.chunkIndex - b.chunkIndex
+    )
+    .slice(0, topK)
+    .map(({ confidence: _confidence, ...chunk }) => chunk);
+}
+
+/**
+ * Derive structured "why it matched" reasons for a ranked result (1d):
+ * name-token / path-token overlap with the query, plus a content hit when a
+ * real content chunk matched.
+ */
+function computeRankedMatchReasons(
+  query: string,
+  fileName: string,
+  filePath: string,
+  chunks: Array<{ sourceType: "content" | "summary" | "metadata_stub"; chunkText: string }>
+): MatchReason[] {
+  const reasons: MatchReason[] = [];
+  const queryTokens = new Set(tokenizeQuery(query));
+  if (queryTokens.size > 0) {
+    const nameTokens = new Set(
+      fileName.toLowerCase().replace(/\.[a-z0-9]+$/i, "").split(/[^a-z0-9]+/).filter(Boolean)
+    );
+    const nameHits = [...queryTokens].filter((token) => nameTokens.has(token));
+    if (nameHits.length > 0) {
+      reasons.push({ kind: "name_token", tokens: nameHits });
+    }
+
+    const pathTokens = new Set(filePath.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+    const pathHits = [...queryTokens].filter((token) => pathTokens.has(token) && !nameTokens.has(token));
+    if (pathHits.length > 0) {
+      reasons.push({ kind: "path_token", tokens: pathHits });
+    }
+  }
+
+  const contentChunk = chunks.find((chunk) => chunk.sourceType === "content");
+  if (contentChunk) {
+    reasons.push({ kind: "content_hit", snippet: contentChunk.chunkText.slice(0, 160) });
+  }
+
+  return reasons;
+}
+
+// ============================================================
 // Public API
 // ============================================================
 
 export const retrievalService = {
+  /**
+   * Deterministic exact-identifier lookup (1c). Bypasses ranking; resolves the
+   * revision/status near-duplicate family to the latest/approved member.
+   */
+  async lookupExactIdentifier(
+    projectId: UUID,
+    query: string
+  ): Promise<IdentifierLookupResult | null> {
+    return identifierLookupService.lookupExactIdentifier(projectId, query);
+  },
+
   /**
    * Retrieve the top-K most relevant chunks for a query.
    * Used directly by the chat service.
@@ -976,22 +1287,29 @@ export const retrievalService = {
       }
     }
 
+    candidates = filterLowQualityChunks(candidates);
     candidates = applySourceTypePolicy(candidates, query);
     candidates = applyInterpretationBoost(candidates, options?.interpretation);
     candidates = applyFileIdentityBoost(candidates, query);
     candidates = applySpecificationChunkBoost(candidates, query);
     candidates = await maybeApplyRerank(projectId, query, candidates);
 
-    // Deduplicate by fileId, keeping best chunk per file
+    // Deduplicate by fileId, keeping best chunk per file (confidence breaks ties)
     const deduped = new Map<string, (typeof candidates)[number]>();
     for (const c of candidates) {
       const existing = deduped.get(c.fileId);
-      if (!existing || c.relevance > existing.relevance) deduped.set(c.fileId, c);
+      if (
+        !existing ||
+        c.relevance > existing.relevance ||
+        (c.relevance === existing.relevance && (c.confidence ?? 0) > (existing.confidence ?? 0))
+      ) {
+        deduped.set(c.fileId, c);
+      }
     }
 
     return Array.from(deduped.values())
       .filter((c) => c.relevance >= normalized.minRelevance)
-      .sort((a, b) => b.relevance - a.relevance)
+      .sort((a, b) => b.relevance - a.relevance || (b.confidence ?? 0) - (a.confidence ?? 0))
       .slice(0, normalized.topK)
       .map((entry) => ({
         fileId: entry.fileId as UUID,
@@ -1016,6 +1334,34 @@ export const retrievalService = {
   }> {
     const normalized = normalizeOptions(options);
     const db = getDbIfInitialized();
+
+    // Deterministic exact-id route (1c): if the query carries an exact
+    // construction identifier that resolves to an indexed file, bypass ranking
+    // and return the resolved (latest/approved) family member directly.
+    if (db) {
+      try {
+        const exact = await identifierLookupService.lookupExactIdentifier(projectId, query);
+        if (exact) {
+          const matchedChunks = await rankChunksWithinFile(
+            exact.fileId,
+            query,
+            normalized.topK
+          );
+          return {
+            query,
+            results: [toExactIdentifierResult(exact, matchedChunks)],
+            totalMatches: 1,
+            searchedAt: new Date(),
+          };
+        }
+      } catch (error) {
+        logger.warn("retrieval.exact_id.failed", {
+          projectId: String(projectId),
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
     const hybridEnabled = featureService.isRolloutFlagEnabledForProject(
       projectId,
       "RETRIEVAL_HYBRID_ENABLED"
@@ -1067,6 +1413,7 @@ export const retrievalService = {
       }
     }
 
+    candidates = filterLowQualityChunks(candidates);
     candidates = applySourceTypePolicy(candidates, query);
     candidates = applyInterpretationBoost(candidates, options?.interpretation);
     candidates = applyFileIdentityBoost(candidates, query);
@@ -1081,7 +1428,7 @@ export const retrievalService = {
     }
 
     // Fetch file metadata from DB if available
-    const fileMetaMap = new Map<string, { filePath: string; docCategory?: string; summary?: string; tags?: string[]; extractedFields?: unknown }>();
+    const fileMetaMap = new Map<string, { filePath: string; docCategory?: string; summary?: string; tags?: string[]; extractedFields?: unknown; deepLinkUrl?: string }>();
     if (db && byFile.size > 0) {
       try {
         const fileIds = Array.from(byFile.keys());
@@ -1096,6 +1443,7 @@ export const retrievalService = {
             summary: r.summary ?? undefined,
             tags: r.tags ?? undefined,
             extractedFields: r.extractedFields ?? undefined,
+            deepLinkUrl: r.deepLinkUrl ?? undefined,
           });
         }
       } catch { /* non-fatal */ }
@@ -1106,6 +1454,18 @@ export const retrievalService = {
         const sorted = chunks.sort((a, b) => b.relevance - a.relevance);
         const topChunk = sorted[0]!;
         const meta = fileMetaMap.get(fileId);
+        const matchedChunks = options?.includeChunks !== false
+          ? sorted.slice(0, 3).map((c) => ({
+              chunkId: c.chunkId,
+              chunkText: c.chunkText.slice(0, 400),
+              chunkIndex: c.chunkIndex,
+              relevance: Number(Math.max(0, Math.min(1, c.relevance)).toFixed(3)),
+              sourceType: c.sourceType,
+              pageNumber: c.pageNumber,
+              sectionLabel: c.sectionLabel,
+              metadata: c.metadata,
+            }))
+          : [];
         return {
           fileId: fileId as UUID,
           fileName: topChunk.fileName,
@@ -1114,29 +1474,25 @@ export const retrievalService = {
           summary: meta?.summary,
           tags: meta?.tags,
           extractedFields: meta?.extractedFields as Record<string, string | undefined> | undefined,
-          matchedChunks: options?.includeChunks !== false
-            ? sorted.slice(0, 3).map((c) => ({
-                chunkId: c.chunkId,
-                chunkText: c.chunkText.slice(0, 400),
-                chunkIndex: c.chunkIndex,
-                relevance: Number(Math.max(0, Math.min(1, c.relevance)).toFixed(3)),
-                sourceType: c.sourceType,
-                pageNumber: c.pageNumber,
-                sectionLabel: c.sectionLabel,
-                metadata: c.metadata,
-              }))
-            : [],
+          deepLinkUrl: meta?.deepLinkUrl,
+          matchReasons: computeRankedMatchReasons(query, topChunk.fileName, meta?.filePath ?? "", sorted),
+          matchedChunks,
           topRelevance: Number(Math.max(0, Math.min(1, topChunk.relevance)).toFixed(3)),
         };
       })
       .filter((r) => r.topRelevance >= normalized.minRelevance)
-      .sort((a, b) => b.topRelevance - a.topRelevance)
-      .slice(0, normalized.topK);
+      .sort((a, b) => b.topRelevance - a.topRelevance);
+
+    // Collapse near-duplicate copies of the same document (format / disposition
+    // / "copy" variants) so a single logical document never occupies multiple
+    // top-K slots. Results are already sorted by relevance, so the first member
+    // of each family — the best match for this query — is the one we keep.
+    const collapsed = collapseDocumentFamilies(results).slice(0, normalized.topK);
 
     return {
       query,
-      results,
-      totalMatches: results.length,
+      results: collapsed,
+      totalMatches: collapsed.length,
       searchedAt: new Date(),
     };
   },
@@ -1187,7 +1543,7 @@ export const retrievalService = {
         return {
           fileId: f.id,
           fileName: f.fileName,
-          submittarNumber: ef?.submittarNumber,
+          submittalNumber: ef?.submittalNumber ?? ef?.submittarNumber,
           status: ef?.approvalStatus,
         };
       });
@@ -1338,7 +1694,7 @@ export const retrievalService = {
         sourceType: c.sourceType,
         pageNumber: c.pageNumber ?? undefined,
         sectionLabel: c.sectionLabel ?? undefined,
-        metadata: (c.metadata as Record<string, unknown>) ?? undefined,
+        metadata: (c.metadata as Record<string, unknown> | null) ?? undefined,
       })),
       relatedDocuments,
     };

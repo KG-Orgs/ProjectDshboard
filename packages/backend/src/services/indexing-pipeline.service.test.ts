@@ -113,7 +113,7 @@ describe("indexingPipelineInternals", () => {
     expect(adapter.name).toBe("legacy-default");
   });
 
-  it("adds extraction parser provenance to chunk metadata", async () => {
+  it("records extraction parser provenance at the file level", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "idx-pipeline-"));
     const tempFilePath = path.join(dir, "sample.txt");
 
@@ -126,12 +126,9 @@ describe("indexingPipelineInternals", () => {
         mimeType: "text/plain",
       });
 
-      const contentChunk = insights.chunks.find((chunk) => chunk.sourceType === "content");
-      expect(contentChunk?.metadata).toMatchObject({
-        extractionParser: {
-          parserName: "legacy-default",
-          parserMode: "active",
-        },
+      expect(insights.extractionProvenance?.parser).toMatchObject({
+        parserName: "legacy-default",
+        parserMode: "active",
       });
     } finally {
       await rm(dir, { recursive: true, force: true });
@@ -166,14 +163,11 @@ describe("indexingPipelineInternals", () => {
         mimeType: "text/plain",
       });
 
-      const contentChunk = insights.chunks.find((chunk) => chunk.sourceType === "content");
-      expect(contentChunk?.metadata).toMatchObject({
-        extractionParserV2Shadow: {
-          parserName: "docling",
-          parserMode: "shadow",
-          succeeded: true,
-          extractedBlockCount: 5,
-        },
+      expect(insights.extractionProvenance?.shadow).toMatchObject({
+        parserName: "docling",
+        parserMode: "shadow",
+        succeeded: true,
+        extractedBlockCount: 5,
       });
     } finally {
       await rm(dir, { recursive: true, force: true });
@@ -207,16 +201,13 @@ describe("indexingPipelineInternals", () => {
       });
 
       expect(insights.chunkCount).toBeGreaterThan(0);
-      const contentChunk = insights.chunks.find((chunk) => chunk.sourceType === "content");
-      expect(contentChunk?.metadata).toMatchObject({
-        extractionParser: {
-          parserName: "legacy-default",
-          parserMode: "active",
-        },
-        extractionParserV2Shadow: {
-          parserName: "docling",
-          succeeded: false,
-        },
+      expect(insights.extractionProvenance?.parser).toMatchObject({
+        parserName: "legacy-default",
+        parserMode: "active",
+      });
+      expect(insights.extractionProvenance?.shadow).toMatchObject({
+        parserName: "docling",
+        succeeded: false,
       });
     } finally {
       await rm(dir, { recursive: true, force: true });

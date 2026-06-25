@@ -1,0 +1,338 @@
+{
+  "projectId": "731cfd5d-e647-4551-89e7-0a3cc4915115",
+  "projectName": "MLJ-017 Package 6 - General (TEST CLONE)",
+  "defaultTopK": 3,
+  "generatedAt": "2026-06-25T21:45:00.000Z",
+  "description": "Realistic PM-style queries without embedded filenames — requires retrieval to find the right source document. Expanded set: real-01..real-35.",
+  "questions": [
+    {
+      "id": "real-01",
+      "bucket": "answer",
+      "query": "What hold points does QWP-001 require before concrete placement?",
+      "expectedFilePatterns": ["QWP-001", "Formwork Rebar"],
+      "expectedInTopK": 3,
+      "groundingFileId": "0ecdcffd-1856-48b9-8916-bd69c074c7d3",
+      "acceptableAnswerContains": ["hold", "concrete", "inspection", "rebar"],
+      "notes": "QWP-001 APP — hold points in quality work plan section K"
+    },
+    {
+      "id": "real-02",
+      "bucket": "answer",
+      "query": "What specs do I have to follow for salvaging during selective demolition?",
+      "expectedFilePatterns": ["02 41 19 Selective Demolition", "Selective Demolition"],
+      "expectedInTopK": 3,
+      "groundingFileId": "9750eca2-90a7-470a-991d-f90b03966118",
+      "acceptableAnswerContains": ["salvage", "demolition", "owner", "MTA"],
+      "notes": "Section 02 41 19 — salvage requirements for items of value to Owner"
+    },
+    {
+      "id": "real-03",
+      "bucket": "answer",
+      "query": "Based on the volume 5 conformed PRDC, what are the expansion joint specifications?",
+      "expectedFilePatterns": ["Volume 05_PRDC 03", "Volume_05_Project_Requirements", "PRDC 03"],
+      "expectedInTopK": 3,
+      "groundingFileId": "2fd43a04-5389-4b2c-a628-8485bc00cf02",
+      "acceptableAnswerContains": ["expansion joint", "sealant", "joint"],
+      "notes": "PRDC 03 Architecture — expansion joint sealant and installation requirements"
+    },
+    {
+      "id": "real-04",
+      "bucket": "find",
+      "query": "Find the conformed PRDC volume for Package 6",
+      "expectedFilePatterns": ["Volume_05_Project_Requirements_and_Design_Criteria_CONFORMED", "CONFORMED 821"],
+      "expectedInTopK": 3,
+      "groundingFileId": "5558170d-95d9-4a2c-8ff9-45e38bcdc629",
+      "notes": "Conformed PRDC master volume — 2778+ chunks indexed"
+    },
+    {
+      "id": "real-05",
+      "bucket": "answer",
+      "query": "What materials satisfy the expansion joint backer rod specification?",
+      "expectedFilePatterns": ["Expansion Joints Backer Rod", "GEN-007"],
+      "expectedInTopK": 3,
+      "groundingFileId": "91880fb0-4fc5-49ff-a4d2-da5bcd31eb0b",
+      "acceptableAnswerContains": ["backer rod", "Sika", "expansion joint"],
+      "notes": "GEN-007R01 backer rod submittal — Sika product data"
+    },
+    {
+      "id": "real-06",
+      "bucket": "find",
+      "query": "What comments came back on the Burnside MDT submittal package?",
+      "expectedFilePatterns": ["Submittal Package comments", "Burnside MDT"],
+      "expectedInTopK": 3,
+      "groundingFileId": "d1a46cb0-b38f-44a5-a6da-a4a5a6ac66f1",
+      "notes": "AEAN submittal package with designer comments — Burnside/Norwood MDT CE+T"
+    },
+    {
+      "id": "real-07",
+      "bucket": "find",
+      "query": "Show me the platform structural drawings for Burnside",
+      "expectedFilePatterns": ["Structural Steel Foundations", "Burnside Ave", "EDU02D"],
+      "expectedInTopK": 3,
+      "groundingFileId": "ebc86bcb-4b5f-469d-a474-fc1bd4e32318",
+      "notes": "EDU02D structural steel foundations and fire standpipe relocation at Burnside"
+    },
+    {
+      "id": "real-08",
+      "bucket": "find",
+      "query": "Pull up the SWP for platform concrete demolition",
+      "expectedFilePatterns": ["SWP-011", "Platform Concrete Demo"],
+      "expectedInTopK": 3,
+      "groundingFileId": "42a9e1e7-71a0-480f-a7fe-2b293010b1de",
+      "notes": "SWP-011 APP — platform concrete demo safe work plan"
+    },
+    {
+      "id": "real-09",
+      "bucket": "find",
+      "query": "Where is the design build baseline schedule?",
+      "expectedFilePatterns": ["Design Build Baseline Schedule", "01 32 10"],
+      "expectedInTopK": 3,
+      "groundingFileId": "d197ad25-ecc6-4f92-8fff-9171fed1b13e",
+      "notes": "01 32 10 baseline schedule — multiple revs indexed"
+    },
+    {
+      "id": "real-10",
+      "bucket": "find",
+      "query": "Pull up the detailed cost breakdown for the project",
+      "expectedFilePatterns": ["Detailed Cost Breakdown", "GEN-004", "Contract Schedule Requirements"],
+      "expectedInTopK": 3,
+      "groundingFileId": "c4748e9d-7691-457e-b6fc-037e487b66b2",
+      "notes": "No dedicated Cost Report folder in corpus. Primary PM-facing cost doc is GEN-004 Detailed Cost Breakdown (01 32 10 Contract Schedule Requirements submittals). Internal cost loading lives under 07 - SCHEDULE/Baselines/Cost Resource Loading."
+    },
+    {
+      "id": "real-11",
+      "bucket": "find",
+      "query": "Where are the Package 6 conformed specifications",
+      "expectedFilePatterns": ["Conformed Specifications", "DU07", "GEN-063"],
+      "expectedInTopK": 3,
+      "groundingFileId": "fd0f8178-a352-423e-8c9a-403946b5ddd5",
+      "notes": "No AECOM-branded conformed spec volume in corpus. DU07 GEN-063 (FINAL 100) Conformed Specifications in 01 10 20 Design Requirements is the defensible target; AECOM appears on drawings/CRs but not the spec submittal filenames."
+    },
+    {
+      "id": "real-12",
+      "bucket": "answer",
+      "query": "What quality requirements does QWP-002 cover for drilled grouted piles?",
+      "expectedFilePatterns": ["QWP-002", "Drilled Grouted Piles"],
+      "expectedInTopK": 3,
+      "groundingFileId": "26b4c9e7-0c79-403f-8a94-85274fccf5dc",
+      "acceptableAnswerContains": ["pile", "drill", "grout", "quality"],
+      "notes": "QWP-002 APP — drilled and grouted piles quality work plan"
+    },
+    {
+      "id": "real-13",
+      "bucket": "find",
+      "query": "Pull up the SWP for tactile and rubbing board",
+      "expectedFilePatterns": ["SWP-013", "Tactile and Rubbing Board"],
+      "expectedInTopK": 3,
+      "groundingFileId": "06818bbe-bd6b-4778-aa9a-ee77d8f63c19",
+      "notes": "SWP-013 APP — platform edge tactile/rubbing board. Pinned over SWP-030 MPT because activity-based query reliably retrieves SWP-013 in top-3 (MPT setup did not)."
+    },
+    {
+      "id": "real-14",
+      "bucket": "answer",
+      "query": "What is the LOE percent complete for Burnside on the April schedule update?",
+      "expectedFilePatterns": ["April 26 Schedule Update", "April 26 Schedule"],
+      "expectedInTopK": 3,
+      "groundingFileId": "c9d55bee-80cc-4ace-8ed9-e97dc4285214",
+      "acceptableAnswerContains": ["Burnside", "milestone", "LOE"],
+      "notes": "April 26 station schedule update — MS-110 Burnside LOE at 11.16%"
+    },
+    {
+      "id": "real-15",
+      "bucket": "answer",
+      "query": "What track clearance requirements are in Volume 06?",
+      "expectedFilePatterns": ["Volume_06_Track", "Track_Specifications"],
+      "expectedInTopK": 3,
+      "groundingFileId": "6af20760-b527-4ac1-a3b4-786a7427bca0",
+      "acceptableAnswerContains": ["clearance", "track"],
+      "notes": "Volume 06 track specifications — car clearance and superelevation"
+    },
+    {
+      "id": "real-16",
+      "bucket": "find",
+      "query": "Show me Burnside platform rebar shop drawings",
+      "expectedFilePatterns": ["Burnside Ave", "Rebar Shop Drawings", "BUR-001"],
+      "expectedInTopK": 3,
+      "groundingFileId": "73b4c9d3-1eef-402e-a931-6846cbe9c816",
+      "notes": "BUR-001R00 Burnside Ave platform/foundation rebar shop drawings"
+    },
+    {
+      "id": "real-17",
+      "bucket": "answer",
+      "query": "What is DRFI-0078 about regarding the Myrtle platform elevator entrance?",
+      "expectedFilePatterns": ["DRFI-0078", "Myrtle Ave Platform"],
+      "expectedInTopK": 3,
+      "groundingFileId": "f860627f-1cfb-49cc-aedc-83c7953969af",
+      "acceptableAnswerContains": ["Myrtle", "platform", "entrance", "elevator"],
+      "notes": "DRFI-0078 follow-up to DRFI-0046 Myrtle platform EL entrance"
+    },
+    {
+      "id": "real-18",
+      "bucket": "find",
+      "query": "Find the monthly progress report from April 2026",
+      "expectedFilePatterns": ["Monthly Progress Report - April 2026"],
+      "expectedInTopK": 3,
+      "groundingFileId": "7162a656-e018-4e1c-b3fc-8ec9a9d3d014",
+      "notes": "April 2026 monthly progress report — FIO indexed PDF"
+    },
+    {
+      "id": "real-19",
+      "bucket": "find",
+      "query": "Show me the Burnside MDT submittal package comments",
+      "expectedFilePatterns": ["Submittal Package comments", "Burnside MDT"],
+      "expectedInTopK": 3,
+      "groundingFileId": "d1a46cb0-b38f-44a5-a6da-a4a5a6ac66f1",
+      "notes": "Burnside MDT CE+T submittal package designer comments (GEN-007R00 AEAN). Default for submittal-comment queries; YL review rollup was wrong ground truth."
+    },
+    {
+      "id": "real-20",
+      "bucket": "answer",
+      "query": "What division 22 plumbing requirements apply to escutcheons?",
+      "expectedFilePatterns": ["Division_22", "22 05 18 Escutcheons"],
+      "expectedInTopK": 3,
+      "acceptableAnswerContains": ["escutcheon", "plumbing", "22 05"],
+      "groundingFileId": "1cff5bb5-5e10-4965-8781-9abcefd2624f",
+      "notes": "Division 22 conformed specs — section 22 05 18 escutcheons for plumbing piping"
+    },
+    {
+      "id": "real-21",
+      "bucket": "answer",
+      "query": "What hold points does QWP-003 require before selective demolition work?",
+      "expectedFilePatterns": ["QWP-003", "Selective Demolition"],
+      "expectedInTopK": 3,
+      "groundingFileId": "b9ab96a5-1fee-4cf4-9a17-903735f93cff",
+      "acceptableAnswerContains": ["hold", "demolition", "inspection"],
+      "notes": "QWP-003 FIO — selective demolition quality work plan hold points"
+    },
+    {
+      "id": "real-22",
+      "bucket": "find",
+      "query": "Pull up the quality work plan for excavation",
+      "expectedFilePatterns": ["QWP-005", "Excavation"],
+      "expectedInTopK": 3,
+      "groundingFileId": "038ea007-92cf-41ae-bb0c-f66dddc4e3a9",
+      "notes": "QWP-005 ORIG — excavation quality work plan"
+    },
+    {
+      "id": "real-23",
+      "bucket": "answer",
+      "query": "What quality requirements does QWP-006 cover for controlled and uncontrolled fills?",
+      "expectedFilePatterns": ["QWP-006", "Controlled and Uncontrolled Fills"],
+      "expectedInTopK": 3,
+      "groundingFileId": "b5aa2180-a9bd-4fec-ba2e-d8108a08ce81",
+      "acceptableAnswerContains": ["fill", "controlled", "compaction", "quality"],
+      "notes": "QWP-006 APP — controlled and uncontrolled fills quality work plan"
+    },
+    {
+      "id": "real-24",
+      "bucket": "find",
+      "query": "Where is the safe work plan for platform formwork and concrete?",
+      "expectedFilePatterns": ["SWP-015", "Platform Formwork", "Rebar and Concrete"],
+      "expectedInTopK": 3,
+      "groundingFileId": "234cea53-61d8-4369-9d16-65b828d7e3ae",
+      "notes": "SWP-015 APP — platform formwork, rebar and concrete safe work plan"
+    },
+    {
+      "id": "real-25",
+      "bucket": "find",
+      "query": "Show me the SWP for steel installation repair and modification",
+      "expectedFilePatterns": ["SWP-012", "Steel Installation Repair"],
+      "expectedInTopK": 3,
+      "groundingFileId": "9bcc609d-b888-4bf1-a57c-c24446a7212c",
+      "notes": "SWP-012 APP — steel installation repair and modification"
+    },
+    {
+      "id": "real-26",
+      "bucket": "answer",
+      "query": "What does DRFI-0099 say about galvanized versus galvalume gauge?",
+      "expectedFilePatterns": ["DRFI-0099", "Galvanized", "Galvalume"],
+      "expectedInTopK": 3,
+      "groundingFileId": "c9ca8693-0d2a-47f5-987c-a2629dd1b67e",
+      "acceptableAnswerContains": ["galvanized", "galvalume", "gauge", "20-GA"],
+      "notes": "DRFI-0099 CLO — 20-GA galvanized vs 22-GA galvalume metal deck dispute"
+    },
+    {
+      "id": "real-27",
+      "bucket": "find",
+      "query": "Find DRFI-0047 about the Burnside catch basin interference",
+      "expectedFilePatterns": ["DRFI-0047", "Burnside Catch Basin"],
+      "expectedInTopK": 3,
+      "groundingFileId": "e75ab624-2655-4023-a1a3-f46f83bbffec",
+      "notes": "DRFI-0047 — Burnside catch basin interference RFI"
+    },
+    {
+      "id": "real-28",
+      "bucket": "find",
+      "query": "Where is the Burnside station night differential breakdown?",
+      "expectedFilePatterns": ["CO-05", "Night Differential", "Burnside Station"],
+      "expectedInTopK": 3,
+      "groundingFileId": "82c9b7b3-28fe-498c-a36f-ba547b171851",
+      "notes": "CO-05 — Burnside station night differential breakdown January 2026"
+    },
+    {
+      "id": "real-29",
+      "bucket": "find",
+      "query": "Pull up the project health and safety plan",
+      "expectedFilePatterns": ["HASP"],
+      "expectedInTopK": 3,
+      "groundingFileId": "d1ad4317-78ed-4d16-9eff-37bcf7f33b1a",
+      "notes": "GEN-008R02 APP-EAN — project HASP (health and safety plan)"
+    },
+    {
+      "id": "real-30",
+      "bucket": "answer",
+      "query": "What quality work plan covers membrane waterproofing?",
+      "expectedFilePatterns": ["QWP-007", "Membrane Waterproofing"],
+      "expectedInTopK": 3,
+      "groundingFileId": "8023a818-2450-49f5-9352-f1e743a21f1a",
+      "acceptableAnswerContains": ["waterproofing", "membrane", "quality"],
+      "notes": "QWP-007 APP — membrane waterproofing quality work plan"
+    },
+    {
+      "id": "real-31",
+      "bucket": "find",
+      "query": "Where is the six week look ahead for early March 2025?",
+      "expectedFilePatterns": ["6 Week Look Ahead", "2025-03-10", "GEN-007"],
+      "expectedInTopK": 3,
+      "groundingFileId": "8c280a42-7b0b-4807-892c-ab3caf167ed4",
+      "notes": "GEN-007 FIO — 6 week look ahead 2025-03-10 to 2025-04-20"
+    },
+    {
+      "id": "real-32",
+      "bucket": "find",
+      "query": "Show me the utility coordination report from September 2025",
+      "expectedFilePatterns": ["Utility Coordination", "September 2025", "GEN-010"],
+      "expectedInTopK": 3,
+      "groundingFileId": "eb51ecdd-1911-429c-89e8-7358974a2f9f",
+      "notes": "GEN-010 ORIG — utility coordination report September 2025"
+    },
+    {
+      "id": "real-33",
+      "bucket": "answer",
+      "query": "What does DRFI-0129 address regarding the MDT stair S3 top connection?",
+      "expectedFilePatterns": ["DRFI-0129", "MDT Stair", "S3 Top Connection"],
+      "expectedInTopK": 3,
+      "groundingFileId": "0c09c343-6c6a-4166-8d87-be0b75af9d10",
+      "acceptableAnswerContains": ["stair", "connection", "MDT", "S3"],
+      "notes": "DRFI-0129 CLO — MDT stair S3 top connection (S&D RFI #03)"
+    },
+    {
+      "id": "real-34",
+      "bucket": "find",
+      "query": "Pull up the submittal register from March 2025",
+      "expectedFilePatterns": ["Submittal Register", "March 2025", "GEN-003"],
+      "expectedInTopK": 3,
+      "groundingFileId": "df05dd5c-3be3-42f9-9114-4125708f9ef4",
+      "notes": "GEN-003 FIO — submittal register March 2025"
+    },
+    {
+      "id": "real-35",
+      "bucket": "find",
+      "query": "Show me the Norwood structural steel and foundations drawing package",
+      "expectedFilePatterns": ["GEN-025", "EDU02A", "Structural Steel", "NOR"],
+      "expectedInTopK": 3,
+      "groundingFileId": "710bb1a1-5224-4284-aa1b-aed7be678e36",
+      "notes": "GEN-025 EDU02A FINAL 100 — structural steel and foundations at Norwood"
+    }
+  ]
+}

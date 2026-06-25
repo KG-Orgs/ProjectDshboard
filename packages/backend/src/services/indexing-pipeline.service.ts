@@ -25,6 +25,7 @@ import {
   type ClassificationResult,
 } from "./construction-classifier.service";
 import { docParserService, type DocParserShadowMetadata } from "./doc-parser.service";
+import { deriveFileIdentity, isLikelyGarbageText } from "./text-ranking.utils";
 
 // ============================================================
 // Types
@@ -52,6 +53,12 @@ export interface IndexedFileInsights {
     relation: string;
     weight: number;
   }>;
+  // File-level extraction provenance (parser + optional V2 shadow), recorded once
+  // per file rather than duplicated into every chunk's metadata.
+  extractionProvenance?: {
+    parser?: ParserProvenance;
+    shadow?: DocParserShadowMetadata;
+  };
 }
 
 interface ExtractTextInput {
@@ -91,6 +98,7 @@ interface BuildInsightsInput {
   rawChunks: RawChunk[];
   fileName: string;
   filePath?: string;
+  provenance?: ParserProvenance;
   shadowMetadata?: DocParserShadowMetadata;
 }
 
@@ -406,12 +414,29 @@ function inferSectionLabel(chunkText: string, sectionHeaders: string[]): string 
     .sort((a, b) => b.length - a.length)[0];
   if (direct) return direct;
 
-  // 2. Regex: spec-style numbered sections (e.g. "3.52. EXPANSION JOINT ASSEMBLIES")
-  //    Prefer the FIRST match in candidateText (outermost heading)
-  const specMatch = candidateText.match(
-    /\b\d+(?:\.\d+){1,4}\.?\s+[A-Z][A-Za-z0-9&/(),'\- ]{2,80}/
-  );
-  if (specMatch) return specMatch[0].trim();
+  // 2. Spec-style numbered sections (e.g. "3.52. EXPANSION JOINT ASSEMBLIES").
+  //    A single chunk often carries page-header noise plus several "X.YY. TITLE"
+  //    markers, and many are placeholders ("(NOT USED)"). Pick the LAST usable /
+  //    most-specific marker - the section the chunk body actually belongs to -
+  //    rather than the first (which is frequently a skipped placeholder header).
+  const markerStart = /\b\d+(?:\.\d+){1,4}\.?\s+[A-Z]/g;
+  const starts: number[] = [];
+  let markerMatch: RegExpExecArray | null;
+  while ((markerMatch = markerStart.exec(candidateText)) !== null) {
+    starts.push(markerMatch.index);
+  }
+  if (starts.length > 0) {
+    const sections = starts.map((start, index) => {
+      const end = index + 1 < starts.length ? starts[index + 1]! : candidateText.length;
+      let segment = candidateText.slice(start, end);
+      const newlineAt = segment.indexOf("\n");
+      if (newlineAt >= 0) segment = segment.slice(0, newlineAt);
+      return segment.trim().slice(0, 90).trim();
+    });
+    const usable = sections.filter((section) => !/\bNOT\s+USED\b/i.test(section));
+    const pool = usable.length > 0 ? usable : sections;
+    return pool[pool.length - 1];
+  }
 
   // 3. Fallback: first line if it looks like a heading
   const firstLine = candidateLines[0]!;
@@ -475,12 +500,40 @@ function buildSummaryPromptSample(text: string): string {
   ].join("\n\n");
 }
 
-function buildSummaryChunk(summary: string, keyTopics: string[], category?: string): string {
+/**
+ * Approximates token count without a tokenizer dependency. Real BPE tokens land
+ * between word-count and chars/4 for typical English/technical text, so we take the
+ * larger of the two as a safe (non-undercounting) estimate.
+ */
+function estimateTokenCount(text: string): number {
+  const trimmed = text.trim();
+  if (!trimmed) return 0;
+  const words = trimmed.split(/\s+/).filter(Boolean).length;
+  const charBased = Math.ceil(trimmed.length / 4);
+  return Math.max(words, charBased);
+}
+
+function buildSummaryChunk(
+  summary: string,
+  keyTopics: string[],
+  category: string | undefined,
+  fileName: string,
+  filePath?: string
+): string {
   const topicLine = keyTopics.length > 0 ? keyTopics.slice(0, 12).join(", ") : "none";
   const categoryLine = category && category.trim() ? category : "unknown";
 
+  // The file's name and folder path are first-class retrieval signals; embedding an
+  // identity line means a semantic search for "the structural submittal log" can match
+  // the summary even when the body text never spells out the document's name/location.
+  const identity = deriveFileIdentity(fileName, filePath);
+  const identityLine = identity.identityText
+    ? `File / Location: ${identity.identityText}`
+    : `File: ${fileName}`;
+
   return [
     "DOCUMENT SUMMARY",
+    identityLine,
     `Category: ${categoryLine}`,
     `Key topics: ${topicLine}`,
     "",
@@ -721,6 +774,7 @@ function resolveExtractionAdapter(input: ExtractTextInput, context: ExtractionCo
 async function extractAndChunk(input: ExtractTextInput): Promise<{
   text: string;
   rawChunks: RawChunk[];
+  provenance: ParserProvenance;
   shadowMetadata?: DocParserShadowMetadata;
 }> {
   const context: ExtractionContext = {
@@ -742,24 +796,13 @@ async function extractAndChunk(input: ExtractTextInput): Promise<{
       })
     : undefined;
 
+  // Extraction provenance is identical for every chunk of a file, so it is recorded
+  // once at the file level (see IndexedFileInsights.extractionProvenance) instead of
+  // being duplicated into each chunk's metadata jsonb.
   return {
     text: parsed.text,
-    rawChunks: parsed.blocks.map((block) => ({
-      ...block,
-      metadata: {
-        ...(block.metadata ?? {}),
-        extractionParser: {
-          ...parsed.provenance,
-        },
-        ...(shadowMetadata
-          ? {
-              extractionParserV2Shadow: {
-                ...shadowMetadata,
-              },
-            }
-          : {}),
-      },
-    })),
+    rawChunks: parsed.blocks,
+    provenance: parsed.provenance,
     shadowMetadata,
   };
 }
@@ -799,7 +842,7 @@ export const indexingPipelineService = {
   },
 
   async indexTempFile(input: ExtractTextInput): Promise<IndexedFileInsights> {
-    const { text, rawChunks, shadowMetadata } = await extractAndChunk(input);
+    const { text, rawChunks, provenance, shadowMetadata } = await extractAndChunk(input);
     const fileName = input.fileName ?? path.basename(input.tempFilePath);
     const filePath = input.filePath ?? "";
 
@@ -808,24 +851,25 @@ export const indexingPipelineService = {
       rawChunks,
       fileName,
       filePath,
+      provenance,
       shadowMetadata,
     });
   },
 };
 
 async function buildInsights(input: BuildInsightsInput): Promise<IndexedFileInsights> {
-  const { text, rawChunks, fileName, filePath, shadowMetadata } = input;
+  const { text, rawChunks, fileName, filePath, provenance, shadowMetadata } = input;
   const boundedChunks = capChunks(rawChunks, fileName);
   const sectionHeaders = extractSectionHeaders(text);
   const labeledChunks = assignSectionLabels(boundedChunks, sectionHeaders);
 
-  const normalizedChunks = labeledChunks
+  const mappedChunks = labeledChunks
     .map((chunk, chunkIndex) => {
       const normalizedChunk = normalizeText(chunk.chunkText);
       return {
         chunkIndex,
         chunkText: normalizedChunk,
-        tokenCount: normalizedChunk.split(/\s+/).filter(Boolean).length,
+        tokenCount: estimateTokenCount(normalizedChunk),
         sourceType: chunk.sourceType,
         pageNumber: chunk.pageNumber,
         sectionLabel: chunk.sectionLabel,
@@ -834,6 +878,20 @@ async function buildInsights(input: BuildInsightsInput): Promise<IndexedFileInsi
       };
     })
     .filter((c) => c.chunkText.length > 0);
+
+  // Gate extraction-garbage chunks (mojibake from binary .pptx/.docx/.msg bytes)
+  // so we never embed them. chunkIndex is reassigned by array position below, so
+  // dropping entries here does not create gaps. A high drop count is a strong
+  // signal the file needs a different extractor / OCR — surfaced via the warning.
+  const normalizedChunks = mappedChunks.filter((c) => !isLikelyGarbageText(c.chunkText));
+  const droppedGarbage = mappedChunks.length - normalizedChunks.length;
+  if (droppedGarbage > 0) {
+    logger.warn("indexing.chunks.garbage_skipped", {
+      fileName,
+      droppedGarbage,
+      kept: normalizedChunks.length,
+    });
+  }
 
   const keyTopics = Array.from(
     new Set([
@@ -871,25 +929,18 @@ async function buildInsights(input: BuildInsightsInput): Promise<IndexedFileInsi
 
   // Add a synthetic summary chunk so chat can quickly retrieve document-level intent.
   const summaryChunkText = normalizeText(
-    buildSummaryChunk(summary, keyTopics, classification.category)
+    buildSummaryChunk(summary, keyTopics, classification.category, fileName, filePath)
   );
 
   const chunks = [
     {
       chunkIndex: 0,
       chunkText: summaryChunkText,
-      tokenCount: summaryChunkText.split(/\s+/).filter(Boolean).length,
+      tokenCount: estimateTokenCount(summaryChunkText),
       sourceType: "summary" as const,
       metadata: {
         keyTopics: keyTopics.slice(0, 12),
         category: classification.category,
-        ...(shadowMetadata
-          ? {
-              extractionParserV2Shadow: {
-                ...shadowMetadata,
-              },
-            }
-          : {}),
       },
       confidence: 1,
     },
@@ -897,7 +948,7 @@ async function buildInsights(input: BuildInsightsInput): Promise<IndexedFileInsi
       ? [{
           chunkIndex: 1,
           chunkText: sectionIndexChunkText,
-          tokenCount: sectionIndexChunkText.split(/\s+/).filter(Boolean).length,
+          tokenCount: estimateTokenCount(sectionIndexChunkText),
           sourceType: "summary" as const,
           metadata: { type: "section_index" },
           confidence: 1,
@@ -927,6 +978,13 @@ async function buildInsights(input: BuildInsightsInput): Promise<IndexedFileInsi
     classification,
     chunks,
     links,
+    extractionProvenance:
+      provenance || shadowMetadata
+        ? {
+            ...(provenance ? { parser: provenance } : {}),
+            ...(shadowMetadata ? { shadow: shadowMetadata } : {}),
+          }
+        : undefined,
   };
 }
 

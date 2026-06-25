@@ -23,8 +23,13 @@ export interface AppEnv {
   classifierEndpoint: string;
   openAiEmbeddingModel: string;
   openAiEmbeddingEndpoint: string;
+  openAiEmbeddingDimensions: number;
+  anthropicApiKey?: string;
+  anthropicChatModel: string;
+  anthropicChatEndpoint: string;
   documentStorageProvider: "filesystem";
   documentStorageLocalRoot: string;
+  localCorpusParent?: string;
   documentStorageEncryptionKey?: string;
   documentStorageEncryptionKeyVersion: number;
   documentRetentionDaysDefault: number;
@@ -100,6 +105,10 @@ export function getEnv(): AppEnv {
       ? retrievalBlendProfileRaw
       : "balanced";
 
+  const parsedEmbeddingDimensions = Number.parseInt(process.env.OPENAI_EMBEDDING_DIMENSIONS ?? "1024", 10);
+  const embeddingDimensions =
+    Number.isNaN(parsedEmbeddingDimensions) || parsedEmbeddingDimensions < 1 ? 1024 : parsedEmbeddingDimensions;
+
   const geminiApiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
   const geminiChatModel = process.env.GEMINI_CHAT_MODEL ?? "gemini-2.5-flash";
   const geminiChatEndpoint =
@@ -149,9 +158,15 @@ export function getEnv(): AppEnv {
     openAiEmbeddingModel: process.env.OPENAI_EMBEDDING_MODEL ?? "text-embedding-3-small",
     openAiEmbeddingEndpoint:
       process.env.OPENAI_EMBEDDING_ENDPOINT ?? "https://api.openai.com/v1/embeddings",
+    openAiEmbeddingDimensions: embeddingDimensions,
+    anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+    anthropicChatModel: process.env.ANTHROPIC_CHAT_MODEL ?? "claude-sonnet-4-5",
+    anthropicChatEndpoint:
+      process.env.ANTHROPIC_CHAT_ENDPOINT ?? "https://api.anthropic.com/v1/messages",
     documentStorageProvider: "filesystem",
     documentStorageLocalRoot:
       process.env.DOCUMENT_STORAGE_LOCAL_ROOT ?? ".tmp/document-storage",
+    localCorpusParent: process.env.LOCAL_CORPUS_PARENT,
     documentStorageEncryptionKey: process.env.DOCUMENT_STORAGE_ENCRYPTION_KEY,
     documentStorageEncryptionKeyVersion:
       Number.isNaN(encryptionKeyVersion) || encryptionKeyVersion < 1 ? 1 : encryptionKeyVersion,

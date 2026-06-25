@@ -45,4 +45,15 @@ describe("interpretationService", () => {
     expect(interpreted.intent).toBe("general_qa");
     expect(interpreted.alternatives?.[0]?.intent).toBe("general_qa");
   });
+
+  it("enriches interpretation with construction identifiers from the query", async () => {
+    delete process.env.CHAT_INTERPRETER_ENABLE_LLM;
+
+    const interpreted = await interpretationService.interpret({
+      query: "What hold points does QWP-001 require before concrete placement?",
+    });
+
+    expect(interpreted.retrievalHints?.exactIdentifierFirst).toBe(true);
+    expect(interpreted.entities?.constructionIdentifiers).toContain("QWP1");
+  });
 });

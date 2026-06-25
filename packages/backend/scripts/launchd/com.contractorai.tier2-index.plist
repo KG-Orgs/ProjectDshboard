@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.contractorai.tier2-index</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>cd /Users/kyle.weixu/src/ai-assistant/packages/backend &amp;&amp; exec pnpm tier2:index -- --preset corpus --project-id 731cfd5d-e647-4551-89e7-0a3cc4915115 --concurrency 2 --watch-seconds 120</string>
+  </array>
+  <key>StandardOutPath</key>
+  <string>/tmp/tier2-overnight-index.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/tier2-overnight-index.log</string>
+  <key>WorkingDirectory</key>
+  <string>/Users/kyle.weixu/src/ai-assistant/packages/backend</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/kyle.weixu/.nvm/versions/node/v22.14.0/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>HOME</key>
+    <string>/Users/kyle.weixu</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+</dict>
+</plist>

@@ -24,35 +24,7 @@ const projectsByOrg = new Map<string, CreateProjectResponse["project"][]>();
 const filesByProject = new Map<string, FileRecord[]>();
 const syncTimesByProject = new Map<string, Date>();
 const IN_CLAUSE_BATCH_SIZE = 250;
-let fileChunksVectorColumnIsNativeVector: boolean | undefined;
-
-async function shouldWriteEmbeddingVector(): Promise<boolean> {
-  if (typeof fileChunksVectorColumnIsNativeVector === "boolean") {
-    return fileChunksVectorColumnIsNativeVector;
-  }
-
-  const db = getDbIfInitialized();
-  if (!db) {
-    fileChunksVectorColumnIsNativeVector = false;
-    return false;
-  }
-
-  try {
-    const rows = await db.execute<{ udt_name: string }>(sql`
-      SELECT udt_name
-      FROM information_schema.columns
-      WHERE table_name = 'file_chunks' AND column_name = 'embedding_vector'
-      LIMIT 1
-    `);
-
-    const row = Array.from(rows as unknown as Array<{ udt_name?: string }>)[0];
-    fileChunksVectorColumnIsNativeVector = row?.udt_name === "vector";
-  } catch {
-    fileChunksVectorColumnIsNativeVector = false;
-  }
-
-  return fileChunksVectorColumnIsNativeVector;
-}
+const CHUNK_INSERT_BATCH_SIZE = 200;
 
 function toBatches<T>(input: T[], batchSize: number): T[][] {
   const batches: T[][] = [];
@@ -661,6 +633,7 @@ export const projectService = {
       docCategory?: string;
       tags?: string[];
       extractedFields?: Record<string, unknown>;
+      extractionProvenance?: Record<string, unknown>;
       specSection?: string;
       sheetNumber?: string;
       revision?: string;
@@ -687,7 +660,12 @@ export const projectService = {
           lastIndexed: update.lastIndexed,
           docCategory: update.docCategory,
           tags: update.tags,
-          extractedFields: update.extractedFields,
+          ...(update.extractedFields !== undefined
+            ? { extractedFields: sql`${update.extractedFields}::jsonb` }
+            : {}),
+          ...(update.extractionProvenance !== undefined
+            ? { extractionProvenance: sql`${update.extractionProvenance}::jsonb` }
+            : {}),
           specSection: update.specSection,
           sheetNumber: update.sheetNumber,
           revision: update.revision,
@@ -766,98 +744,103 @@ export const projectService = {
   ): Promise<void> {
     const db = getDbIfInitialized();
     if (db) {
-      const existing = await db
-        .select()
-        .from(fileChunks)
-        .where(
-          and(
-            eq(fileChunks.projectId, projectId),
-            eq(fileChunks.fileId, fileId)
-          )
-        );
-
-      if (existing.length > 0) {
-        await db
-          .delete(chunkLinks)
-          .where(
-            and(
-              eq(chunkLinks.projectId, projectId),
-              inArray(
-                chunkLinks.sourceChunkId,
-                existing.map((entry) => entry.id)
-              )
-            )
-          );
-
-        await db
-          .delete(fileChunks)
+      await db.transaction(async (tx) => {
+        const existing = await tx
+          .select()
+          .from(fileChunks)
           .where(
             and(
               eq(fileChunks.projectId, projectId),
               eq(fileChunks.fileId, fileId)
             )
           );
-      }
 
-      const inserted: Array<{
-        id: UUID;
-        chunkIndex: number;
-      }> = [];
-      const writeVectorColumn = await shouldWriteEmbeddingVector();
+        if (existing.length > 0) {
+          await tx
+            .delete(chunkLinks)
+            .where(
+              and(
+                eq(chunkLinks.projectId, projectId),
+                inArray(
+                  chunkLinks.sourceChunkId,
+                  existing.map((entry) => entry.id)
+                )
+              )
+            );
 
-      for (const chunk of chunks) {
-        const [created] = await db
-          .insert(fileChunks)
-          .values({
-            id: toUuid(randomUUID()),
-            projectId,
-            fileId,
-            onedriveItemId,
-            fileName,
-            chunkIndex: chunk.chunkIndex,
-            chunkText: chunk.chunkText,
-            sourceType: chunk.sourceType ?? "content",
-            pageNumber: chunk.pageNumber,
-            sectionLabel: chunk.sectionLabel,
-            metadata: chunk.metadata ?? {},
-            tokenCount: chunk.tokenCount,
-            embeddingModel: chunk.embeddingModel,
-            embedding: chunk.embedding,
-            embeddingVector: writeVectorColumn ? chunk.embedding : undefined,
-            createdAt: new Date(),
-          })
-          .returning({
-            id: fileChunks.id,
-            chunkIndex: fileChunks.chunkIndex,
-          });
-
-        inserted.push({
-          id: toUuid(created.id),
-          chunkIndex: created.chunkIndex,
-        });
-      }
-
-      const byIndex = new Map(inserted.map((entry) => [entry.chunkIndex, entry.id]));
-
-      for (const link of links) {
-        const sourceChunkId = byIndex.get(link.sourceChunkIndex);
-        const targetChunkId = byIndex.get(link.targetChunkIndex);
-
-        if (!sourceChunkId || !targetChunkId) {
-          continue;
+          await tx
+            .delete(fileChunks)
+            .where(
+              and(
+                eq(fileChunks.projectId, projectId),
+                eq(fileChunks.fileId, fileId)
+              )
+            );
         }
 
-        await db.insert(chunkLinks).values({
+        const inserted: Array<{
+          id: UUID;
+          chunkIndex: number;
+        }> = [];
+        const now = new Date();
+
+        // Native pgvector `embedding_vector` is the single source of truth for vectors.
+        const chunkRows = chunks.map((chunk) => ({
           id: toUuid(randomUUID()),
           projectId,
           fileId,
-          sourceChunkId,
-          targetChunkId,
-          relation: link.relation,
-          weight: link.weight,
-          createdAt: new Date(),
-        });
-      }
+          onedriveItemId,
+          fileName,
+          chunkIndex: chunk.chunkIndex,
+          chunkText: chunk.chunkText,
+          sourceType: chunk.sourceType ?? "content",
+          pageNumber: chunk.pageNumber,
+          sectionLabel: chunk.sectionLabel,
+          metadata: chunk.metadata ?? {},
+          confidence: chunk.confidence,
+          tokenCount: chunk.tokenCount,
+          embeddingModel: chunk.embeddingModel,
+          embeddingVector: chunk.embedding,
+          createdAt: now,
+        }));
+
+        for (const rowBatch of toBatches(chunkRows, CHUNK_INSERT_BATCH_SIZE)) {
+          const created = await tx
+            .insert(fileChunks)
+            .values(rowBatch)
+            .returning({
+              id: fileChunks.id,
+              chunkIndex: fileChunks.chunkIndex,
+            });
+          for (const entry of created) {
+            inserted.push({ id: toUuid(entry.id), chunkIndex: entry.chunkIndex });
+          }
+        }
+
+        const byIndex = new Map(inserted.map((entry) => [entry.chunkIndex, entry.id]));
+
+        const linkRows = links
+          .map((link) => {
+            const sourceChunkId = byIndex.get(link.sourceChunkIndex);
+            const targetChunkId = byIndex.get(link.targetChunkIndex);
+            if (!sourceChunkId || !targetChunkId) return undefined;
+            return {
+              id: toUuid(randomUUID()),
+              projectId,
+              fileId,
+              sourceChunkId,
+              targetChunkId,
+              relation: link.relation,
+              weight: link.weight,
+              createdAt: now,
+            };
+          })
+          .filter((row): row is NonNullable<typeof row> => row !== undefined);
+
+        for (const linkBatch of toBatches(linkRows, CHUNK_INSERT_BATCH_SIZE)) {
+          await tx.insert(chunkLinks).values(linkBatch);
+        }
+      });
 
       return;
     }
@@ -957,7 +940,7 @@ export const projectService = {
         metadata: (row.metadata as Record<string, unknown> | null) ?? undefined,
         tokenCount: row.tokenCount,
         embeddingModel: row.embeddingModel,
-        embedding: Array.isArray(row.embedding) ? (row.embedding as number[]) : [],
+        embedding: Array.isArray(row.embeddingVector) ? (row.embeddingVector as number[]) : [],
       }));
     }
 

@@ -9,7 +9,8 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import dotenv from "dotenv";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { initializeDb } from "./db";
+import { eq, and } from "drizzle-orm";
+import { initializeDb, getDbIfInitialized, fileRecords } from "./db";
 import type {
   AuthLoginRequest,
   ChatIntentLabel,
@@ -25,6 +26,12 @@ import type {
 import { getEnv, hasMicrosoftOAuthConfig } from "./config/env";
 import { AppError, asyncHandler, isAppError } from "./lib/errors";
 import { logger } from "./lib/logger";
+import {
+  guessMimeType,
+  isLocalCorpusItemId,
+  readLocalCorpusFile,
+  resolveLocalCorpusAbsolutePath,
+} from "./services/local-corpus.utils";
 import {
   authService,
   chatService,
@@ -548,9 +555,62 @@ async function createApp(): Promise<Express> {
       return;
     }
 
+    const safeName = file.fileName.replace(/\"/g, "");
+
+    if (isLocalCorpusItemId(file.onedriveItemId)) {
+      const env = getEnv();
+      let deepLinkUrl: string | null | undefined;
+      const db = getDbIfInitialized();
+      if (db) {
+        const [row] = await db
+          .select({ deepLinkUrl: fileRecords.deepLinkUrl })
+          .from(fileRecords)
+          .where(and(eq(fileRecords.projectId, projectId), eq(fileRecords.id, fileId)))
+          .limit(1);
+        deepLinkUrl = row?.deepLinkUrl;
+      }
+
+      const absolutePath = resolveLocalCorpusAbsolutePath({
+        onedriveItemId: file.onedriveItemId,
+        filePath: file.filePath,
+        deepLinkUrl,
+        corpusParent: env.localCorpusParent,
+      });
+
+      if (!absolutePath) {
+        res.status(400).json({
+          error: "local_corpus_not_configured",
+          message:
+            "LOCAL_CORPUS_PARENT is not configured. Set it to the OneDrive parent folder that contains the indexed corpus.",
+        });
+        return;
+      }
+
+      try {
+        const buffer = readLocalCorpusFile(absolutePath);
+        res.setHeader("Content-Type", guessMimeType(file.fileName, file.mimeType ?? undefined));
+        res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
+        res.send(buffer);
+        return;
+      } catch (error) {
+        const details = error instanceof Error ? error.message : String(error);
+        logger.warn("project.file_content.local_read_failed", {
+          projectId,
+          fileId,
+          absolutePath,
+          details,
+        });
+        res.status(404).json({
+          error: "local_corpus_file_missing",
+          message: "Indexed file is not available on disk at the expected local path.",
+          details: { path: absolutePath },
+        });
+        return;
+      }
+    }
+
     const fileContent = await onedriveService.downloadFileContent(req.user, file.onedriveItemId);
     const contentType = fileContent.contentType ?? file.mimeType ?? "application/octet-stream";
-    const safeName = file.fileName.replace(/\"/g, "");
 
     res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);

@@ -115,6 +115,8 @@ async function requestEmbeddings(input: string | string[]): Promise<{
       body: JSON.stringify({
         model,
         input,
+        // text-embedding-3-* supports Matryoshka truncation via `dimensions`.
+        dimensions: env.openAiEmbeddingDimensions,
       }),
       signal: AbortSignal.timeout(EMBEDDING_REQUEST_TIMEOUT_MS),
     });
@@ -149,7 +151,7 @@ async function requestEmbeddings(input: string | string[]): Promise<{
   if (vectors.length !== expectedLength) {
     throw new EmbeddingProviderError(
       "embedding_invalid_response",
-      false,
+      true,
       "Embedding provider returned mismatched vector count."
     );
   }
@@ -157,8 +159,17 @@ async function requestEmbeddings(input: string | string[]): Promise<{
   if (vectors.some((vector) => vector.length === 0)) {
     throw new EmbeddingProviderError(
       "embedding_invalid_response",
-      false,
+      true,
       "Embedding provider returned one or more empty vectors."
+    );
+  }
+
+  const expectedDims = env.openAiEmbeddingDimensions;
+  if (vectors.some((vector) => vector.length !== expectedDims)) {
+    throw new EmbeddingProviderError(
+      "embedding_invalid_response",
+      true,
+      `Embedding provider returned unexpected dimension(s); expected ${expectedDims}.`
     );
   }
 
@@ -202,7 +213,8 @@ function shouldSplitBatchAfterFailure(error: unknown): boolean {
     error.code === "embedding_timeout" ||
     error.code === "embedding_network" ||
     error.code === "embedding_rate_limit" ||
-    error.code === "embedding_provider_unavailable"
+    error.code === "embedding_provider_unavailable" ||
+    error.code === "embedding_invalid_response"
   );
 }
 
@@ -236,12 +248,25 @@ async function embedBatchWithFallback(texts: string[]): Promise<EmbeddingResult[
   }
 }
 
+// Preflight makes a live embedding API call; cache the OK result so we don't pay a
+// round-trip on every index/retrieval request. Failures are not cached so a fixed
+// key/quota issue is retried immediately.
+const PREFLIGHT_OK_TTL_MS = 5 * 60 * 1000;
+let cachedPreflightOk: { result: EmbeddingPreflightResult; expiresAt: number } | null = null;
+
 export const embeddingsService = {
   async preflight(): Promise<EmbeddingPreflightResult> {
+    if (cachedPreflightOk && cachedPreflightOk.expiresAt > Date.now()) {
+      return cachedPreflightOk.result;
+    }
+
     try {
       await requestEmbeddings("preflight-check");
-      return { ok: true };
+      const result: EmbeddingPreflightResult = { ok: true };
+      cachedPreflightOk = { result, expiresAt: Date.now() + PREFLIGHT_OK_TTL_MS };
+      return result;
     } catch (error) {
+      cachedPreflightOk = null;
       if (error instanceof EmbeddingProviderError) {
         return {
           ok: false,

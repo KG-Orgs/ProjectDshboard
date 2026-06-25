@@ -143,6 +143,50 @@ describe("chatCoordinatorService", () => {
     expect(searchSpy).not.toHaveBeenCalled();
   });
 
+  it("routes spec vocabulary + subject queries to retrieval instead of filename lookup", async () => {
+    vi.spyOn(projectService, "listProjectFiles").mockResolvedValue({
+      files: [],
+      total: 0,
+      page: 1,
+      pageSize: 200,
+      hasMore: false,
+    });
+    const searchSpy = vi.spyOn(retrievalService, "searchProject").mockResolvedValue({
+      query: "concrete reinforcement requirements specifications",
+      totalMatches: 1,
+      searchedAt: new Date(),
+      results: [
+        {
+          fileId: asUuid("file-spec-1"),
+          fileName: "03 30 00 Cast-in-Place Concrete.pdf",
+          filePath: "02 - DESIGN/01 Specifications/ADA6 NYCT Specification Final/03 30 00 Cast-in-Place Concrete.pdf",
+          docCategory: "specification",
+          tags: ["spec"],
+          matchedChunks: [
+            {
+              chunkId: "chunk-spec-1",
+              chunkIndex: 1,
+              chunkText: "Reinforcing steel shall conform to ASTM specifications for concrete reinforcement.",
+              relevance: 0.91,
+              sourceType: "content",
+              pageNumber: 4,
+            },
+          ],
+          topRelevance: 0.91,
+        },
+      ],
+    });
+
+    const result = await chatCoordinatorService.generateReply(
+      asUuid("project-spec-qa"),
+      "concrete reinforcement requirements specifications"
+    );
+
+    expect(searchSpy).toHaveBeenCalled();
+    expect(result.content.toLowerCase()).not.toContain("yes, i found");
+    expect(result.sources.length).toBeGreaterThan(0);
+  });
+
   it("returns filename matches for short filename fragment prompts", async () => {
     vi.spyOn(projectService, "listProjectFiles").mockResolvedValue({
       files: [
@@ -374,6 +418,133 @@ describe("chatCoordinatorService", () => {
     expect(result.sources).toHaveLength(1);
     expect(result.sources[0]?.fileId).toBe(qwpFileId);
     expect(result.autoOpenFileName).toBe(qwpFileName);
+    expect(searchSpy).not.toHaveBeenCalled();
+  });
+
+  it("routes explicit identifier content queries to the resolved file, not fuzzy filename matches", async () => {
+    const qwp001Id = asUuid("file-qwp-001");
+    const qwp001Name = "A37806_GEN-019R00 - QWP-001 Concrete Formwork and Reinforcement.pdf";
+    const swp063Id = asUuid("file-swp-063");
+    const swp063Name = "SWP-063 Track Replacement.pdf";
+
+    vi.spyOn(projectService, "listProjectFiles").mockResolvedValue({
+      files: [
+        {
+          id: swp063Id,
+          projectId: asUuid("project-qwp-id"),
+          onedriveItemId: "onedrive-swp-063",
+          fileName: swp063Name,
+          filePath: "03 - SAFETY/SWP-063 Track Replacement.pdf",
+          fileSize: 900000,
+          mimeType: "application/pdf",
+          docCategory: "report",
+          tags: [],
+          extractedFields: undefined,
+          summary: undefined,
+          keyTopics: undefined,
+          specSection: undefined,
+          sheetNumber: undefined,
+          revision: undefined,
+          indexStatus: "indexed",
+          chunkCount: 3,
+          lastIndexed: new Date(),
+          lastSynced: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: qwp001Id,
+          projectId: asUuid("project-qwp-id"),
+          onedriveItemId: "onedrive-qwp-001",
+          fileName: qwp001Name,
+          filePath: "04 - QA-QC/QWP-001 Concrete Formwork.pdf",
+          fileSize: 1100000,
+          mimeType: "application/pdf",
+          docCategory: "report",
+          tags: [],
+          extractedFields: undefined,
+          summary: undefined,
+          keyTopics: undefined,
+          specSection: undefined,
+          sheetNumber: undefined,
+          revision: undefined,
+          indexStatus: "indexed",
+          chunkCount: 2,
+          lastIndexed: new Date(),
+          lastSynced: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+      total: 2,
+      page: 1,
+      pageSize: 200,
+      hasMore: false,
+    });
+
+    vi.spyOn(retrievalService, "lookupExactIdentifier").mockResolvedValue({
+      fileId: qwp001Id,
+      fileName: qwp001Name,
+      filePath: "04 - QA-QC/QWP-001 Concrete Formwork.pdf",
+      docCategory: "report",
+      extractedFields: undefined,
+      deepLinkUrl: undefined,
+      matchReasons: [{ kind: "exact_id", identifierType: "qwp", value: "QWP-001", raw: "QWP-001" }],
+      identifier: {
+        type: "qwp",
+        valueNormalized: "QWP-001",
+        queryRaw: "QWP-001",
+      },
+      totalFamilyMembers: 1,
+    });
+
+    const searchSpy = vi.spyOn(retrievalService, "searchProject");
+    vi.spyOn(retrievalService, "getDocumentDetail").mockImplementation(async (fileId) => {
+      if (fileId !== qwp001Id) return null;
+      return {
+        fileId: qwp001Id,
+        fileName: qwp001Name,
+        filePath: "04 - QA-QC/QWP-001 Concrete Formwork.pdf",
+        fileSize: 1100000,
+        mimeType: "application/pdf",
+        docCategory: "report",
+        summary: "Concrete formwork and reinforcement quality work plan.",
+        keyTopics: ["hold points", "concrete"],
+        tags: [],
+        extractedFields: undefined,
+        specSection: undefined,
+        sheetNumber: undefined,
+        revision: "00",
+        indexStatus: "indexed",
+        lastIndexed: new Date(),
+        chunkCount: 2,
+        chunks: [
+          {
+            chunkIndex: 15,
+            chunkText:
+              "Inspector must sign off on HOLD POINT before concrete work continuing.",
+            tokenCount: 12,
+            pageNumber: 8,
+          },
+          {
+            chunkIndex: 3,
+            chunkText: "Material Degradation, Attachment, Geometry, performance risks.",
+            tokenCount: 8,
+            pageNumber: 5,
+          },
+        ],
+        relatedDocuments: [],
+      };
+    });
+
+    const result = await chatCoordinatorService.generateReply(
+      asUuid("project-qwp-id"),
+      "What hold points does QWP-001 require before concrete placement?"
+    );
+
+    expect(result.sources).toHaveLength(1);
+    expect(result.sources[0]?.fileId).toBe(qwp001Id);
+    expect(result.content.toLowerCase()).toContain("hold");
     expect(searchSpy).not.toHaveBeenCalled();
   });
 
@@ -1429,6 +1600,26 @@ describe("chatCoordinatorService", () => {
     );
 
     expect(result.citations ?? []).toHaveLength(0);
+    expect(result.content.toLowerCase()).not.toContain("could not validate direct chunk-level evidence");
+  });
+
+  it("appends uncertainty marker for factual routed responses with no retrieved context", async () => {
+    process.env.CHAT_STRICT_CITATION_VERIFICATION_ENABLED = "true";
+    resetEnvCache();
+
+    vi.spyOn(retrievalService, "searchProject").mockResolvedValue({
+      query: "",
+      totalMatches: 0,
+      searchedAt: new Date(),
+      results: [],
+    });
+
+    const result = await chatCoordinatorService.generateReply(
+      asUuid("project-routed-no-context"),
+      "what are the expansion joint requirements"
+    );
+
+    expect(result.citations ?? []).toHaveLength(0);
     expect(result.content.toLowerCase()).toContain("could not validate direct chunk-level evidence");
   });
 
@@ -1469,7 +1660,7 @@ describe("chatCoordinatorService", () => {
     );
 
     expect(result.citations ?? []).toHaveLength(0);
-    expect(result.content.toLowerCase()).toContain("could not validate direct chunk-level evidence");
+    expect(result.content.toLowerCase()).not.toContain("could not validate direct chunk-level evidence");
     expect(result.content.toLowerCase()).not.toContain("could not find an exact indexed passage");
   });
 

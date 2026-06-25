@@ -1,0 +1,52 @@
+{
+  "projectId": "731cfd5d-e647-4551-89e7-0a3cc4915115",
+  "projectName": "MLJ-017 Package 6 - General (TEST CLONE)",
+  "description": "Hand-curated chunk-grounded questions from chunk audit spot-checks",
+  "questions": [
+    {
+      "id": "curated-rfi-0183-signals",
+      "bucket": "answer",
+      "query": "Who answered RFI-0183 about Burnside Avenue signal light heights, and what was the answer?",
+      "expectedFilePatterns": ["RFI-0183", "Burnside Avenue Platform-Level Overhead Clearances"],
+      "groundingFileId": "38e5d12a-b891-42b7-8356-c55ec809cf54",
+      "groundingChunkId": "84c9c2d3-4d2e-405c-9b01-253d79c0ba38",
+      "acceptableAnswerContains": ["Neha Modak", "signal", "heights", "remain"]
+    },
+    {
+      "id": "curated-avi-082-shielding",
+      "bucket": "answer",
+      "query": "What work was performed on 2026-03-25 related to platform shielding at Ave I per the construction photos?",
+      "expectedFilePatterns": ["AVI-082R00", "Construction Photos"],
+      "groundingFileId": "a1ccc93c-e2a0-4050-a124-98e3fcba9e1b",
+      "groundingChunkId": "e8c9769b-167a-4eab-8aad-92dbc2e60bd8",
+      "acceptableAnswerContains": ["shielding", "platform", "2026-03-25", "installation"]
+    },
+    {
+      "id": "curated-mowe-inspection-lead",
+      "bucket": "answer",
+      "query": "How many business days does MOWE need to process infrastructure inspection requests?",
+      "expectedFilePatterns": ["MOWE Joint Survey", "REQUEST FOR INFRASTRUCTURE INSPECTIONS"],
+      "groundingFileId": "f19a9963-7262-4229-980b-91a738b8bf3d",
+      "groundingChunkId": "1a3fa1e4-f716-499a-9587-4a8a14b02fb2",
+      "acceptableAnswerContains": ["5", "business days", "MOWE", "process"]
+    },
+    {
+      "id": "curated-myr-006-permittee",
+      "bucket": "answer",
+      "query": "What must the permittee comply with per the MYR-006R00 DOT permit?",
+      "expectedFilePatterns": ["MYR-006R00", "DOT Permits"],
+      "groundingFileId": "e158549b-ed21-4ec7-8cfb-5e107a2a0a21",
+      "groundingChunkId": "37753365-8c7a-47fc-b5db-ef6614060d6f",
+      "acceptableAnswerContains": ["permittee", "comply", "DOT", "revocation"]
+    },
+    {
+      "id": "curated-gen-045-grinder",
+      "bucket": "answer",
+      "query": "What are the rated power and disc diameter specs for the DCG 125-S angle grinder in GEN-045R00 SWP-027?",
+      "expectedFilePatterns": ["GEN-045R00", "SWP-027", "Steel Demolition"],
+      "groundingFileId": "0f70c896-780a-4ff9-af28-98b36f35a407",
+      "groundingChunkId": "074c81c3-93c8-43ae-83e0-026615e62f20",
+      "acceptableAnswerContains": ["125", "1400", "grinder", "DCG"]
+    }
+  ]
+}

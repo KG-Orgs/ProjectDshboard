@@ -295,35 +295,31 @@ describe("retrievalService", () => {
     expect(sources[0]?.relevance).toBeGreaterThan(sources[1]?.relevance ?? 0);
   });
 
-  it("merges hybrid candidates with lexical-heavy blend profile", () => {
+  it("fuses hybrid candidates with RRF, biasing toward lexical rank under lexical_heavy", () => {
+    // chunk-A leads the vector list; chunk-B leads the lexical list. Under a
+    // lexical-heavy profile, RRF should rank chunk-B (top lexical) ahead of
+    // chunk-A even though chunk-A has the higher raw vector score.
     const merged = retrievalInternals.mergeHybridCandidates(
       [
-        {
-          chunkId: "chunk-1",
-          fileId: "file-1",
-          fileName: "spec.pdf",
-          chunkIndex: 0,
-          chunkText: "semantic",
-          relevance: 0.8,
-          sourceType: "content",
-        },
+        { chunkId: "chunk-A", fileId: "file-1", fileName: "a.pdf", chunkIndex: 0, chunkText: "a", relevance: 0.9, sourceType: "content" },
+        { chunkId: "chunk-B", fileId: "file-2", fileName: "b.pdf", chunkIndex: 0, chunkText: "b", relevance: 0.8, sourceType: "content" },
       ],
       [
-        {
-          chunkId: "chunk-1",
-          fileId: "file-1",
-          fileName: "spec.pdf",
-          chunkIndex: 0,
-          chunkText: "lexical",
-          relevance: 0.4,
-          sourceType: "content",
-        },
+        { chunkId: "chunk-B", fileId: "file-2", fileName: "b.pdf", chunkIndex: 0, chunkText: "b", relevance: 0.7, sourceType: "content" },
+        { chunkId: "chunk-A", fileId: "file-1", fileName: "a.pdf", chunkIndex: 0, chunkText: "a", relevance: 0.5, sourceType: "content" },
       ],
       "lexical_heavy"
     );
 
-    expect(merged).toHaveLength(1);
-    expect(merged[0]?.relevance).toBeCloseTo(0.54, 3);
+    expect(merged).toHaveLength(2);
+    expect(merged[0]?.chunkId).toBe("chunk-B");
+    expect(merged[1]?.chunkId).toBe("chunk-A");
+    // Top fused score is normalized to 1.0; runner-up is strictly lower.
+    expect(merged[0]?.relevance).toBeCloseTo(1, 6);
+    expect(merged[0]?.relevance).toBeGreaterThan(merged[1]?.relevance ?? 0);
+    // Original per-retriever scores are preserved for downstream heuristics.
+    expect(merged[0]?.vectorScore).toBe(0.8);
+    expect(merged[0]?.lexicalScore).toBe(0.7);
   });
 
   it("selects lexical-heavy blend profile for active_doc_qa intent", () => {

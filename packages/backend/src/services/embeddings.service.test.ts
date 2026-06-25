@@ -8,6 +8,7 @@ describe("embeddingsService", () => {
     vi.restoreAllMocks();
     vi.stubEnv("OPENAI_EMBEDDING_ENDPOINT", "https://api.openai.com/v1/embeddings");
     vi.stubEnv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small");
+    vi.stubEnv("OPENAI_EMBEDDING_DIMENSIONS", "2");
   });
 
   afterEach(() => {
@@ -123,5 +124,47 @@ describe("embeddingsService", () => {
     expect(result).toHaveLength(2);
     expect(result[0]?.vector).toEqual([0.11, 0.22]);
     expect(result[1]?.vector).toEqual([0.33, 0.44]);
+  });
+
+  it("splits a batch when provider returns mismatched vector count", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "test-key");
+    resetEnvCache();
+
+    const fetchMock = vi.fn().mockImplementation(async (_url, init) => {
+      const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string | string[] };
+      const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+
+      if (inputs.length > 1) {
+        return new Response(
+          JSON.stringify({
+            data: [{ embedding: [0.1, 0.2] }],
+            model: "text-embedding-3-small",
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const value = inputs[0] === "beta" ? 0.3 : inputs[0] === "gamma" ? 0.5 : 0.1;
+      return new Response(
+        JSON.stringify({
+          data: [{ embedding: [value, value + 0.1] }],
+          model: "text-embedding-3-small",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    });
+
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const result = await embeddingsService.embedBatch(["alpha", "beta", "gamma"]);
+
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(3);
+    expect(result).toHaveLength(3);
   });
 });

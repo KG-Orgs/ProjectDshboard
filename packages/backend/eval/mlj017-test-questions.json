@@ -1,0 +1,335 @@
+{
+  "projectId": "731cfd5d-e647-4551-89e7-0a3cc4915115",
+  "projectName": "MLJ-017 Package 6 - General (TEST CLONE)",
+  "defaultTopK": 3,
+  "questions": [
+    {
+      "id": "find-01",
+      "bucket": "find",
+      "query": "Volume 06 Track Specifications A37806",
+      "expectedFilePatterns": ["Volume_06_Track_Specifications"],
+      "expectedInTopK": 1,
+      "notes": "Bid docs RFP Volume 06 — 1849 chunks indexed",
+      "groundingFileId": "6af20760-b527-4ac1-a3b4-786a7427bca0"
+    },
+    {
+      "id": "find-02",
+      "bucket": "find",
+      "query": "Volume 05 Project Requirements and Design Criteria PRDC",
+      "expectedFilePatterns": ["Volume_05_Project_Requirements"],
+      "expectedInTopK": 1,
+      "notes": "Bid docs PRDC volume — 2778 chunks",
+      "groundingFileId": "86e5e99d-5a14-436e-884c-dc6af108f24b"
+    },
+    {
+      "id": "find-03",
+      "bucket": "find",
+      "query": "April 26 schedule update station schedules",
+      "expectedFilePatterns": ["April 26 Schedule Update"],
+      "expectedInTopK": 1,
+      "notes": "07 - SCHEDULE/Station Schedules — 436 chunks",
+      "groundingFileId": "c9d55bee-80cc-4ace-8ed9-e97dc4285214"
+    },
+    {
+      "id": "find-04",
+      "bucket": "find",
+      "query": "Design Build Baseline Schedule 01 32 01",
+      "expectedFilePatterns": ["01_32_01-002R00", "Design Build Baseline Schedule", "01 32 01"],
+      "expectedInTopK": 1,
+      "notes": "07 - SCHEDULE baseline schedule docx — 138 chunks",
+      "groundingFileId": "ba0c1734-e810-46fe-b562-59332c575400"
+    },
+    {
+      "id": "find-05",
+      "bucket": "find",
+      "query": "Hydraulic Elevator Equipment section 14 24 00",
+      "expectedFilePatterns": ["14 24 00 Hydraulic Elevator"],
+      "expectedInTopK": 1,
+      "notes": "02 - DESIGN approved specs — 101 chunks",
+      "groundingFileId": "aa43de5c-cf31-44e2-a1f9-e4e319400a10"
+    },
+    {
+      "id": "find-06",
+      "bucket": "find",
+      "query": "Division 22 plumbing common work results specifications",
+      "expectedFilePatterns": ["Division_22"],
+      "expectedInTopK": 1,
+      "notes": "02 - DESIGN conformed specs Division 22 — 353 chunks",
+      "groundingFileId": "cfb08f05-39b7-43f5-8b50-03b7dab20a66"
+    },
+    {
+      "id": "find-07",
+      "bucket": "find",
+      "query": "Burnside SOGR full report B225 B236",
+      "expectedFilePatterns": ["B225 TO B236 WEB SOGR"],
+      "expectedInTopK": 1,
+      "notes": "02 - DESIGN Burnside SOGR inspection — 63 chunks",
+      "groundingFileId": "4a986606-9b01-481d-823e-9f73e05665a4"
+    },
+    {
+      "id": "find-08",
+      "bucket": "find",
+      "query": "Design-Build Agreement fully executed A37806",
+      "expectedFilePatterns": ["Design-Build Agreement - Fully Executed"],
+      "expectedInTopK": 1,
+      "notes": "00 - Bid Docs executed DBA — 1378 chunks",
+      "groundingFileId": "07fb8e0d-8245-4a13-824d-4bfa6378eb1a"
+    },
+    {
+      "id": "find-09",
+      "bucket": "find",
+      "query": "Middletown Road fire alarm system submission",
+      "expectedFilePatterns": ["Middletown Rd_FA system"],
+      "expectedInTopK": 1,
+      "notes": "02 - DESIGN FA workshop submission — 632 chunks",
+      "groundingFileId": "6680eb94-64de-4e03-b34d-61de27becb88"
+    },
+    {
+      "id": "find-10",
+      "bucket": "find",
+      "query": "Concrete Repair Procedures MTA submittal GEN-009",
+      "expectedFilePatterns": ["GEN-009R00", "Concrete Repair Procedures"],
+      "expectedInTopK": 1,
+      "notes": "05 - SUBMITTALS concrete repair — 34 chunks",
+      "groundingFileId": "1f3025a8-d99c-4d02-b8dc-a8cf7a8997e1"
+    },
+    {
+      "id": "answer-01",
+      "bucket": "answer",
+      "query": "What UPS backup duration is required for communications systems per PRDC 07?",
+      "expectedFilePatterns": ["RFI063", "Data Cabinet AC on UPS", "PRDC 07 Communications"],
+      "expectedInTopK": 1,
+      "notes": "RFI-063 discusses PRDC 07 §7.5.2 UPS backup — 5 chunks",
+      "groundingFileId": "6b9e3951-79c7-446f-bc14-7c9bcdaef6d2",
+      "acceptableAnswerContains": ["UPS", "hour", "communications"]
+    },
+    {
+      "id": "answer-02",
+      "bucket": "answer",
+      "query": "What quality risks does QWP-001 address for concrete formwork and reinforcement?",
+      "expectedFilePatterns": ["QWP-001", "Concretre, Reinforcement, Formwork"],
+      "expectedInTopK": 1,
+      "notes": "QWP-001 quality work plan — 22 chunks",
+      "groundingFileId": "179e3541-1491-4d6e-af2c-de2b3480aada",
+      "acceptableAnswerContains": ["concrete", "formwork", "reinforcement", "quality"]
+    },
+    {
+      "id": "answer-03",
+      "bucket": "answer",
+      "query": "What ASME elevator safety codes apply to hydraulic elevator equipment on this project?",
+      "expectedFilePatterns": ["14 24 00 Hydraulic Elevator"],
+      "expectedInTopK": 1,
+      "notes": "Section 14 24 00 references ASME A17.1 etc.",
+      "groundingFileId": "aa43de5c-cf31-44e2-a1f9-e4e319400a10",
+      "acceptableAnswerContains": ["ASME", "A17", "elevator"]
+    },
+    {
+      "id": "answer-04",
+      "bucket": "answer",
+      "query": "What is DRFI-0059 about regarding stairs roof deck details?",
+      "expectedFilePatterns": ["DRFI-0059", "Stairs Roof Deck"],
+      "expectedInTopK": 1,
+      "notes": "DRFI-0059 in 24 - RFI'S — 14 chunks",
+      "groundingFileId": "60b1d84d-5f34-4c62-a34a-d6f1cb5331ba",
+      "acceptableAnswerContains": ["roof deck", "stair", "DRFI"]
+    },
+    {
+      "id": "answer-05",
+      "bucket": "answer",
+      "query": "What is the LOE milestone percent complete for Burnside Avenue station on the April 2026 schedule?",
+      "expectedFilePatterns": ["April 26 Schedule Update"],
+      "expectedInTopK": 1,
+      "notes": "Schedule chunk lists MS-110 Burnside LOE milestone at 11.16%",
+      "groundingFileId": "c9d55bee-80cc-4ace-8ed9-e97dc4285214",
+      "acceptableAnswerContains": ["Burnside", "11.16", "milestone"]
+    },
+    {
+      "id": "answer-06",
+      "bucket": "answer",
+      "query": "What does Section 22 05 00 cover for plumbing work on Package 6?",
+      "expectedFilePatterns": ["Division_22", "22 05 00"],
+      "expectedInTopK": 1,
+      "notes": "Division 22 spec PART 1 GENERAL summary",
+      "groundingFileId": "cfb08f05-39b7-43f5-8b50-03b7dab20a66",
+      "acceptableAnswerContains": ["plumbing", "common work", "22 05 00"]
+    },
+    {
+      "id": "answer-07",
+      "bucket": "answer",
+      "query": "What are the car clearance requirements for track work in Volume 06?",
+      "expectedFilePatterns": ["Volume_06_Track", "Track_Specifications"],
+      "expectedInTopK": 1,
+      "notes": "Volume 06 discusses clearance and superelevation",
+      "groundingFileId": "6af20760-b527-4ac1-a3b4-786a7427bca0",
+      "acceptableAnswerContains": ["clearance", "track"]
+    },
+    {
+      "id": "answer-08",
+      "bucket": "answer",
+      "query": "What is Sika Backer Rod used for in expansion joints?",
+      "expectedFilePatterns": ["Expansion Joints Backer Rod", "GEN-007R01"],
+      "expectedInTopK": 1,
+      "notes": "GEN-007R01 expansion joint backer rod submittal — 7 chunks",
+      "groundingFileId": "91880fb0-4fc5-49ff-a4d2-da5bcd31eb0b",
+      "acceptableAnswerContains": ["backer rod", "expansion joint", "sealant"]
+    },
+    {
+      "id": "answer-09",
+      "bucket": "answer",
+      "query": "What contractual milestone MS-20 requires for ADA work completion?",
+      "expectedFilePatterns": ["April 26 Schedule Update", "Baseline Schedule"],
+      "expectedInTopK": 1,
+      "notes": "Schedule lists MS-20 Performance of all ADA Work",
+      "groundingFileId": "c9d55bee-80cc-4ace-8ed9-e97dc4285214",
+      "acceptableAnswerContains": ["MS-20", "ADA"]
+    },
+    {
+      "id": "answer-10",
+      "bucket": "answer",
+      "query": "What Build America Buy America requirements apply to plumbing submittals?",
+      "expectedFilePatterns": ["Division_22", "22 05 00"],
+      "expectedInTopK": 1,
+      "notes": "Division 22 §1.05 SUBMITTALS mentions BABA Act",
+      "groundingFileId": "cfb08f05-39b7-43f5-8b50-03b7dab20a66",
+      "acceptableAnswerContains": ["Build America", "Buy America", "submittal"]
+    },
+    {
+      "id": "answer-11",
+      "bucket": "answer",
+      "query": "What is the subject of RFI 063 regarding data cabinet AC on UPS?",
+      "expectedFilePatterns": ["RFI063", "Data Cabinet AC on UPS"],
+      "expectedInTopK": 1,
+      "notes": "RFI-063 subject line in chunk text",
+      "groundingFileId": "6b9e3951-79c7-446f-bc14-7c9bcdaef6d2",
+      "acceptableAnswerContains": ["data cabinet", "UPS", "AC"]
+    },
+    {
+      "id": "answer-12",
+      "bucket": "answer",
+      "query": "What stations are included in ADA Upgrades Package 6 per the track specifications volume?",
+      "expectedFilePatterns": ["Volume_06_Track_Specifications"],
+      "expectedInTopK": 1,
+      "notes": "Volume 06 cover lists five stations Package 6",
+      "groundingFileId": "6af20760-b527-4ac1-a3b4-786a7427bca0",
+      "acceptableAnswerContains": ["five stations", "Package 6", "ADA"]
+    },
+    {
+      "id": "identifier-01",
+      "bucket": "identifier",
+      "query": "QWP-001",
+      "expectedFilePatterns": ["QWP-001", "GEN-019R00"],
+      "expectedInTopK": 1,
+      "notes": "document_identifiers type=QWP value=QWP1 — 22 chunks",
+      "groundingFileId": "179e3541-1491-4d6e-af2c-de2b3480aada"
+    },
+    {
+      "id": "identifier-02",
+      "bucket": "identifier",
+      "query": "RFI-063",
+      "expectedFilePatterns": ["RFI063", "RFI-063"],
+      "expectedInTopK": 1,
+      "notes": "document_identifiers type=RFI value=RFI63",
+      "groundingFileId": "6b9e3951-79c7-446f-bc14-7c9bcdaef6d2"
+    },
+    {
+      "id": "identifier-03",
+      "bucket": "identifier",
+      "query": "GEN-009R00 concrete repair",
+      "expectedFilePatterns": ["GEN-009R00", "Concrete Repair Procedures"],
+      "expectedInTopK": 1,
+      "notes": "SUBMITTAL identifier GEN009R00",
+      "groundingFileId": "1f3025a8-d99c-4d02-b8dc-a8cf7a8997e1"
+    },
+    {
+      "id": "identifier-04",
+      "bucket": "identifier",
+      "query": "BUR-042R01 SOGR Burnside",
+      "expectedFilePatterns": ["BUR-042R01", "SOGR at Burnside"],
+      "expectedInTopK": 1,
+      "notes": "SUBMITTAL BUR042R01 — 868 chunks indexed",
+      "groundingFileId": "fe353658-9ebf-421c-a700-93724578bbb3"
+    },
+    {
+      "id": "identifier-05",
+      "bucket": "identifier",
+      "query": "DRFI-0059",
+      "expectedFilePatterns": ["DRFI-0059", "Stairs Roof Deck"],
+      "expectedInTopK": 1,
+      "notes": "DRFI identifier in 24 - RFI'S folder",
+      "groundingFileId": "60b1d84d-5f34-4c62-a34a-d6f1cb5331ba"
+    },
+    {
+      "id": "identifier-06",
+      "bucket": "identifier",
+      "query": "CSI 01 40 10 QWP concrete",
+      "expectedFilePatterns": ["01 40 10", "QWP-001"],
+      "expectedInTopK": 1,
+      "notes": "CSI section on QWP-001 file",
+      "groundingFileId": "179e3541-1491-4d6e-af2c-de2b3480aada"
+    },
+    {
+      "id": "ambiguous-01",
+      "bucket": "ambiguous",
+      "query": "Burnside station construction schedule",
+      "expectedFilePatterns": ["Burnside", "Schedule"],
+      "expectedInTopK": 3,
+      "notes": "Multiple Burnside schedule files indexed (baseline, silica, April update)"
+    },
+    {
+      "id": "ambiguous-02",
+      "bucket": "ambiguous",
+      "query": "EDU06 track traction power and signals drawings",
+      "expectedFilePatterns": ["EDU06", "Track Traction Power"],
+      "expectedInTopK": 3,
+      "notes": "Same EDU06 drawing duplicated across Myrtle/Norwood/Ave I/Middletown — 244 chunks each"
+    },
+    {
+      "id": "ambiguous-03",
+      "bucket": "ambiguous",
+      "query": "expansion joint specifications and submittals",
+      "expectedFilePatterns": ["Expansion Joint", "expansion joint", "Backer Rod", "Volume_05", "PRDC"],
+      "expectedInTopK": 3,
+      "notes": "PRDC mentions expansion joints; GEN-007R01 backer rod submittal also matches"
+    },
+    {
+      "id": "ambiguous-04",
+      "bucket": "ambiguous",
+      "query": "Avenue I comments matrix design review",
+      "expectedFilePatterns": ["Avenue I", "Comments Matrix"],
+      "expectedInTopK": 3,
+      "notes": "Many Avenue I DU/EDU comment matrix xlsx versions indexed"
+    },
+    {
+      "id": "not_found-01",
+      "bucket": "not_found",
+      "query": "offshore wind farm turbine foundation specifications",
+      "expectedFilePatterns": [],
+      "maxTopRelevance": 0.65,
+      "notes": "Zero chunk hits for 'offshore wind' in corpus at eval snapshot"
+    },
+    {
+      "id": "not_found-02",
+      "bucket": "not_found",
+      "query": "cryptocurrency mining facility electrical requirements",
+      "expectedFilePatterns": [],
+      "maxTopRelevance": 0.65,
+      "notes": "Zero chunk hits for 'cryptocurrency' in corpus"
+    },
+    {
+      "id": "not_found-03",
+      "bucket": "not_found",
+      "query": "Mars colony habitat construction standards",
+      "expectedFilePatterns": [],
+      "maxTopRelevance": 0.65,
+      "notes": "Zero chunk hits for 'Mars colony' in corpus"
+    },
+    {
+      "id": "not_found-04",
+      "bucket": "not_found",
+      "query": "nuclear fusion reactor installation procedures",
+      "expectedFilePatterns": [],
+      "maxTopRelevance": 0.65,
+      "notes": "Zero chunk hits for 'nuclear fusion reactor' in corpus"
+    }
+  ]
+}

@@ -19,6 +19,8 @@ import { logger } from "../lib/logger";
 
 export interface ExtractedConstructionFields {
   rfiNumber?: string;
+  submittalNumber?: string;
+  /** @deprecated Legacy misspelling kept only so previously persisted rows still read. */
   submittarNumber?: string;
   changeOrderNumber?: string;
   drawingNumber?: string;
@@ -42,6 +44,17 @@ export interface ClassificationResult {
   confidence: number; // 0-100
   extractedFields: ExtractedConstructionFields;
   tags: string[];
+}
+
+/**
+ * Read-shim for the submittal number that tolerates both the canonical
+ * `submittalNumber` and the legacy misspelled `submittarNumber` persisted in
+ * older `extracted_fields` rows. Use everywhere the value is consumed.
+ */
+export function readSubmittalNumber(
+  fields?: { submittalNumber?: string; submittarNumber?: string } | null
+): string | undefined {
+  return fields?.submittalNumber ?? fields?.submittarNumber;
 }
 
 // ============================================================
@@ -160,7 +173,7 @@ const CATEGORY_RULES: CategoryRule[] = [
 
 const FIELD_PATTERNS = {
   rfiNumber: /rfi\s*#?\s*(\d+)/i,
-  submittarNumber: /submittal\s*#?\s*([\w-]+)/i,
+  submittalNumber: /submittal\s*#?\s*([\w-]+)/i,
   changeOrderNumber: /(?:change\s+order|pco)\s*#?\s*([\w-]+)/i,
   drawingNumber: /(?:drawing|dwg)\s*#?\s*([\w-]+)/i,
   specSection: /section\s+(\d{2}\s+\d{2}\s+\d{2})/i,
@@ -241,7 +254,7 @@ function pickTopCategory(scores: Map<ConstructionCategory, number>): { category:
 function deriveTagsFromCategory(category: ConstructionCategory, fields: ExtractedConstructionFields): string[] {
   const tags: string[] = [category];
   if (fields.rfiNumber) tags.push("rfi", `rfi-${fields.rfiNumber}`);
-  if (fields.submittarNumber) tags.push("submittal");
+  if (fields.submittalNumber) tags.push("submittal");
   if (fields.changeOrderNumber) tags.push("change-order");
   if (fields.discipline) tags.push(fields.discipline.toLowerCase());
   if (fields.approvalStatus) tags.push(fields.approvalStatus.toLowerCase().replace(/\s+/g, "-"));
@@ -281,7 +294,7 @@ Respond with this JSON schema (no markdown, just raw JSON):
   "category": "<one of: ${CATEGORY_LIST}>",
   "confidence": <0-100>,
   "rfiNumber": "<or null>",
-  "submittarNumber": "<or null>",
+  "submittalNumber": "<or null>",
   "changeOrderNumber": "<or null>",
   "drawingNumber": "<or null>",
   "specSection": "<CSI section or null>",

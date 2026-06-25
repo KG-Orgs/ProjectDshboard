@@ -282,6 +282,8 @@ export interface ChatInterpretation {
     rfiNumber?: string;
     submittalNumber?: string;
     specSection?: string;
+    /** Normalized construction IDs detected in the query (e.g. QWP-001, RFI-042). */
+    constructionIdentifiers?: string[];
     dateHint?: "recent" | "latest";
     statusHint?: "open" | "pending" | "closed";
   };
@@ -289,6 +291,8 @@ export interface ChatInterpretation {
     preferredCategories?: string[];
     preferredTags?: string[];
     recencyBias?: boolean;
+    /** When true, resolve named construction identifiers before fuzzy retrieval. */
+    exactIdentifierFirst?: boolean;
   };
   /** Classifier routing fields (populated when LLM classifier is active) */
   userRole?: ClassifierUserRole;

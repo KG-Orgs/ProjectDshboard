@@ -1,6 +1,7 @@
 import type { ChatInterpretation, OpenDocContext } from "@contractor/shared";
 import { getEnv } from "../config/env";
 import { logger } from "../lib/logger";
+import { parseIdentifierQuery } from "./identifier-lookup.service";
 
 const CLASSIFIER_TIMEOUT_MS = 1200;
 
@@ -210,8 +211,10 @@ async function classifyWithLlm(context: InterpretationContext): Promise<ChatInte
               "  proceedMode   — proceed (enough info to answer), assume (make reasonable assumptions and note them), ask (must clarify before answering)",
               "  requiredDocTypes — array of doc types to retrieve, e.g. ['rfi','schedule','drawing']. Empty array if no retrieval needed.",
               "  alternatives  — array of {intent, confidence} for runner-up intents",
-              "  entities      — {rfiNumber?, submittalNumber?, specSection?, dateHint?, statusHint?}",
-              "  retrievalHints — {preferredCategories?, preferredTags?, recencyBias?}",
+              "  entities      — {rfiNumber?, submittalNumber?, specSection?, dateHint?, statusHint?, constructionIdentifiers?}",
+              "  retrievalHints — {preferredCategories?, preferredTags?, recencyBias?, exactIdentifierFirst?}",
+              "",
+              "When the user names a construction document identifier (QWP-001, SWP-042, RFI-123, submittal numbers, etc.), set retrievalHints.exactIdentifierFirst=true and list normalized values in entities.constructionIdentifiers. Prefer exact identifier lookup over fuzzy filename matching.",
             ].join("\n"),
           },
           {
@@ -320,6 +323,34 @@ async function classifyWithLlm(context: InterpretationContext): Promise<ChatInte
   }
 }
 
+function enrichWithIdentifiers(
+  interpretation: ChatInterpretation,
+  query: string
+): ChatInterpretation {
+  const identifiers = parseIdentifierQuery(query);
+  if (identifiers.length === 0) {
+    return interpretation;
+  }
+
+  const values = identifiers.map((entry) => entry.valueNormalized);
+  return {
+    ...interpretation,
+    entities: {
+      ...interpretation.entities,
+      constructionIdentifiers: [
+        ...new Set([
+          ...(interpretation.entities?.constructionIdentifiers ?? []),
+          ...values,
+        ]),
+      ],
+    },
+    retrievalHints: {
+      ...interpretation.retrievalHints,
+      exactIdentifierFirst: true,
+    },
+  };
+}
+
 export const interpretationService = {
   async interpret(context: InterpretationContext): Promise<ChatInterpretation> {
     const trimmedContext: InterpretationContext = {
@@ -330,10 +361,15 @@ export const interpretationService = {
     const rules = fromRules(trimmedContext);
     const llm = await classifyWithLlm(trimmedContext);
 
-    if (llm && llm.confidence >= Math.max(0.7, rules.confidence + 0.08)) {
-      return llm;
+    let base: ChatInterpretation;
+    if (llm && llm.confidence >= 0.65) {
+      base = llm;
+    } else if (llm && llm.confidence > rules.confidence) {
+      base = llm;
+    } else {
+      base = rules;
     }
 
-    return rules;
+    return enrichWithIdentifiers(base, trimmedContext.query);
   },
 };

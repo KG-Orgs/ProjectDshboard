@@ -823,6 +823,9 @@ export const indexingService = {
                   summary: insights.summary,
                   keyTopics: insights.keyTopics,
                   chunkCount: insights.chunkCount,
+                  extractionProvenance: insights.extractionProvenance as
+                    | Record<string, unknown>
+                    | undefined,
                   lastIndexed: new Date(),
                   processingMode: resolvedProcessingMode,
                   processingReason,

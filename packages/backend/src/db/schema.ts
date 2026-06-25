@@ -18,6 +18,7 @@ import {
   uuid,
   text,
   integer,
+  real,
   bigint,
   timestamp,
   boolean,
@@ -75,7 +76,7 @@ export type ConstructionCategory = (typeof CONSTRUCTION_CATEGORIES)[number];
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  onedriveTeantId: text("onedrive_tenant_id"),
+  onedriveTenantId: text("onedrive_tenant_id"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -249,6 +250,14 @@ export const fileRecords = pgTable(
     versionHash: text("version_hash"),
     owner: text("owner"),
 
+    // File-level extraction provenance (parser + optional V2 shadow); recorded once
+    // per file instead of being duplicated into every chunk's metadata.
+    extractionProvenance: jsonb("extraction_provenance"),
+
+    // Openable source/deep-link captured at ingestion (Microsoft Graph webUrl
+    // when available, else local file:// path) — migration 0015.
+    deepLinkUrl: text("deep_link_url"),
+
     // Sync metadata
     onedriveEtag: text("onedrive_etag"),
     lastSynced: timestamp("last_synced", { withTimezone: true }),
@@ -299,12 +308,12 @@ export const fileChunks = pgTable(
     pageNumber: integer("page_number"),
     sectionLabel: text("section_label"),
     metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+    // 0..1 extraction confidence from the indexing pipeline (ranking tie-breaker).
+    confidence: real("confidence"),
     tokenCount: integer("token_count").default(0).notNull(),
     embeddingModel: text("embedding_model").notNull(),
-    // Legacy JSONB embedding (kept for backward-compat, populated by older code)
-    embedding: jsonb("embedding"),
-    // pgvector column for high-performance ANN search
-    embeddingVector: vector("embedding_vector", { dimensions: 1536 }),
+    // pgvector column for high-performance ANN search (single source of truth).
+    embeddingVector: vector("embedding_vector", { dimensions: 1024 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -315,6 +324,39 @@ export const fileChunks = pgTable(
     onedriveItemIdx: index("idx_file_chunks_onedrive_item").on(table.onedriveItemId),
     sourceTypeIdx: index("idx_file_chunks_source_type").on(table.sourceType),
     pageNumberIdx: index("idx_file_chunks_page_number").on(table.pageNumber),
+  })
+);
+
+// ================================
+// DOCUMENT IDENTIFIERS (first-class exact-id signal)
+// ================================
+//
+// Flexible identifier index (MVP Slice 1, migration 0015). One row per
+// identifier carried by a file (a file may carry several). `valueNormalized` is
+// the deterministic lookup key produced by normalizeIdentifier; `raw` keeps the
+// verbatim source token. Types are kept in sync by hand — never run db:migrate.
+export const documentIdentifiers = pgTable(
+  "document_identifiers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    fileId: uuid("file_id")
+      .references(() => fileRecords.id, { onDelete: "cascade" })
+      .notNull(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    // e.g. QWP | SWP | CWP | RFI | DRFI | PRDC | DU | EDU | TRANSMITTAL | MOD | CSI | SUBMITTAL | CO | NCR
+    type: text("type").notNull(),
+    valueNormalized: text("value_normalized").notNull(),
+    raw: text("raw").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    typeValueIdx: index("idx_document_identifiers_type_value").on(table.type, table.valueNormalized),
+    fileIdx: index("idx_document_identifiers_file").on(table.fileId),
+    projectIdx: index("idx_document_identifiers_project").on(table.projectId),
   })
 );
 

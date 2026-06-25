@@ -1,0 +1,2631 @@
+{
+  "snapshot": {
+    "snapshotAt": "2026-06-25T20:16:23.565Z",
+    "totalFiles": 10721,
+    "indexedFiles": 10072,
+    "totalChunks": 964547
+  },
+  "projectId": "731cfd5d-e647-4551-89e7-0a3cc4915115",
+  "projectName": "MLJ-017 Package 6 - General (TEST CLONE)",
+  "evaluatedAt": "2026-06-25T20:17:35.373Z",
+  "topKDefault": 3,
+  "searchOnly": true,
+  "summary": {
+    "total": 110,
+    "passed": 98,
+    "failed": 12,
+    "passRate": 0.891,
+    "sourceAtK": {
+      "hits": 98,
+      "total": 110,
+      "rate": 0.891
+    },
+    "groundedAnswer": {
+      "hits": 0,
+      "total": 0,
+      "rate": 0
+    },
+    "byBucket": {
+      "answer": {
+        "pass": 98,
+        "total": 110,
+        "passRate": 0.891
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "chunk-69891ac7-c2",
+      "bucket": "answer",
+      "query": "In CO#15 - Ave I Relocate Water Service (MLJ Interal), what does the document state about 335 Center Avenue, Mamaroneck, NY 10543 (914) 777 – 8292 ♦ (914)?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: CO#15 - Ave I Relocate Water Service (MLJ Interal)",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "CO#15 - Ave I Relocate Water Service (MLJ Interal).pdf",
+        "A37806_01 33 10_MDT-008R00 - FIO - DOT Permits Exp. 10.02.25.pdf",
+        "A37806_01 33 10_NOR-015R00 - FIO - DOT PERMITS EXP 5-10-26 NEW RENEWED (Dual Closure).pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "CO#15 - Ave I Relocate Water Service (MLJ Interal)"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-da0c6d56-c48",
+      "bucket": "answer",
+      "query": "In A37806_GEN-051R00 - APP - Subcontractor Approval Forms , what does GEN-051R00 say about contracting and prog?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_GEN-051R00 - APP - Subcontractor Approval Forms , A37806, 051R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_GEN-051R00 - APP - Subcontractor Approval Forms - Island Pavement Cutting Co Inc..pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_GEN-051R00 - APP - Subcontractor Approval Forms ",
+        "A37806",
+        "051R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-da0c6d56-c30",
+      "bucket": "answer",
+      "query": "In A37806_GEN-051R00 - APP - Subcontractor Approval Forms , what does GEN-051R00 say about prog and contracting?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_GEN-051R00 - APP - Subcontractor Approval Forms , A37806, 051R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_GEN-051R00 - APP - Subcontractor Approval Forms - Island Pavement Cutting Co Inc..pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_GEN-051R00 - APP - Subcontractor Approval Forms ",
+        "A37806",
+        "051R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-44a66cdc-c2",
+      "bucket": "answer",
+      "query": "In 2025-03-19 MTACD-MLJTC2-L-0022 Sub-Contractor Approval , what does the document state about 2 Broadway, 8th Floor?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: MLJTC2, Contractor",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "2025-03-19 MTACD-MLJTC2-L-0025 Sub-Contractor Approval  Safe Spect Corp. Safety Consultant $55,220.00.pdf",
+        "2025-03-19 MTACD-MLJTC2-L-0019 Sub-Contractor Approval  Cantos Inc. $504,200.00.pdf",
+        "2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "MLJTC2",
+        "Contractor"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-38b42538-c48",
+      "bucket": "answer",
+      "query": "In Pre-Proposal Slideshow_A37806_RFP_Addendum_02, what requirements does spec section 01 10 30 include for 01 10 30?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 10 30_MYR-005R00 - APP - Request for Facility Operations Inspections - Existing Fire Standpipe Pre-test (Myrtle).pdf"
+      ],
+      "topRelevances": [
+        4
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-38b42538-c19",
+      "bucket": "answer",
+      "query": "In Pre-Proposal Slideshow_A37806_RFP_Addendum_02, what does the document state about Disclaimer: This presentation and the information contained herein is provided for info...?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: Pre-Proposal Slideshow_A37806_RFP_Addendum_02, A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "Pre-Proposal Slideshow_A37806_RFP_Addendum_02.pdf",
+        "A37806_RFP_Addendum_02.pdf",
+        "A37806_RFP_Addendum_02_Combined.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "Pre-Proposal Slideshow_A37806_RFP_Addendum_02",
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-1be1940a-c51",
+      "bucket": "answer",
+      "query": "In A37806_GEN-027R00 - R&R - Subcontractor Approval Forms , what does GEN-027R00 say about subcontractor and contract?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_GEN-027R00 - R&R - Subcontractor Approval Forms , A37806, 027R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_GEN-027R00 - R&R - Subcontractor Approval Forms - Crossroads JV, LLC.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_GEN-027R00 - R&R - Subcontractor Approval Forms ",
+        "A37806",
+        "027R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-1be1940a-c26",
+      "bucket": "answer",
+      "query": "In A37806_GEN-027R00 - R&R - Subcontractor Approval Forms , what does GEN-027R00 say about percentage and ownership?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_GEN-027R00 - R&R - Subcontractor Approval Forms , A37806, 027R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_GEN-027R00 - R&R - Subcontractor Approval Forms - Crossroads JV, LLC.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_GEN-027R00 - R&R - Subcontractor Approval Forms ",
+        "A37806",
+        "027R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-6068cbdd-c2",
+      "bucket": "answer",
+      "query": "In A37806 Transmittal 0014 -  MTA Personnel and PMC Suppli, what does Transmittal 0014 say about 01 50 00 and returned?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806 Transmittal 0014 -  MTA Personnel and PMC Suppli, A37806, Transmittal",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806 Transmittal 0014 -  MTA Personnel and PMC Supplies.pdf"
+      ],
+      "topRelevances": [
+        8
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806 Transmittal 0014 -  MTA Personnel and PMC Suppli",
+        "A37806",
+        "Transmittal"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-862d3b51-c2",
+      "bucket": "answer",
+      "query": "In 2026-03-03 Cary Winston Access pass 2026 signed, what does the document state about 1010 Northern Blvd Suite 200 Great Neck NY 11021 | (929) 800-1972?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: 2026-03-03 Cary Winston Access pass 2026 signed",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "2026-03-03 Cary Winston Access pass 2026 signed.pdf",
+        "Cary Winston Letter.pdf",
+        "MLJTC2-MTACD-0114 - MTA System Access Passes 01.30.26.docx"
+      ],
+      "topRelevances": [
+        1,
+        0.643,
+        0.625
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "2026-03-03 Cary Winston Access pass 2026 signed"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-862d3b51-c3",
+      "bucket": "answer",
+      "query": "In 2026-03-03 Cary Winston Access pass 2026 signed, what does the document state about Attachment 4. List of Contractor Company Employees Requesting Access Passes?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: 2026-03-03 Cary Winston Access pass 2026 signed",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "2026-03-03 Cary Winston Access pass 2026 signed.pdf",
+        "Attachment 4 - Renewals Page 2 PDF.pdf",
+        "Attachment 4 - MLJ Contracting MTA Passes Renewal.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "2026-03-03 Cary Winston Access pass 2026 signed"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-fb1040ac-c2",
+      "bucket": "answer",
+      "query": "In A37806 Transmittal 0012 -  Masks KN95 01.09.2026, what does Transmittal 0012 say about 01 50 00 and returned?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806, Transmittal",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806 Transmittal 0012 - Masks KN95 Provided 200 01.09.26.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806",
+        "Transmittal"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-3ccd72b4-c2",
+      "bucket": "answer",
+      "query": "In A37806 - TC Electric Letter, what does the document state about Attn: Michael Wilson, Program CEO?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01_30_10-GEN_001R00 - Project Management Plan.docx",
+        "A37806 - TC Electric Letter.pdf",
+        "A37806_01 30 20_GEN-136R00 - FIO - Monthly Job Progress Meeting Minutes 04.23.26.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-e19299ea-c6",
+      "bucket": "answer",
+      "query": "In A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundati, what does AVI-002R01 say about 8u1106 and elevator?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundati, A37806, 002R01",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundation Rebar Shop Drawings-MTA.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundati",
+        "A37806",
+        "002R01"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-e19299ea-c3",
+      "bucket": "answer",
+      "query": "In A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundati, what does AVI-002R01 say about 03 20 00 and contract?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundati, A37806, 002R01",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundation Rebar Shop Drawings-MTA.pdf"
+      ],
+      "topRelevances": [
+        8
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundati",
+        "A37806",
+        "002R01"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-b2f715c4-c4",
+      "bucket": "answer",
+      "query": "In A37806_14 24 00_BUR-009R00 - R&R - EL539 Cab and Entran, what does BUR-009R00 say about 08 80 00 and information?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806, 009R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_14 24 00_BUR-009R00 - AAN - EL539 Cab and Entrance Drawings.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806",
+        "009R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-b2f715c4-c2",
+      "bucket": "answer",
+      "query": "In A37806_14 24 00_BUR-009R00 - R&R - EL539 Cab and Entran, what does BUR-009R00 say about 14 24 00 and contract?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806, 009R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_14 24 00_BUR-009R00 - AAN - EL539 Cab and Entrance Drawings.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806",
+        "009R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-8a793d89-c4",
+      "bucket": "answer",
+      "query": "In A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Stai, what does BUR-001R00 say about drawing and professional?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Stai, A37806, 001R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Staircase Enclosure Shop Drawings.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Stai",
+        "A37806",
+        "001R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-8a793d89-c3",
+      "bucket": "answer",
+      "query": "In A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Stai, what does BUR-001R00 say about information and exceptions?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Stai, A37806, 001R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Staircase Enclosure Shop Drawings.pdf"
+      ],
+      "topRelevances": [
+        8
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Stai",
+        "A37806",
+        "001R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-afe123c6-c2",
+      "bucket": "answer",
+      "query": "In Invoice 11707, what does the document state about Service Locations: Middletown?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: Invoice 11707",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "Invoice 11707.pdf",
+        "A37806_01 33 10_GEN001R00_ - Copy.docx",
+        "A37806_23 33 00_GEN-001R00 - Damper and Louver Product Data.pdf"
+      ],
+      "topRelevances": [
+        1,
+        0.776,
+        0.765
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "Invoice 11707"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-6a8f8474-c2",
+      "bucket": "answer",
+      "query": "In Invoice 11830, what does the document state about Service Locations: Middletown?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: Invoice 11830",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "Invoice 11830.pdf",
+        "A37806_01 33 10_GEN001R00_ - Copy.docx",
+        "A37806_23 33 00_GEN-001R00 - Damper and Louver Product Data.pdf"
+      ],
+      "topRelevances": [
+        1,
+        0.847,
+        0.801
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "Invoice 11830"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-ce208562-c3",
+      "bucket": "answer",
+      "query": "In 2025 Lockton Invoice 0849812, what does the document state about Single Invoice: INV 123456*?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: 2025 Lockton Invoice 0849812, 0849812",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "2025 Lockton Invoice 0849812.pdf",
+        "A37806_01 30 20_MYR-074R00 - FIO - DEP-Preconstruction Meeting Myrtle-11.14.25.pdf",
+        "MTA  C & D_Enovate Consulting, LLC_25-26 GL, Excess, Prof, P_5-8-2025 (1).pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "2025 Lockton Invoice 0849812",
+        "0849812"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-ce208562-c2",
+      "bucket": "answer",
+      "query": "In 2025 Lockton Invoice 0849812, what does the document state about Harco National Insurance Company?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: 2025 Lockton Invoice 0849812, 0849812",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "2025 Lockton Invoice 0849812.pdf",
+        "COI - C876085 - MLJ CONTRACTING CORP. - 2024 - 1-21-2025 - 534015720.pdf",
+        "A37806_PRDC12-012R00 - R&R - Lead Placard Package-Burnside.pdf"
+      ],
+      "topRelevances": [
+        1,
+        0.63,
+        0.584
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "2025 Lockton Invoice 0849812",
+        "0849812"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-5d538cd7-c3",
+      "bucket": "answer",
+      "query": "In Backup for Invoice#01, what does the document state about TIME AND MATERIAL (T&M) LOG SHEET Office: 516-605-1122?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: Backup for Invoice#01",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "Backup for Invoice#01.pdf",
+        "CO#03 Equipment used at Burnside Avenue.pdf",
+        "T&M MLJ_KAS 001.pdf"
+      ],
+      "topRelevances": [
+        0.963,
+        0.92,
+        0.904
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "Backup for Invoice#01"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-5d538cd7-c5",
+      "bucket": "answer",
+      "query": "In Backup for Invoice#01, what does the document state about TIME AND MATERIAL (T&M) LOG SHEET Office: 516-605-1122?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: Backup for Invoice#01",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "Backup for Invoice#01.pdf",
+        "CO#03 Equipment used at Burnside Avenue.pdf",
+        "T&M MLJ_KAS 001.pdf"
+      ],
+      "topRelevances": [
+        0.963,
+        0.92,
+        0.904
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "Backup for Invoice#01"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-8683adfa-c2",
+      "bucket": "answer",
+      "query": "In A37806_01 30 20_GEN-042R00 - ORIG - A37806 & C49321R Co, what does GEN-042R00 say about 00\n01 30 and contract?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806, 042R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf"
+      ],
+      "topRelevances": [
+        5
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806",
+        "042R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-8683adfa-c3",
+      "bucket": "answer",
+      "query": "In A37806_01 30 20_GEN-042R00 - ORIG - A37806 & C49321R Co, what does GEN-042R00 say about station and ahern?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806, 042R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf"
+      ],
+      "topRelevances": [
+        4
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806",
+        "042R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-83c4d024-c3646",
+      "bucket": "answer",
+      "query": "In A37806 Kick Off Pre-Work Conference MASTER FILE - 2.10., what does the document state about q��faX1�E_f�Xǰ\"�/�\u0017�\u001a��P\u0004�8w���$a<R\u0002��v\u0007`p\u0006\u0013`\u000f�u =��\b\u0012a R�u�v3��P�i�<4/��߱\u001f\u0006'�Gȓ\u001b������...?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806, Conference",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806 Kick Off Pre-Work Conference MASTER FILE - Final.pdf",
+        "A37806_01 40 10_GEN-124R00 - APP - CWP-052 - Platform Concrete Mockup.pdf",
+        "A37806_01 40 10_GEN-090R01 - AEAN - QWP-012 REV01 - Miscellaneous Metals.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        0.97
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806",
+        "Conference"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-83c4d024-c3829",
+      "bucket": "answer",
+      "query": "In A37806 Kick Off Pre-Work Conference MASTER FILE - 2.10., what does the document state about X��u?:\u001fO½��m�f���Ʒ_�g� �y,�M�?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806, Conference",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806 Kick Off Pre-Work Conference MASTER FILE - Final.pdf",
+        "A37806_01 33 00_GEN-005R00 - FIO - Submittal Register May 2025.pdf",
+        "A37806_01 33 00_GEN-015R00 - Submittal Register March 2026.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806",
+        "Conference"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-d270696a-c23",
+      "bucket": "answer",
+      "query": "In A37806 Monthly Job Progress Meeting Minutes 2025-07-24, what does the document state about /25, 11:33:11 AM 1h 21m 13s bjiang@mljcontracting.com bjiang@mljcontracting.com Presenter?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806 Monthly Job Progress Meeting Minutes 2025-07-24, A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806 Monthly Job Progress Meeting Minutes 2025-07-24.pdf",
+        "A37806_01 30 20_GEN-091R00 - APP - Monthly Job Progress Meeting Minutes 11.20.25.pdf",
+        "A37806_01 30 20_GEN-013R00 - FIO - Monthly Job Progress Meeting Minutes 04.24.25.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806 Monthly Job Progress Meeting Minutes 2025-07-24",
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-d270696a-c28",
+      "bucket": "answer",
+      "query": "In A37806 Monthly Job Progress Meeting Minutes 2025-07-24, what does the document state about Emmanuel Olagbaiye 7/24/25, 10:03:48 AM 7/24/25, 11:33:23 AM 1h 29m 34s EOlagbaiye@mljc...?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806 Monthly Job Progress Meeting Minutes 2025-07-24, A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806 Monthly Job Progress Meeting Minutes 2025-07-24.pdf",
+        "A37806_01 30 20_GEN-029R00 - FIO - Monthly Job Progress Meeting Minutes 07.24.25.pdf",
+        "A37806_01 30 20_GEN-013R00 - FIO - Monthly Job Progress Meeting Minutes 04.24.25.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806 Monthly Job Progress Meeting Minutes 2025-07-24",
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-46885e53-c8",
+      "bucket": "answer",
+      "query": "In A37806 Monthly Job Progress Meeting Minutes 2026-05-28, what does the document state about CPR-003 R2 issued on 5/6/26.?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 30 20_GEN-017R00 - FIO - Monthly Job Progress Meeting Minutes 05.22.25.pdf",
+        "A37806 Monthly Job Progress Meeting Minutes 2026-02-26.docx",
+        "A37806 Monthly Job Progress Meeting Minutes 2025-06-26.pdf"
+      ],
+      "topRelevances": [
+        1,
+        0.979,
+        0.818
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-46885e53-c4",
+      "bucket": "answer",
+      "query": "In A37806 Monthly Job Progress Meeting Minutes 2026-05-28, what does the document state about ace from 3/2-9/20/26 on Track J4?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806 Monthly Job Progress Meeting Minutes 2026-02-26.docx",
+        "A37806 Monthly Job Progress Meeting Minutes 2026-01-22.docx",
+        "A37806 Monthly Job Progress Meeting Minutes 2025-11-20.docx"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-4b8950a6-c3",
+      "bucket": "answer",
+      "query": "In 37135_02FF_181ST_001R00 - (NET) - Monitoring Plan, what does the document state about Date Received Reviewed By?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: A-37806_J-TRACK-13A-034R01 - RWC - Material I&T Request 100-8 Insulated Joint Type A (Qty.4 Sets).pdf | A-37806_J-TRACK-13A-029R01 - RWC - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.20 Pairs)-MJ-LT-SKASSA.pdf | A37806_01 40 10_GEN-085R01 - APP - CWP-054 Wire & Cable Installation.pdf",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A-37806_J-TRACK-13A-034R01 - RWC - Material I&T Request 100-8 Insulated Joint Type A (Qty.4 Sets).pdf",
+        "A-37806_J-TRACK-13A-029R01 - RWC - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.20 Pairs)-MJ-LT-SKASSA.pdf",
+        "A37806_01 40 10_GEN-085R01 - APP - CWP-054 Wire & Cable Installation.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-4b8950a6-c2",
+      "bucket": "answer",
+      "query": "In 37135_02FF_181ST_001R00 - (NET) - Monitoring Plan, what does the document state about For NYCT/MTA Review & Comment?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: 001R00, Monitoring",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_PRDC12_MID-001R00 - FIO - Baseline Noise Monitoring Report Middletown Station.pdf",
+        "A37806_01 33 10_BUR-004R00 - FIO - BUR - MPT Plans.pdf",
+        "A37806_01 33 20_GEN-001R00 - R&R - Communications and Public Outreach Plan..pdf"
+      ],
+      "topRelevances": [
+        0.97,
+        0.947,
+        0.945
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "001R00",
+        "Monitoring"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-ae1aafb0-c7",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and , what does GEN-001R00 say about coordination and .................................................................................................................?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and , A37806, 001R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and Agency Coordination and Permitting Implementation Plan.pdf"
+      ],
+      "topRelevances": [
+        8
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and ",
+        "A37806",
+        "001R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-ae1aafb0-c19",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and , what does GEN-001R00 say about coordination and design?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and , A37806, 001R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and Agency Coordination and Permitting Implementation Plan.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 33 10_GEN-001R00 - APP-EAN - Third Party and ",
+        "A37806",
+        "001R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-6235c6e0-c33",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10., what does BUR-003R00 say about permit and street?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10., A37806, 003R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10.21.25.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10.",
+        "A37806",
+        "003R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-6235c6e0-c71",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10., what does BUR-003R00 say about mitigation and within?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10., A37806, 003R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10.21.25.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10.",
+        "A37806",
+        "003R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-8bf2aca9-c9",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work, what does 01 33 10 say about branch and branches?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work, A37806, 005R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work Permit.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work",
+        "A37806",
+        "005R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-8bf2aca9-c16",
+      "bucket": "answer",
+      "query": "In A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work, what does 01 33 10 say about tree and standards?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work, A37806, 005R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work Permit.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work",
+        "A37806",
+        "005R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-aa934827-c2",
+      "bucket": "answer",
+      "query": "In FATMIR KASTRATI, what does the document state about Attachment 8. Access Pass Application?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: FATMIR KASTRATI",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "FATMIR KASTRATI.pdf",
+        "Cary Winston Attachment 8 & 9.pdf",
+        "ABHISHEK PATEL.pdf"
+      ],
+      "topRelevances": [
+        1,
+        0.948,
+        0.941
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "FATMIR KASTRATI"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-aa934827-c3",
+      "bucket": "answer",
+      "query": "In FATMIR KASTRATI, what does the document state about ntract to New York City Transit, cannot be performed without the use?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: DANIELLA RAMIREZ.pdf | Non-Employee Access Pass Application Packet - Exp 2024 and 2025 - JACK TROIANO.pdf | XIN YUAN.pdf",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "DANIELLA RAMIREZ.pdf",
+        "Non-Employee Access Pass Application Packet - Exp 2024 and 2025 - JACK TROIANO.pdf",
+        "XIN YUAN.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-92056c6f-c4",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_BUR-081R00 - FIO - January 2026  Constr, what does BUR-081R00 say about burnside and side?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 32 10_BUR-081R00 - FIO - January 2026  Constr, A37806, 081R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 32 10_BUR-081R00 - FIO - January 2026  Construction Photos.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 32 10_BUR-081R00 - FIO - January 2026  Constr",
+        "A37806",
+        "081R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-92056c6f-c3",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_BUR-081R00 - FIO - January 2026  Constr, what does BUR-081R00 say about burnside and side?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 32 10_BUR-081R00 - FIO - January 2026  Constr, A37806, 081R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 32 10_BUR-081R00 - FIO - January 2026  Construction Photos.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 32 10_BUR-081R00 - FIO - January 2026  Constr",
+        "A37806",
+        "081R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-be82ab58-c5",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_BUR-080R00 - FIO - Burnside December 20, what does BUR-080R00 say about side and installation?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 32 10_BUR-080R00 - FIO - Burnside December 20, A37806, 080R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 32 10_BUR-080R00 - FIO - Burnside December 2025  Construction Photos.pdf"
+      ],
+      "topRelevances": [
+        8
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 32 10_BUR-080R00 - FIO - Burnside December 20",
+        "A37806",
+        "080R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-be82ab58-c4",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_BUR-080R00 - FIO - Burnside December 20, what does BUR-080R00 say about area and installation?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 32 10_BUR-080R00 - FIO - Burnside December 20, A37806, 080R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 32 10_BUR-080R00 - FIO - Burnside December 2025  Construction Photos.pdf"
+      ],
+      "topRelevances": [
+        8
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 32 10_BUR-080R00 - FIO - Burnside December 20",
+        "A37806",
+        "080R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-f1878087-c4",
+      "bucket": "answer",
+      "query": "In 2025-05-13 A37806 Burnside Ave VECP Presentation, what does the document state about VALUE ENGINEERING BACKGROUND?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806, Presentation",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 30 20_GEN-004R00 - FIO - Burnside Ave VECP Presentation Meeting Minutes 03.06.25.pdf",
+        "A37806_PRDC12-047R02 - NEPA Consistency Review Burnside.pdf",
+        "A37806_PRDC12-047R05 - ORIG - NEPA Consistency Review Burnside DO NOT USE.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806",
+        "Presentation"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-f1878087-c2",
+      "bucket": "answer",
+      "query": "In 2025-05-13 A37806 Burnside Ave VECP Presentation, what does the document state about May 13, 2025| 12:00 PM?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806, Presentation",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 30 20_GEN-004R00 - FIO - Burnside Ave VECP Presentation Meeting Minutes 03.06.25.pdf",
+        "2025-05-13 A37806 Burnside Ave VECP Presentation.pdf",
+        "Base markups.pdf"
+      ],
+      "topRelevances": [
+        1,
+        0.92,
+        0.789
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806",
+        "Presentation"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-f1dd6e34-c25",
+      "bucket": "answer",
+      "query": "In PRO 26-01 Control of Project Nonconforming Items-JS.202, what does the document state about NONCONFORMING ITEMS PROCEDURE?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: PRO 26-01 Control of Project Nonconforming Items-JS.202, Nonconforming, 20260109",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "PRO 26-01 Control of Project Nonconforming Items-JS.20260109.pdf",
+        "A37806_01 40 10_GEN-116R00 - FIO - External Audit - Glenridge & Seiko - Steel Sub.pdf",
+        "A37806_01 40 10_GEN-099R00 - ORIG - NCR-A37806-2026-002 I&T Inspection of MDT Steel_MTA.pdf"
+      ],
+      "topRelevances": [
+        1,
+        0.99,
+        0.868
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "PRO 26-01 Control of Project Nonconforming Items-JS.202",
+        "Nonconforming",
+        "20260109"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-f1dd6e34-c23",
+      "bucket": "answer",
+      "query": "In PRO 26-01 Control of Project Nonconforming Items-JS.202, what requirements does spec section 01 40 10 include for 01 40 10?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: A37806_01 40 10_GEN-003 - ADA-P6 - CRF_Design Project Specific Quality Management Plan_R01 - AECOM Responses.xlsx",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 40 10_GEN-003 - ADA-P6 - CRF_Design Project Specific Quality Management Plan_R01 - AECOM Responses.xlsx"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-22a58e99-c2",
+      "bucket": "answer",
+      "query": "In A37806_DRFI-0079 - MDT NB Stair Foundation Rebar Interf, what does DRFI-0079 say about 05 12 00 and anchor?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_DRFI-0079 - MDT NB Stair Foundation Rebar Interf, A37806, Foundation",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_DRFI-0079 - MDT NB Stair Foundation Rebar Interference.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_DRFI-0079 - MDT NB Stair Foundation Rebar Interf",
+        "A37806",
+        "Foundation"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-7f545dae-c2",
+      "bucket": "answer",
+      "query": "In A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+0, what does RFI098 say about conductor and platform?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+0, A37806, RFI098",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+00.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+0",
+        "A37806",
+        "RFI098"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-7f545dae-c4",
+      "bucket": "answer",
+      "query": "In A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+0, what does RFI098 say about conductor and figure?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+0, A37806, RFI098",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+00.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+0",
+        "A37806",
+        "RFI098"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-2e21cbdc-c17",
+      "bucket": "answer",
+      "query": "In A37806_ADA P6_RFI096, what does RFI096 say about platform and exit?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_ADA P6_RFI096, A37806, RFI096",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_ADA P6_RFI096.pdf"
+      ],
+      "topRelevances": [
+        4
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_ADA P6_RFI096",
+        "A37806",
+        "RFI096"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-2e21cbdc-c18",
+      "bucket": "answer",
+      "query": "In A37806_ADA P6_RFI096, what does RFI096 say about upgrades and mcdonald?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_ADA P6_RFI096, A37806, RFI096",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_ADA P6_RFI096.pdf"
+      ],
+      "topRelevances": [
+        4
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_ADA P6_RFI096",
+        "A37806",
+        "RFI096"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-f5c380d3-c2",
+      "bucket": "answer",
+      "query": "In MYR-A-444A, what does DRFI-0078 say about level and construction?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: A37806_DRFI-0078 - Follow up to DRFI-0046 Myrtle Ave Platform EL Entrance.pdf",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_DRFI-0078 - Follow up to DRFI-0046 Myrtle Ave Platform EL Entrance.pdf"
+      ],
+      "topRelevances": [
+        3
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-f5c380d3-c3",
+      "bucket": "answer",
+      "query": "In MYR-A-444A, what does DRFI-0078 say about lcd-a-525 and panel?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: A37806_DRFI-0078 - Follow up to DRFI-0046 Myrtle Ave Platform EL Entrance.pdf",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_DRFI-0078 - Follow up to DRFI-0046 Myrtle Ave Platform EL Entrance.pdf"
+      ],
+      "topRelevances": [
+        2
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-a7e7e464-c3",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-096R04 - APP - SWP-016 - Elevator S, what does GEN-096R04 say about 01 35 10 and submittal?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-097R01 - APP - SWP-016- Elevator Steel & Enclosure (Night).pdf"
+      ],
+      "topRelevances": [
+        5
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-a7e7e464-c52",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-096R04 - APP - SWP-016 - Elevator S, what does GEN-096R04 say about rcny and outrigger?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-097R01 - APP - SWP-016- Elevator Steel & Enclosure (Night).pdf"
+      ],
+      "topRelevances": [
+        4
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-b6b3128f-c17",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-041R01 - R&R - SWP-011 - Platform C, what does GEN-041R01 say about dust and control?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf"
+      ],
+      "topRelevances": [
+        4
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-b6b3128f-c31",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-041R01 - R&R - SWP-011 - Platform C, what does GEN-041R01 say about machine and specification?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf"
+      ],
+      "topRelevances": [
+        4
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-3157502c-c15",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General fo, what does GEN-055R01 say about tools and electrical?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General fo, A37806, 055R01",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General formwork rebar and concrete.pdf"
+      ],
+      "topRelevances": [
+        5
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General fo",
+        "A37806",
+        "055R01"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-3157502c-c2",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General fo, what does GEN-055R01 say about 01 35 10 and transmittal?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General fo, A37806, 055R01",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General formwork rebar and concrete.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 35 10_GEN-055R01 - APP - SWP-032 - General fo",
+        "A37806",
+        "055R01"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-1f653e39-c16",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine St, what does GEN-116R00 say about lifting and hearing?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine St, A37806, 116R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine Stair Barricade.pdf"
+      ],
+      "topRelevances": [
+        4
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine St",
+        "A37806",
+        "116R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-1f653e39-c5",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine St, what does GEN-116R00 say about available and safety?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine St, A37806, 116R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine Stair Barricade.pdf"
+      ],
+      "topRelevances": [
+        5
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 35 10_GEN-116R00 - R&R - SWP-052 Mezzanine St",
+        "A37806",
+        "116R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-eb10b48b-c12",
+      "bucket": "answer",
+      "query": "In 21 12 00 - Fire-Suppression Standpipes, what does EDU02 say about supports and hangers?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: 21 12 00 - Fire-Suppression Standpipes, Suppression, Standpipes",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "21 12 00 - Fire-Suppression Standpipes.pdf"
+      ],
+      "topRelevances": [
+        5
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "21 12 00 - Fire-Suppression Standpipes",
+        "Suppression",
+        "Standpipes"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-eb10b48b-c19",
+      "bucket": "answer",
+      "query": "In 21 12 00 - Fire-Suppression Standpipes, what does EDU02 say about 21 12 00 and hose?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: 21 12 00 - Fire-Suppression Standpipes, Suppression, Standpipes",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "21 12 00 - Fire-Suppression Standpipes.pdf"
+      ],
+      "topRelevances": [
+        4
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "21 12 00 - Fire-Suppression Standpipes",
+        "Suppression",
+        "Standpipes"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-fe353658-c275",
+      "bucket": "answer",
+      "query": "In A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) , what does BUR-042R01 say about water and leaks?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) , A37806, 042R01",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) - SOGR at Burnside Avenue.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) ",
+        "A37806",
+        "042R01"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-fe353658-c395",
+      "bucket": "answer",
+      "query": "In A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) , what does BUR-042R01 say about repair and steel?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) , A37806, 042R01",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) - SOGR at Burnside Avenue.pdf"
+      ],
+      "topRelevances": [
+        8
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) ",
+        "A37806",
+        "042R01"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-bca6afd2-c2",
+      "bucket": "answer",
+      "query": "In Transmittal 212-NOR Xfer Girder inspection, what does Transmittal 212-NOR say about aecom and mljtc?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: Transmittal 212-NOR Xfer Girder inspection, Transmittal, inspection",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "Transmittal 212-NOR Xfer Girder inspection.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "Transmittal 212-NOR Xfer Girder inspection",
+        "Transmittal",
+        "inspection"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-c60c1183-c4",
+      "bucket": "answer",
+      "query": "In A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Ins, what does NOR-010R00 say about contract and manager?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Ins, A37806, 010R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Inspection Findings 11-20-2025.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Ins",
+        "A37806",
+        "010R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-c60c1183-c7",
+      "bucket": "answer",
+      "query": "In A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Ins, what does NOR-010R00 say about m3071513 and m3083356?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Ins, A37806, 010R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Inspection Findings 11-20-2025.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_33 14 15_NOR-010R00 - FIO - Norwood Ave CCTV Ins",
+        "A37806",
+        "010R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-639c329f-c6",
+      "bucket": "answer",
+      "query": "In A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and, what does GEN-014R00 say about 01 40 10 and survey?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and, A37806, 014R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and Certification Report- May 2025.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and",
+        "A37806",
+        "014R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-639c329f-c2",
+      "bucket": "answer",
+      "query": "In A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and, what does GEN-014R00 say about nyct and information?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and, A37806, 014R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and Certification Report- May 2025.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and",
+        "A37806",
+        "014R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-39a5d5d5-c10",
+      "bucket": "answer",
+      "query": "In A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC, what does GEN-001R00 say about safety and application?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC, A37806, 001R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC comments.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC",
+        "A37806",
+        "001R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-39a5d5d5-c5",
+      "bucket": "answer",
+      "query": "In A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC, what does GEN-001R00 say about packaging and certifiable?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC, A37806, 001R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC comments.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_03 61 00_GEN-001R00 - FIO -  SikaGrout-212 - PMC",
+        "A37806",
+        "001R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-f50ff9f5-c100",
+      "bucket": "answer",
+      "query": "In A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burns, what does PRDC12-012R02 say about area and cutting?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burns, A37806, PRDC12",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burnside.pdf"
+      ],
+      "topRelevances": [
+        8
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burns",
+        "A37806",
+        "PRDC12"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-4b1f7d74-c5",
+      "bucket": "answer",
+      "query": "In MLJTC2-MTACD-XXXX - MTA System Access Passes, what does the document state about �r���\u001a����: f����@�\u0001���1nLg)��xs+ʍmWm��Q݋b�o�f}��?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: MLJTC2-MTACD-XXXX - MTA System Access Passes, MLJTC2",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "MLJTC2-MTACD-XXXX - MTA System Access Passes.docx",
+        "MLJTC2-MTACD-XXXX - MTA System Access Passes 01.27.26.docx",
+        "MLJTC2-MTACD-0114 - MTA System Access Passes 02.04.26.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        0.95
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "MLJTC2-MTACD-XXXX - MTA System Access Passes",
+        "MLJTC2"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-4b1f7d74-c21",
+      "bucket": "answer",
+      "query": "In MLJTC2-MTACD-XXXX - MTA System Access Passes, what does the document state about �\u001c&��{D!�8�\u0018~49l��&��\u0013A��?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: MLJTC2-MTACD-XXXX - MTA System Access Passes, MLJTC2",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "MLJTC2-MTACD-XXXX - MTA System Access Passes.docx",
+        "MLJTC2-MTACD-XXXX - MTA System Access Passes 01.27.26.docx",
+        "MLJTC2-MTACD-0114 - MTA System Access Passes 02.04.26.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        0.98
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "MLJTC2-MTACD-XXXX - MTA System Access Passes",
+        "MLJTC2"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-dd522ca1-c42",
+      "bucket": "answer",
+      "query": "In A37806 Org Chart r1 2025-01-02, what does the document state about �Y��N��O\u0006]��b�^nUw\u0012�O�\u0015��\u0007%\u001b�#�I.�s�Q���\u0012;\u0015�p�|b5?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: RE A-37806_J-TRACK-13D-010R00 - CPM RFI Bridge Clip Wire Mesh (Qty.600).msg | RE_ A-37806 P6 Subcontract with MLJTC2.msg | A37806_RFI-0057 - MYR AVE PS LAN System contract W-47032 9.9.25.msg",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "RE A-37806_J-TRACK-13D-010R00 - CPM RFI Bridge Clip Wire Mesh (Qty.600).msg",
+        "RE_ A-37806 P6 Subcontract with MLJTC2.msg",
+        "A37806_RFI-0057 - MYR AVE PS LAN System contract W-47032 9.9.25.msg"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-dd522ca1-c30",
+      "bucket": "answer",
+      "query": "In A37806 Org Chart r1 2025-01-02, what does the document state about \u001f�k�i��fI�X���H�\u001dF2O8�5\u0019_�Z|��Z2MS��鬷�mhz�����jk+�{ԏL�_2�E�)2�\u00122\u000f\u001d\u0007�*/\u0014���7������,\u0013j��\u0014...?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806 Org Chart r5 2025-01-30.pptx",
+        "A37806 Org Chart r7 2025-02-19 - Quality.pptx",
+        "A37806 Org Chart r9 2025-03-25.pptx"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        0.995
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-767ec6c6-c2",
+      "bucket": "answer",
+      "query": "In 2025-09-10 - T12_31_26-FedEx-Shipping-Label_Xin, what does the document state about ORIGIN ID:RMEA (718) 571-9596?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: 2025-09-10 - T12_31_26-FedEx-Shipping-Label_Xin",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "2025-09-10 - T12_31_26-FedEx-Shipping-Label_Xin.pdf",
+        "2025-09-10 - T12_34_25-FedEx-Shipping-Label_Xin.pdf",
+        "2025-09-08 - T16_38_32-FedEx-Shipping-Label NYPD_Xin.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "2025-09-10 - T12_31_26-FedEx-Shipping-Label_Xin"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-92a1d852-c11",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator , what does GEN-021R00 say about safety and hazards?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator , A37806, 021R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator - Diego Gonzalez.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator ",
+        "A37806",
+        "021R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-92a1d852-c6",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator , what does GEN-021R00 say about contract and east?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator , A37806, 021R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator - Diego Gonzalez.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator ",
+        "A37806",
+        "021R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-9efaf435-c1709",
+      "bucket": "answer",
+      "query": "In A37806 Test Pit MPT for Community Relations Use, what does the document state about ��l�Dt�q����Hj[�:3\u000f/��\u001b^W�\u0019b=��\u001e�~\u001e�\u001d\\��\u000e\u0005�'�����~��~W�a����ײ�^��)A�k�\u0007��\u0003~^\u001e�7�c[��N�...?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_PRDC04-001R00 - R&R - Test Pit and Boring Location Plans.pdf",
+        "A37806 Test Pit MPT for Community Relations Use.msg",
+        "A37806_01 35 10_GEN-004R02 - APP - SWP-002 - Test Pits.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        0.999
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-9efaf435-c4249",
+      "bucket": "answer",
+      "query": "In A37806 Test Pit MPT for Community Relations Use, what does the document state about �s�_��s���\\�/�)\u000eԦ�7K}�\u001f��\u001f�?!���[̜�V\u001a��t�ߒ:\u0004z���K��������(�b��Q���|;�;K$ã�'$�\u001a簄��Z���g�...?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01_30_10-GEN_001R00 - Project Management Plan.docx",
+        "A37806 Test Pit MPT for Community Relations Use.msg",
+        "A37806 RFI-146RFI - Revised responses are required..msg"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-bf3c1064-c92",
+      "bucket": "answer",
+      "query": "In EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead, what does EDU05B say about calculation and name?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead, EDU05B, Electrical",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead.pdf"
+      ],
+      "topRelevances": [
+        8
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead",
+        "EDU05B",
+        "Electrical"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-bf3c1064-c62",
+      "bucket": "answer",
+      "query": "In EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead, what does EDU05B say about 12 14 10 and 25 43 18?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead, EDU05B, Electrical",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "EDU05B-BB 100% Rev 1 - APP - Electrical Long Lead",
+        "EDU05B",
+        "Electrical"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-14c18906-c2",
+      "bucket": "answer",
+      "query": "In Attachment 4 Blank, what does the document state about Attachment 4. List of Contractor Company Employees Requesting Access Passes?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: Attachment",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "Attachment 4 TC Electric.pdf",
+        "MLJ-MTACD-0057 R1 - System Access Passes Request 9.23.25.pdf",
+        "Non-Employee Access Pass Application Packet - Exp 2024 and 2025 - BLANK FORMS.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "Attachment"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-21a5c069-c2",
+      "bucket": "answer",
+      "query": "In 806-RFI-009 - Myrtle Avenue UPS Backup Requirements, what does RFI-009 say about 27 33 01 and nicholas?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: 806-RFI-009 - Myrtle Avenue UPS Backup Requirements, Requirements",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "806-RFI-009 - Myrtle Avenue UPS Backup Requirements",
+        "Requirements"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-21a5c069-c3",
+      "bucket": "answer",
+      "query": "In 806-RFI-009 - Myrtle Avenue UPS Backup Requirements, what does RFI-009 say about systems and communications?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: 806-RFI-009 - Myrtle Avenue UPS Backup Requirements, Requirements",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf"
+      ],
+      "topRelevances": [
+        10
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "806-RFI-009 - Myrtle Avenue UPS Backup Requirements",
+        "Requirements"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-3422bcbf-c3",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025, what does MYR-076R00 say about upgrades and accessibility?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025, A37806, 076R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025 Construction Photos.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025",
+        "A37806",
+        "076R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-3422bcbf-c2",
+      "bucket": "answer",
+      "query": "In A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025, what does MYR-076R00 say about nyct and information?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025, A37806, 076R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025 Construction Photos.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025",
+        "A37806",
+        "076R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-f19a9963-c2",
+      "bucket": "answer",
+      "query": "In A37806 MOWE Joint Survey 04.08.25  04.09.25, what does the document state about REQUEST FOR INFRASTRUCTURE INSPECTIONS?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806 MOWE Joint Survey 04.08.25  04.09.25, A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806 MOWE Joint Survey 04.08.25  04.09.25.pdf",
+        "A-37806_J-TRACK-13A-034R00 - Material I&T Request 100-8 Insulated Joint Type A (Qty.4 Sets).pdf",
+        "A37806_01 10 20_MYR-022R00 - R&R - EDU02C (FINAL - 100) Structural Steel, Foundations and Fire Standpipe Relocation at MYR.pdf"
+      ],
+      "topRelevances": [
+        1,
+        0.761,
+        0.602
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806 MOWE Joint Survey 04.08.25  04.09.25",
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-f19a9963-c3",
+      "bucket": "answer",
+      "query": "In A37806 MOWE Joint Survey 04.08.25  04.09.25, what does the document state about forwarded to the MOWE Capital Contracts Office within five (5) working days?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 31 30_GEN-010R00 - FIO - Monthly Progress Report - October 2025.pdf",
+        "A37806_01 33 00_GEN-010R00 - RWC - Submittal Register October 2025.pdf",
+        "A37806_01 33 00_GEN-009R00 - Submittal Register September 2025.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-b05eba48-c8",
+      "bucket": "answer",
+      "query": "In Actual - ALl Station 4.6.26 - N, what does the document state about Activity ID Activity Name Original?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: Full 4.22.25.pdf | A37806__01_32_01-002R02 - Design Build Baseline Schedule Full.pdf | May 26 Pencil Copy.pdf",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "Full 4.22.25.pdf",
+        "A37806__01_32_01-002R02 - Design Build Baseline Schedule Full.pdf",
+        "May 26 Pencil Copy.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-b05eba48-c7",
+      "bucket": "answer",
+      "query": "In Actual - ALl Station 4.6.26 - N, what does the document state about EL1121- Install Elevator Enclosure Framing ( Outage)?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: MA 4.1.26.pdf | A37806_01 31 30_GEN-017R00 - FIO - Monthly Progress Report - January 2026.pdf | Actual - ALl Station 4.6.26 - N.pdf",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "MA 4.1.26.pdf",
+        "A37806_01 31 30_GEN-017R00 - FIO - Monthly Progress Report - January 2026.pdf",
+        "Actual - ALl Station 4.6.26 - N.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-82296656-c12",
+      "bucket": "answer",
+      "query": "In M017_IMP_Draft Subcontract_20260227, what does the document state about re applicable, the incorporation specifically excludes any payment provisions contained...?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: M017_IMP_Draft Subcontract_20260227, Subcontract, 20260227",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "M017_IMP_Draft Subcontract_20260227.docx",
+        "50 States - Subcontract - NOT EXECUTED (DRAFT).docx",
+        "M017_IMP_Draft Subcontract_20260227 SD 3.2.26.docx"
+      ],
+      "topRelevances": [
+        1,
+        0.984,
+        0.943
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "M017_IMP_Draft Subcontract_20260227",
+        "Subcontract",
+        "20260227"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-82296656-c10",
+      "bucket": "answer",
+      "query": "In M017_IMP_Draft Subcontract_20260227, what does the document state about ontract represents the entire Subcontract between the parties and supersedes all prior?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: M017_IMP_Draft Subcontract_20260227, Subcontract, 20260227",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "M017_IMP_Draft Subcontract_20260227.docx",
+        "MLJ Contract -- with IMP Revisions SD 11.26.25.docx",
+        "MLJ Contract -- with IMP Revisions 12.31.25.docx"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "M017_IMP_Draft Subcontract_20260227",
+        "Subcontract",
+        "20260227"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-be4768ff-c2",
+      "bucket": "answer",
+      "query": "In SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025, what does the document state about ACTION ITEMS -SDI Co-ordination?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx",
+        "SDI - MLJ Bi-weekly Meeting Draft Agenda - 01.28.2026.docx",
+        "SDI - MLJ Weekly Meeting Draft Agenda - 03.18.2026.docx"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-be4768ff-c5",
+      "bucket": "answer",
+      "query": "In SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025, what does the document state about OCIP and Sub approval for surveyor?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx",
+        "SDI - MLJ Bi-weekly Meeting Draft Agenda - 01.14.2026.docx",
+        "SDI - MLJ Bi-weekly Meeting Draft Agenda - 01.28.2026.docx"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-7ffe0fdb-c5",
+      "bucket": "answer",
+      "query": "In A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Form, what does GEN-001R02 say about pilot and excavate?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Form, A37806, 001R02",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Formwork Drawing.pdf"
+      ],
+      "topRelevances": [
+        7
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Form",
+        "A37806",
+        "001R02"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-7ffe0fdb-c2",
+      "bucket": "answer",
+      "query": "In A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Form, what does GEN-001R02 say about nyct and information?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Form, A37806, 001R02",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Formwork Drawing.pdf"
+      ],
+      "topRelevances": [
+        9
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_03 10 00_GEN-001R02 - ORIG - Elevator Walls Form",
+        "A37806",
+        "001R02"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-997cb89d-c4",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-044R00 - ORIG - List of Competent P, what does GEN-044R00 say about 01 35 10 and station?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 35 10_GEN-044R00 - ORIG - List of Competent P, A37806, 044R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-044R00 - ORIG - List of Competent Persons.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 35 10_GEN-044R00 - ORIG - List of Competent P",
+        "A37806",
+        "044R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-997cb89d-c3",
+      "bucket": "answer",
+      "query": "In A37806_01 35 10_GEN-044R00 - ORIG - List of Competent P, what does GEN-044R00 say about 01 35 10 and civil?",
+      "passed": true,
+      "scoreDetails": "Source file in top-1: A37806_01 35 10_GEN-044R00 - ORIG - List of Competent P, A37806, 044R00",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 10_GEN-044R00 - ORIG - List of Competent Persons.pdf"
+      ],
+      "topRelevances": [
+        6
+      ],
+      "totalMatches": 1,
+      "expectedPatternHit": true,
+      "matchedPatterns": [
+        "A37806_01 35 10_GEN-044R00 - ORIG - List of Competent P",
+        "A37806",
+        "044R00"
+      ],
+      "sourceAt3": true
+    },
+    {
+      "id": "chunk-29df6b3d-c3",
+      "bucket": "answer",
+      "query": "In WINDY KEANE, what does the document state about ntract to New York City Transit, cannot be performed without the use?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: DANIELLA RAMIREZ.pdf | A37806_RFP_Addendum_02.pdf | A37806_RFP_Addendum_02_Combined.pdf",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "DANIELLA RAMIREZ.pdf",
+        "A37806_RFP_Addendum_02.pdf",
+        "A37806_RFP_Addendum_02_Combined.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-29df6b3d-c2",
+      "bucket": "answer",
+      "query": "In WINDY KEANE, what does the document state about Attachment 8. Access Pass Application?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: Cary Winston Attachment 8 & 9.pdf | Attachment 4 Blank.pdf | Attachment 4 2 page in pdf.pdf",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "Cary Winston Attachment 8 & 9.pdf",
+        "Attachment 4 Blank.pdf",
+        "Attachment 4 2 page in pdf.pdf"
+      ],
+      "topRelevances": [
+        0.995,
+        0.875,
+        0.727
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-ebd3b55a-c4",
+      "bucket": "answer",
+      "query": "In Invoice#01_12-31-2025, what does the document state about Total changes approved Application and onthe Continuation Sheet that are changed to?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: A37806_01 32 10_GEN-075R00 - FIO - 6 Week Look Ahead 2025-12-22 to 2026-02-01.pdf | A37806 ADA Package 6 - 6 Week Look Ahead 2025-12-22 to 2026-02-01.pdf | A37806 ADA Package 6 - 6 Week Look Ahead 2026-01-26 to 2026-03-08 R1.pdf",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 32 10_GEN-075R00 - FIO - 6 Week Look Ahead 2025-12-22 to 2026-02-01.pdf",
+        "A37806 ADA Package 6 - 6 Week Look Ahead 2025-12-22 to 2026-02-01.pdf",
+        "A37806 ADA Package 6 - 6 Week Look Ahead 2026-01-26 to 2026-03-08 R1.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    },
+    {
+      "id": "chunk-ebd3b55a-c3",
+      "bucket": "answer",
+      "query": "In Invoice#01_12-31-2025, what does the document state about G on G703) By: Date:?",
+      "passed": false,
+      "scoreDetails": "Missing expected source in top-1. Got: A37806_01 35 70_GEN-001R00 - FIO - Utility Coordination - January 2025.pdf | A37806_01 35 70_GEN-002R00 - FIO - Utility Coordination - February 2025.pdf | A37806_01 35 70_GEN-003R00 - FIO - Utility Coordination - March 2025.pdf",
+      "topK": 3,
+      "rankCutoff": 1,
+      "topFileNames": [
+        "A37806_01 35 70_GEN-001R00 - FIO - Utility Coordination - January 2025.pdf",
+        "A37806_01 35 70_GEN-002R00 - FIO - Utility Coordination - February 2025.pdf",
+        "A37806_01 35 70_GEN-003R00 - FIO - Utility Coordination - March 2025.pdf"
+      ],
+      "topRelevances": [
+        1,
+        1,
+        1
+      ],
+      "totalMatches": 3,
+      "expectedPatternHit": false,
+      "matchedPatterns": [],
+      "sourceAt3": false
+    }
+  ]
+}

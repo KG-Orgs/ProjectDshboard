@@ -1158,20 +1158,18 @@ function ChatWorkspacePageContent() {
       }
       const references = Array.from(referencesMap.values());
 
-      // The primary source's best page (from AI citation evidence)
+      // Show the answer immediately; don't block on PDF preview resolution.
+      setIsTyping(false);
+      await streamAssistantMessage(responseText, references, payload.suggestions);
+
       const primaryBestPage = references[0]?.bestPage ?? references[0]?.suggestedPages?.[0];
-
-      // Auto-open best source if open intent or no doc is open
       const shouldAutoOpen = wantsOpen || (!activeDoc && references.length > 0);
-      if (shouldAutoOpen && references.length > 0) {
-        await openOrCreateDoc(references[0].fileName, requestedPage ?? primaryBestPage, references[0].fileId);
-      } else if (payload.autoOpenFileName && !wantsOpen && references.length > 0) {
-        // Proactively open the top source when AI finds strong evidence.
-        await openOrCreateDoc(references[0].fileName, primaryBestPage, references[0].fileId);
-      }
 
-      // If the active doc is already open and the AI cited a specific page, jump to it.
-      if (
+      if (shouldAutoOpen && references.length > 0) {
+        void openOrCreateDoc(references[0].fileName, requestedPage ?? primaryBestPage, references[0].fileId);
+      } else if (payload.autoOpenFileName && !wantsOpen && references.length > 0) {
+        void openOrCreateDoc(references[0].fileName, primaryBestPage, references[0].fileId);
+      } else if (
         !shouldAutoOpen &&
         primaryBestPage &&
         activeDoc?.kind === 'pdf' &&
@@ -1181,9 +1179,6 @@ function ChatWorkspacePageContent() {
       ) {
         jumpToPdfPage(primaryBestPage);
       }
-
-      setIsTyping(false);
-      await streamAssistantMessage(responseText, references, payload.suggestions);
     } catch (error) {
       setIsTyping(false);
       setChatError(error instanceof Error ? error.message : 'AI chat request failed.');
