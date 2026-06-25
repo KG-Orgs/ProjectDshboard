@@ -58,6 +58,8 @@ export type {
   CreateChatSessionRequest,
   CreateChatSessionResponse,
   ChatSessionsListResponse,
+  UpdateChatSessionRequest,
+  UpdateChatSessionResponse,
   SendChatMessageRequest,
   SendChatMessageResponse,
   ChatHistoryResponse,

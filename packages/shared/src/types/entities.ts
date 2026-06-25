@@ -121,7 +121,14 @@ export interface ChatSession {
   id: UUID;
   projectId: UUID;
   userId: UUID;
+  /** Auto-generated from first user message; user-editable (rename). */
+  title?: string | null;
+  pinned: boolean;
+  /** ISO string — updated on each new message or rename. */
+  updatedAt: Date;
   createdAt: Date;
+  /** Total message count; returned by list endpoints. */
+  messageCount?: number;
 }
 
 /**

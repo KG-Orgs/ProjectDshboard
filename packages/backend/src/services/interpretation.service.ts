@@ -176,10 +176,10 @@ function tryParseJsonObject(input: string): Record<string, unknown> | null {
 
 async function classifyWithLlm(context: InterpretationContext): Promise<ChatInterpretation | null> {
   const env = getEnv();
-  if (!env.openAiApiKey || process.env.CHAT_INTERPRETER_ENABLE_LLM !== "true") {
+  if (!env.classifierApiKey || process.env.CHAT_INTERPRETER_ENABLE_LLM !== "true") {
     return null;
   }
-  const endpoint = env.openAiChatEndpoint ?? "https://api.deepseek.com/v1/chat/completions";
+  const endpoint = env.classifierEndpoint;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CLASSIFIER_TIMEOUT_MS);
@@ -190,16 +190,29 @@ async function classifyWithLlm(context: InterpretationContext): Promise<ChatInte
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${env.openAiApiKey}`,
+        Authorization: `Bearer ${env.classifierApiKey}`,
       },
       body: JSON.stringify({
-        model: env.openAiChatModel,
+        model: env.classifierModel,
         temperature: 0,
         messages: [
           {
             role: "system",
-            content:
-              "Classify construction chatbot user intent. Return strict JSON with keys intent, confidence, alternatives, entities, retrievalHints. No prose.",
+            content: [
+              "You are a construction chatbot router. Classify the user query and return strict JSON only — no prose.",
+              "",
+              "Return a JSON object with these keys:",
+              "  intent        — one of: greeting, file_lookup, active_doc_qa, status_check, schedule_risk, cost_risk, contract_notice, document_summary, general_qa",
+              "  confidence    — float 0-1",
+              "  userRole      — inferred role: project_manager | superintendent | estimator | owner | subcontractor | architect | engineer | unknown",
+              "  questionType  — rfi | submittal | schedule | cost | document_qa | draft_request | status_check | risk_flag | file_lookup | general",
+              "  riskLevel     — low | medium | high | critical",
+              "  proceedMode   — proceed (enough info to answer), assume (make reasonable assumptions and note them), ask (must clarify before answering)",
+              "  requiredDocTypes — array of doc types to retrieve, e.g. ['rfi','schedule','drawing']. Empty array if no retrieval needed.",
+              "  alternatives  — array of {intent, confidence} for runner-up intents",
+              "  entities      — {rfiNumber?, submittalNumber?, specSection?, dateHint?, statusHint?}",
+              "  retrievalHints — {preferredCategories?, preferredTags?, recencyBias?}",
+            ].join("\n"),
           },
           {
             role: "user",
@@ -255,6 +268,30 @@ async function classifyWithLlm(context: InterpretationContext): Promise<ChatInte
       ? (parsed.retrievalHints as ChatInterpretation["retrievalHints"])
       : undefined;
 
+    const userRole = (() => {
+      const allowed = ["project_manager","superintendent","estimator","owner","subcontractor","architect","engineer","unknown"] as const;
+      return allowed.includes(parsed.userRole as typeof allowed[number]) ? (parsed.userRole as typeof allowed[number]) : undefined;
+    })();
+
+    const questionType = (() => {
+      const allowed = ["rfi","submittal","schedule","cost","document_qa","draft_request","status_check","risk_flag","file_lookup","general"] as const;
+      return allowed.includes(parsed.questionType as typeof allowed[number]) ? (parsed.questionType as typeof allowed[number]) : undefined;
+    })();
+
+    const riskLevel = (() => {
+      const allowed = ["low","medium","high","critical"] as const;
+      return allowed.includes(parsed.riskLevel as typeof allowed[number]) ? (parsed.riskLevel as typeof allowed[number]) : undefined;
+    })();
+
+    const proceedMode = (() => {
+      const allowed = ["ask","assume","proceed"] as const;
+      return allowed.includes(parsed.proceedMode as typeof allowed[number]) ? (parsed.proceedMode as typeof allowed[number]) : undefined;
+    })();
+
+    const requiredDocTypes = Array.isArray(parsed.requiredDocTypes)
+      ? (parsed.requiredDocTypes as unknown[]).filter((item): item is string => typeof item === "string").slice(0, 8)
+      : undefined;
+
     return {
       intent,
       confidence,
@@ -262,6 +299,11 @@ async function classifyWithLlm(context: InterpretationContext): Promise<ChatInte
       alternatives,
       entities,
       retrievalHints,
+      userRole,
+      questionType,
+      riskLevel,
+      proceedMode,
+      requiredDocTypes,
     };
   } catch (error) {
     logger.warn("chat.interpretation.classifier_error", {

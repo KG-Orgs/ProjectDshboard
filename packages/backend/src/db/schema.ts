@@ -423,6 +423,12 @@ export const chatSessions = pgTable(
     userId: uuid("user_id")
       .references(() => users.id)
       .notNull(),
+    // Auto-generated from first user message; editable by user (rename)
+    title: text("title"),
+    pinned: boolean("pinned").default(false).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -430,6 +436,7 @@ export const chatSessions = pgTable(
   (table) => ({
     projectIdx: index("idx_chat_sessions_project").on(table.projectId),
     userIdx: index("idx_chat_sessions_user").on(table.userId),
+    updatedAtIdx: index("idx_chat_sessions_updated_at").on(table.updatedAt),
   })
 );
 
@@ -451,6 +458,61 @@ export const chatMessages = pgTable(
   },
   (table) => ({
     sessionIdx: index("idx_chat_messages_session").on(table.sessionId),
+  })
+);
+
+// ================================
+// CONVERSATION DOCUMENTS
+// ================================
+// Tracks which project files were cited/surfaced per session.
+// HOOK: populate this table from chat.service.ts after each AI reply.
+//       Use chunk_ids + relevance_score to build per-session
+//       retrieval heat-maps and boost frequently-cited chunks.
+
+export const conversationDocuments = pgTable(
+  "conversation_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id")
+      .references(() => chatSessions.id, { onDelete: "cascade" })
+      .notNull(),
+    fileId: uuid("file_id").references(() => fileRecords.id, { onDelete: "set null" }),
+    fileName: text("file_name").notNull(),
+    // Array of chunk UUIDs that were retrieved for this turn
+    chunkIds: text("chunk_ids").array(),
+    // 0–100; higher → more central to the conversation
+    relevanceScore: integer("relevance_score").default(50).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    sessionIdx: index("idx_conv_docs_session").on(table.sessionId),
+    fileIdx: index("idx_conv_docs_file").on(table.fileId),
+  })
+);
+
+// ================================
+// AI FEEDBACK
+// ================================
+// Stores per-message user ratings and free-text corrections.
+// HOOK: feed into retrieval re-ranking and fine-tuning pipelines.
+//       Use user_rating < 3 rows as negative examples for DPO.
+
+export const aiFeedback = pgTable(
+  "ai_feedback",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    messageId: uuid("message_id")
+      .references(() => chatMessages.id, { onDelete: "cascade" })
+      .notNull(),
+    // 1 (poor) – 5 (excellent)
+    userRating: integer("user_rating"),
+    correction: text("correction"),
+    // e.g. ['wrong_citation','off_topic','hallucination']
+    tags: text("tags").array(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    messageIdx: index("idx_ai_feedback_message").on(table.messageId),
   })
 );
 
@@ -544,6 +606,42 @@ export const indexingErrors = pgTable(
 );
 
 // ================================
+// PDF MARKUPS
+// ================================
+
+export const pdfMarkups = pgTable(
+  "pdf_markups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    fileId: uuid("file_id")
+      .references(() => fileRecords.id, { onDelete: "cascade" })
+      .notNull(),
+    pageNumber: integer("page_number").notNull(),
+    type: text("type").notNull(),
+    coordinates: jsonb("coordinates").default(sql`'{}'::jsonb`).notNull(),
+    measurement: jsonb("measurement"),
+    category: text("category").default("General Comment").notNull(),
+    status: text("status").default("Open").notNull(),
+    comment: text("comment"),
+    assignedTo: text("assigned_to"),
+    createdBy: text("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectIdx: index("idx_pdf_markups_project").on(table.projectId),
+    fileIdx: index("idx_pdf_markups_file").on(table.fileId),
+    pageIdx: index("idx_pdf_markups_page").on(table.pageNumber),
+    statusIdx: index("idx_pdf_markups_status").on(table.status),
+    categoryIdx: index("idx_pdf_markups_category").on(table.category),
+    updatedAtIdx: index("idx_pdf_markups_updated_at").on(table.updatedAt),
+  })
+);
+
+// ================================
 // RELATIONS (for query convenience)
 // ================================
 
@@ -623,13 +721,33 @@ export const chatSessionsRelations = relations(
       references: [users.id],
     }),
     messages: many(chatMessages),
+    conversationDocuments: many(conversationDocuments),
   })
 );
 
-export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+export const chatMessagesRelations = relations(chatMessages, ({ one, many }) => ({
   session: one(chatSessions, {
     fields: [chatMessages.sessionId],
     references: [chatSessions.id],
+  }),
+  feedback: many(aiFeedback),
+}));
+
+export const conversationDocumentsRelations = relations(conversationDocuments, ({ one }) => ({
+  session: one(chatSessions, {
+    fields: [conversationDocuments.sessionId],
+    references: [chatSessions.id],
+  }),
+  file: one(fileRecords, {
+    fields: [conversationDocuments.fileId],
+    references: [fileRecords.id],
+  }),
+}));
+
+export const aiFeedbackRelations = relations(aiFeedback, ({ one }) => ({
+  message: one(chatMessages, {
+    fields: [aiFeedback.messageId],
+    references: [chatMessages.id],
   }),
 }));
 
@@ -650,3 +768,14 @@ export const projectFeaturesRelations = relations(
     }),
   })
 );
+
+export const pdfMarkupsRelations = relations(pdfMarkups, ({ one }) => ({
+  project: one(projects, {
+    fields: [pdfMarkups.projectId],
+    references: [projects.id],
+  }),
+  file: one(fileRecords, {
+    fields: [pdfMarkups.fileId],
+    references: [fileRecords.id],
+  }),
+}));

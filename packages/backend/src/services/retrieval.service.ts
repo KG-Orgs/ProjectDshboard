@@ -1338,7 +1338,7 @@ export const retrievalService = {
         sourceType: c.sourceType,
         pageNumber: c.pageNumber ?? undefined,
         sectionLabel: c.sectionLabel ?? undefined,
-        metadata: c.metadata ?? undefined,
+        metadata: (c.metadata as Record<string, unknown>) ?? undefined,
       })),
       relatedDocuments,
     };

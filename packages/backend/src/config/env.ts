@@ -18,6 +18,9 @@ export interface AppEnv {
   openAiApiKey?: string;
   openAiChatModel?: string;
   openAiChatEndpoint?: string;
+  classifierApiKey?: string;
+  classifierModel: string;
+  classifierEndpoint: string;
   openAiEmbeddingModel: string;
   openAiEmbeddingEndpoint: string;
   documentStorageProvider: "filesystem";
@@ -103,16 +106,16 @@ export function getEnv(): AppEnv {
     process.env.GEMINI_CHAT_ENDPOINT ??
     "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
-  // DeepSeek-native variables with OPENAI_* compatibility fallback.
-  const deepseekApiKey = process.env.DEEPSEEK_API_KEY ?? process.env.OPENAI_API_KEY;
+  // OpenAI variables with DeepSeek compatibility fallback.
+  const deepseekApiKey = process.env.OPENAI_API_KEY ?? process.env.DEEPSEEK_API_KEY;
   const deepseekChatModel =
-    process.env.DEEPSEEK_CHAT_MODEL ??
     process.env.OPENAI_CHAT_MODEL ??
-    "deepseek-v3.2";
+    process.env.DEEPSEEK_CHAT_MODEL ??
+    "gpt-4.1-mini";
   const deepseekChatEndpoint =
-    process.env.DEEPSEEK_CHAT_ENDPOINT ??
     process.env.OPENAI_CHAT_ENDPOINT ??
-    "https://api.deepseek.com/v1/chat/completions";
+    process.env.DEEPSEEK_CHAT_ENDPOINT ??
+    "https://api.openai.com/v1/chat/completions";
 
   cachedEnv = {
     nodeEnv,
@@ -137,6 +140,12 @@ export function getEnv(): AppEnv {
     openAiApiKey: deepseekApiKey,
     openAiChatModel: deepseekChatModel,
     openAiChatEndpoint: deepseekChatEndpoint,
+    // Dedicated cheap classifier/router model (defaults to gpt-4.1-nano).
+    classifierApiKey: process.env.CLASSIFIER_API_KEY ?? deepseekApiKey,
+    classifierModel: process.env.CLASSIFIER_MODEL ?? "gpt-4.1-nano",
+    classifierEndpoint:
+      process.env.CLASSIFIER_ENDPOINT ??
+      deepseekChatEndpoint,
     openAiEmbeddingModel: process.env.OPENAI_EMBEDDING_MODEL ?? "text-embedding-3-small",
     openAiEmbeddingEndpoint:
       process.env.OPENAI_EMBEDDING_ENDPOINT ?? "https://api.openai.com/v1/embeddings",

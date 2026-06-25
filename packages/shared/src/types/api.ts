@@ -213,6 +213,15 @@ export interface ChatSessionsListResponse {
   sessions: ChatSession[];
 }
 
+export interface UpdateChatSessionRequest {
+  title?: string;
+  pinned?: boolean;
+}
+
+export interface UpdateChatSessionResponse {
+  session: ChatSession;
+}
+
 export interface ChatHistoryTurn {
   role: "user" | "assistant";
   content: string;
@@ -235,6 +244,32 @@ export type ChatIntentLabel =
   | "document_summary"
   | "general_qa";
 
+export type ClassifierUserRole =
+  | "project_manager"
+  | "superintendent"
+  | "estimator"
+  | "owner"
+  | "subcontractor"
+  | "architect"
+  | "engineer"
+  | "unknown";
+
+export type ClassifierQuestionType =
+  | "rfi"
+  | "submittal"
+  | "schedule"
+  | "cost"
+  | "document_qa"
+  | "draft_request"
+  | "status_check"
+  | "risk_flag"
+  | "file_lookup"
+  | "general";
+
+export type ClassifierRiskLevel = "low" | "medium" | "high" | "critical";
+
+export type ClassifierProceedMode = "ask" | "assume" | "proceed";
+
 export interface ChatInterpretation {
   intent: ChatIntentLabel;
   confidence: number;
@@ -255,6 +290,12 @@ export interface ChatInterpretation {
     preferredTags?: string[];
     recencyBias?: boolean;
   };
+  /** Classifier routing fields (populated when LLM classifier is active) */
+  userRole?: ClassifierUserRole;
+  questionType?: ClassifierQuestionType;
+  riskLevel?: ClassifierRiskLevel;
+  proceedMode?: ClassifierProceedMode;
+  requiredDocTypes?: string[];
   fallbackReason?: string;
 }
 

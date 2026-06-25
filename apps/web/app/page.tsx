@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useAuthStore } from '@contractor/shared';
 import Link from 'next/link';
@@ -56,6 +56,10 @@ interface ProjectFilesResponse {
   page: number;
   pageSize: number;
   hasMore: boolean;
+}
+
+interface CreateProjectResponse {
+  project: HomeProject;
 }
 
 interface SyncResponse {
@@ -191,6 +195,12 @@ export default function Home() {
   const [selectedMainFolderId, setSelectedMainFolderId] = useState('');
   const [isUpdatingMainFolder, setIsUpdatingMainFolder] = useState(false);
   const lastProjectSelectionRef = useRef<string | undefined>(undefined);
+  const [userRole, setUserRole] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return window.localStorage.getItem('contractor-ai-user-role') ?? '';
+    }
+    return '';
+  });
 
   // Restore the last successful app session from persisted auth state.
   useEffect(() => {
@@ -231,9 +241,13 @@ export default function Home() {
     return `https://onedrive.live.com/?id=${encodeURIComponent(parsedFolderId)}`;
   }, [extractFolderId]);
 
-  const loadOnboardingData = useCallback(async () => {
-    setOnboardingLoading(true);
-    setOnboardingError(null);
+  const loadOnboardingData = useCallback(async (options?: { background?: boolean }) => {
+    const isBackgroundRefresh = options?.background === true;
+
+    if (!isBackgroundRefresh) {
+      setOnboardingLoading(true);
+      setOnboardingError(null);
+    }
 
     try {
       const [statusResponse, projectsResponse] = await Promise.all([
@@ -260,13 +274,17 @@ export default function Home() {
       });
 
     } catch (requestError) {
-      setOnboardingError(
-        requestError instanceof Error
-          ? requestError.message
-          : 'Unable to load onboarding status. Refresh and try again.'
-      );
+      if (!isBackgroundRefresh) {
+        setOnboardingError(
+          requestError instanceof Error
+            ? requestError.message
+            : 'Unable to load onboarding status. Refresh and try again.'
+        );
+      }
     } finally {
-      setOnboardingLoading(false);
+      if (!isBackgroundRefresh) {
+        setOnboardingLoading(false);
+      }
     }
   }, []);
 
@@ -474,7 +492,7 @@ export default function Home() {
     }
 
     const pollId = window.setInterval(() => {
-      void loadOnboardingData();
+      void loadOnboardingData({ background: true });
       void loadProjectFiles(selectedProjectId);
       void loadIndexingProgress(selectedProjectId);
       void loadSyncProgress(selectedProjectId);
@@ -829,440 +847,616 @@ export default function Home() {
     void handleRunManualSync(projectId);
   };
 
-  return (
-    <div className="home-container">
-      {isAuthenticated ? (
-        <div className="onboarding-shell">
-          <div className="welcome-section">
-            <h2>Welcome, {user?.name || 'User'}</h2>
-            <p>Finish OneDrive connection and project setup to start document sync.</p>
-            <button type="button" className="btn btn-secondary" onClick={() => void logout()}>
-              Sign Out
-            </button>
-          </div>
+  const handleOnboardingCreateProject = useCallback(async () => {
+    const selectedFolder = oneDriveFolders.find((f) => f.id === selectedMainFolderId);
+    if (!selectedFolder) {
+      setOneDriveFolderError('Select a folder first.');
+      return;
+    }
+    setIsCreatingProject(true);
+    setOnboardingError(null);
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: selectedFolder.name, onedriveFolderId: selectedFolder.id }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => undefined) as { message?: string } | undefined;
+        throw new Error(payload?.message ?? 'Project creation failed. Try again.');
+      }
+      const payload = (await response.json()) as CreateProjectResponse;
+      const createdProjectId = payload.project?.id;
 
-          <div className="phase2-grid">
-            <div className="phase2-card">
-              <h3>OneDrive Status</h3>
-              {onboardingLoading && !oneDriveStatus ? <p>Loading status...</p> : null}
-              {oneDriveStatus ? (
-                <>
-                  <p className="status-row">
-                    Connection: <strong>{oneDriveStatus.connected ? 'Connected' : 'Not connected'}</strong>
-                  </p>
-                  <p className="status-row">
-                    Sync: <strong>{oneDriveStatus.syncInProgress ? 'In progress' : 'Idle'}</strong>
-                  </p>
-                  <p className="status-row">
-                    Files detected: <strong>{oneDriveStatus.fileCount ?? 0}</strong>
-                  </p>
-                  {oneDriveStatus.accountEmail ? (
-                    <p className="status-row">
-                      Account: <strong>{oneDriveStatus.accountEmail}</strong>
-                    </p>
-                  ) : null}
-                  {oneDriveStatus.tenantId ? (
-                    <p className="status-row">
-                      Tenant: <strong>{oneDriveStatus.tenantId}</strong>
-                    </p>
-                  ) : null}
-                  {oneDriveStatus.driveType ? (
-                    <p className="status-row">
-                      Drive Type: <strong>{oneDriveStatus.driveType}</strong>
-                    </p>
-                  ) : null}
-                </>
-              ) : null}
-              {oneDriveStatus?.connected ? (
-                <button type="button" className="btn btn-secondary" onClick={handleOpenOneDrive}>
-                  Open OneDrive
-                </button>
-              ) : (
-                <button type="button" className="btn btn-primary" onClick={handleStartOneDriveConnect}>
-                  Connect OneDrive
-                </button>
-              )}
-              <p className="phase2-note">
-                Browse folders directly on OneDrive. In this app, set one folder as the main folder to read.
-              </p>
+      if (!createdProjectId) {
+        throw new Error('Project creation succeeded but no project was returned.');
+      }
+
+      setSelectedProjectId(createdProjectId);
+      await loadOnboardingData();
+      await handleRunManualSync(createdProjectId);
+    } catch (err) {
+      setOnboardingError(err instanceof Error ? err.message : 'Failed to set up project.');
+    } finally {
+      setIsCreatingProject(false);
+    }
+  }, [loadOnboardingData, oneDriveFolders, selectedMainFolderId, handleRunManualSync]);
+
+  const handleSaveRole = (role: string) => {
+    const value = role.trim() || 'Team Member';
+    setUserRole(value);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('contractor-ai-user-role', value);
+    }
+    handleOpenAiChat();
+  };
+
+  const activeProject = projects.find((p) => p.id === selectedProjectId) ?? null;
+  const needsOneDrive = !onboardingLoading && oneDriveStatus !== null && !oneDriveStatus.connected;
+  const needsProject = !onboardingLoading && oneDriveStatus?.connected === true && projects.length === 0;
+  const needsRole = !onboardingLoading && oneDriveStatus?.connected === true && projects.length > 0 && !userRole;
+  const onboardingStep = needsOneDrive ? 1 : needsProject ? 2 : needsRole ? 3 : 0;
+  const isOnboarding = onboardingStep > 0;
+
+  const ROLE_CHIPS = [
+    'Project Manager', 'Project Engineer', 'Superintendent', 'Field Engineer',
+    'Scheduler', 'Cost Engineer', 'QC Manager', 'Safety Manager', 'Document Control',
+  ];
+
+  const sty = {
+    card: {
+      background: '#fff', borderRadius: '12px', padding: '24px',
+      border: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+    } as React.CSSProperties,
+    label: {
+      fontSize: '12px', fontWeight: 600, color: '#6b7280', marginBottom: '8px',
+      textTransform: 'uppercase' as const, letterSpacing: '0.05em', display: 'block',
+    } as React.CSSProperties,
+    input: {
+      width: '100%', padding: '9px 12px', borderRadius: '8px',
+      border: '1.5px solid #e5e7eb', fontSize: '13px', outline: 'none', color: '#111827',
+      background: '#fff',
+    } as React.CSSProperties,
+    btnPrimary: {
+      background: '#0078d4', color: '#fff', border: 'none', borderRadius: '10px',
+      padding: '11px 22px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+    } as React.CSSProperties,
+    btnSecondary: {
+      background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '8px',
+      padding: '8px 14px', fontSize: '13px', cursor: 'pointer', color: '#374151',
+    } as React.CSSProperties,
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#f3f4f6', fontFamily: "'Segoe UI', -apple-system, sans-serif" }}>
+
+      {/* â"€â"€ Top Bar â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
+      <header style={{
+        background: '#fff', borderBottom: '1px solid #e5e7eb', height: '56px',
+        display: 'flex', alignItems: 'center', padding: '0 24px', gap: '12px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06)', position: 'sticky', top: 0, zIndex: 10,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{
+            width: '32px', height: '32px', background: '#0078d4', borderRadius: '8px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontSize: '13px', fontWeight: 700,
+          }}>AI</div>
+          <span style={{ fontWeight: 700, color: '#111827', fontSize: '15px' }}>ContractorAI</span>
+        </div>
+        {activeProject && !isOnboarding ? (
+          <>
+            <div style={{ width: '1px', height: '20px', background: '#e5e7eb', margin: '0 2px' }} />
+            <span style={{ fontSize: '14px', color: '#6b7280', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {activeProject.name}
+            </span>
+          </>
+        ) : null}
+        <div style={{ flex: 1 }} />
+        {!isOnboarding && selectedProjectId ? (
+          <button type="button" onClick={handleOpenAiChat} style={sty.btnPrimary}>
+            Open Workspace
+          </button>
+        ) : null}
+        <button type="button" onClick={() => void logout()} style={{ ...sty.btnSecondary, color: '#6b7280' }}>
+          Sign Out
+        </button>
+        <div style={{
+          width: '32px', height: '32px', borderRadius: '50%', background: '#dbeafe',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '12px', fontWeight: 700, color: '#1d4ed8', flexShrink: 0,
+        }}>
+          {user?.name?.charAt(0)?.toUpperCase() ?? 'U'}
+        </div>
+      </header>
+
+      <main style={{ maxWidth: '960px', margin: '0 auto', padding: '40px 24px' }}>
+
+        {/* Welcome */}
+        <div style={{ marginBottom: '32px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: '0 0 6px' }}>
+            {isOnboarding
+              ? `Welcome, ${user?.name?.split(' ')[0] || 'there'}`
+              : `Welcome back, ${user?.name?.split(' ')[0] || 'there'}`}
+          </h1>
+          <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
+            {isLoading
+              ? 'Restoring your session...'
+              : isOnboarding
+                ? "Let's get your project set up. It only takes a minute."
+                : activeProject
+                  ? `Project: ${activeProject.name}`
+                  : 'Select a project to continue.'}
+          </p>
+        </div>
+
+        {/* â"€â"€ Loading skeleton â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
+        {(isLoading || (onboardingLoading && !oneDriveStatus)) ? (
+          <div style={{ ...sty.card, textAlign: 'center', padding: '48px', color: '#9ca3af', fontSize: '14px' }}>
+            Loading...
+          </div>
+        ) : null}
+
+        {/* â"€â"€ Not authenticated fallback â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
+        {!isAuthenticated && !isLoading ? (
+          <div style={{ ...sty.card, textAlign: 'center', padding: '60px 24px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>[?]</div>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '8px' }}>ContractorAI</h2>
+            <p style={{ color: '#6b7280', marginBottom: '28px', fontSize: '14px' }}>
+              {error ?? 'Sign in to access your project workspace.'}
+            </p>
+            <Link href="/login" style={{
+              background: '#0078d4', color: '#fff', textDecoration: 'none',
+              borderRadius: '10px', padding: '13px 32px', fontSize: '14px', fontWeight: 600,
+            }}>
+              Sign In with Microsoft
+            </Link>
+          </div>
+        ) : null}
+
+        {/* Onboarding Wizard */}
+        {isAuthenticated && !isLoading && !onboardingLoading && isOnboarding ? (
+          <div style={{ ...sty.card, padding: '40px', maxWidth: '580px' }}>
+            {/* Step indicators */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginBottom: '36px' }}>
+              {[
+                { n: 1, label: 'Connect OneDrive' },
+                { n: 2, label: 'Select Folder' },
+                { n: 3, label: 'Your Role' },
+              ].map((step, i) => (
+                <div key={step.n} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? 1 : 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    <div style={{
+                      width: '28px', height: '28px', borderRadius: '50%',
+                      background: onboardingStep > step.n ? '#107c10' : onboardingStep === step.n ? '#0078d4' : '#e5e7eb',
+                      color: onboardingStep >= step.n ? '#fff' : '#9ca3af',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '12px', fontWeight: 700,
+                    }}>
+                      {onboardingStep > step.n ? 'OK' : step.n}
+                    </div>
+                    <span style={{
+                      fontSize: '12px', fontWeight: onboardingStep === step.n ? 600 : 400,
+                      color: onboardingStep === step.n ? '#111827' : '#9ca3af',
+                      whiteSpace: 'nowrap',
+                    }}>{step.label}</span>
+                  </div>
+                  {i < 2 ? <div style={{ flex: 1, height: '1px', background: '#e5e7eb', margin: '0 8px' }} /> : null}
+                </div>
+              ))}
             </div>
 
-            <div className="phase2-card">
-              <h3>MVP Features</h3>
-              <div className="feature-grid">
-                <button type="button" className="feature-tile feature-tile-live" onClick={handleOpenOneDrive}>
-                  <span className="feature-icon">OD</span>
-                  <span className="feature-label">OneDrive</span>
-                  <span className="feature-sub">Open folder website</span>
-                </button>
-                <button type="button" className="feature-tile feature-tile-live" onClick={handleOpenAiChat}>
-                  <span className="feature-icon">AI</span>
-                  <span className="feature-label">AI Chat</span>
-                  <span className="feature-sub">Test routed agent on selected project</span>
-                </button>
-                <button type="button" className="feature-tile feature-tile-soon" disabled>
-                  <span className="feature-icon">PH</span>
-                  <span className="feature-label">Daily Photos</span>
-                  <span className="feature-sub">Coming soon</span>
-                </button>
-                <button type="button" className="feature-tile feature-tile-soon" disabled>
-                  <span className="feature-icon">JR</span>
-                  <span className="feature-label">Job Reports</span>
-                  <span className="feature-sub">Coming soon</span>
+            {/* Step 1: Connect OneDrive */}
+            {onboardingStep === 1 ? (
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '10px' }}>
+                  Connect Microsoft OneDrive
+                </h2>
+                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '32px', lineHeight: '1.7' }}>
+                  Connect your OneDrive account to browse and select your project folder. Your files stay in OneDrive. We only read and index them to power AI search.
+                </p>
+                <button type="button" onClick={handleStartOneDriveConnect} style={sty.btnPrimary}>
+                  Connect OneDrive
                 </button>
               </div>
+            ) : null}
 
-              <h3>Projects</h3>
-              {projects.length === 0 ? (
-                <p>No projects yet. Create your first project to continue onboarding.</p>
-              ) : (
-                <ul className="project-list">
-                  {projects.map((project) => (
-                    <li key={project.id} className="project-item">
-                      <h4>{project.name}</h4>
-                      <p>Folder ID: {project.onedriveFolderId ?? 'Not set'}</p>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => handleSelectProject(project.id)}
-                      >
-                        {selectedProjectId === project.id ? 'Selected' : 'Select Project'}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <div className="folder-dropdown-panel">
-                <h4>Main Project Folder</h4>
-                <p className="phase2-note">
-                  Change the OneDrive folder used for this project. Existing indexed data will be cleared before re-indexing.
+            {/* Step 2: Select Folder */}
+            {onboardingStep === 2 ? (
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '10px' }}>
+                  What project are you working on?
+                </h2>
+                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', lineHeight: '1.7' }}>
+                  Browse and select the OneDrive folder for your project.
                 </p>
-                <div className="folder-dropdown-actions">
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
                   <button
                     type="button"
-                    className="btn btn-secondary"
                     onClick={() => void loadOneDriveFolders()}
-                    disabled={!oneDriveStatus?.connected || isOneDriveFoldersLoading}
+                    disabled={isOneDriveFoldersLoading}
+                    style={sty.btnSecondary}
                   >
-                    {isOneDriveFoldersLoading ? 'Loading folders...' : 'Load OneDrive Folders'}
+                    {isOneDriveFoldersLoading ? 'Loading...' : 'Browse OneDrive'}
                   </button>
-                  <select
-                    value={selectedMainFolderId}
-                    onChange={(event) => setSelectedMainFolderId(event.target.value)}
-                    disabled={oneDriveFolders.length === 0 || isUpdatingMainFolder}
-                  >
-                    <option value="">Select OneDrive folder...</option>
-                    {oneDriveFolders.map((folder) => (
-                      <option key={folder.id} value={folder.id}>
-                        {folder.name}
-                      </option>
-                    ))}
-                  </select>
+                </div>
+                {oneDriveFolders.length > 0 ? (
+                  <>
+                    <select
+                      value={selectedMainFolderId}
+                      onChange={(e) => setSelectedMainFolderId(e.target.value)}
+                      style={{ ...sty.input, marginBottom: '12px' }}
+                    >
+                      <option value="">Select a project folder...</option>
+                      {oneDriveFolders.map((folder) => (
+                        <option key={folder.id} value={folder.id}>{folder.name}</option>
+                      ))}
+                    </select>
+                    {selectedMainFolderId ? (
+                      <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '20px' }}>
+                        Folder: /OneDrive/{oneDriveFolders.find((f) => f.id === selectedMainFolderId)?.name ?? selectedMainFolderId}
+                      </p>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => void handleOnboardingCreateProject()}
+                      disabled={!selectedMainFolderId || isCreatingProject}
+                      style={{
+                        ...sty.btnPrimary,
+                        opacity: !selectedMainFolderId || isCreatingProject ? 0.5 : 1,
+                        cursor: !selectedMainFolderId || isCreatingProject ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {isCreatingProject ? 'Setting up...' : 'Use this folder'}
+                    </button>
+                  </>
+                ) : null}
+                {oneDriveFolderError ? (
+                  <p style={{ marginTop: '12px', fontSize: '13px', color: '#d83b01' }}>{oneDriveFolderError}</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {/* Step 3: Role */}
+            {onboardingStep === 3 ? (
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '10px' }}>
+                  What is your role on this project?
+                </h2>
+                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '20px', lineHeight: '1.7' }}>
+                  This helps tailor your AI assistant. You can type any role.
+                </p>
+                <input
+                  type="text"
+                  value={userRole}
+                  onChange={(e) => setUserRole(e.target.value)}
+                  placeholder="e.g. Project Engineer, Superintendent..."
+                  style={{ ...sty.input, marginBottom: '16px' }}
+                />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '28px' }}>
+                  {ROLE_CHIPS.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setUserRole(role)}
+                      style={{
+                        padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer',
+                        border: `1px solid ${userRole === role ? '#0078d4' : '#e5e7eb'}`,
+                        background: userRole === role ? '#dbeafe' : '#f9fafb',
+                        color: userRole === role ? '#1d4ed8' : '#374151',
+                        fontWeight: userRole === role ? 600 : 400,
+                      }}
+                    >
+                      {role}
+                    </button>
+                  ))}
                 </div>
                 <button
                   type="button"
-                  className="btn btn-primary"
-                  onClick={() => void handleApplyMainProjectFolder()}
-                  disabled={!selectedProjectId || !selectedMainFolderId || isUpdatingMainFolder}
+                  onClick={() => handleSaveRole(userRole)}
+                  style={sty.btnPrimary}
                 >
-                  {isUpdatingMainFolder ? 'Applying...' : 'Set As Main Folder And Re-index'}
+                  Enter Project Workspace &rarr;
                 </button>
-                {oneDriveFolderError ? <p className="page-error">{oneDriveFolderError}</p> : null}
               </div>
-            </div>
+            ) : null}
 
-            <div className="phase2-card">
-              <h3>Create Project</h3>
-              <p className="phase2-note">
-                Use OneDrive website for browsing. Paste a OneDrive folder URL or folder ID below to set the main folder.
-              </p>
-              <button type="button" className="btn btn-secondary" onClick={handleOpenOneDrive}>
-                Open OneDrive Website
-              </button>
+            {onboardingError ? (
+              <div style={{
+                marginTop: '20px', padding: '12px 16px', background: '#fef2f2',
+                border: '1px solid #fecaca', borderRadius: '8px', fontSize: '13px', color: '#b91c1c',
+              }}>
+                {onboardingError}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
-              <form onSubmit={handleCreateProject} className="project-form">
-                <label htmlFor="project-name">Project Name</label>
-                <input
-                  id="project-name"
-                  value={projectName}
-                  onChange={(event) => setProjectName(event.target.value)}
-                  placeholder="Downtown Hospital Renovation"
-                />
-
-                <label htmlFor="folder-id">OneDrive Folder URL Or ID</label>
-                <input
-                  id="folder-id"
-                  value={folderId}
-                  onChange={(event) => setFolderId(event.target.value)}
-                  placeholder="https://onedrive.live.com/?id=... or 01ABCDEF23GHIJKL"
-                />
-                <p className="phase2-note folder-tip">
-                  Tip: In OneDrive, open your target folder and copy its link. You can paste either the full URL or just the folder ID.
-                </p>
-
-                <button type="submit" className="btn btn-primary" disabled={isCreatingProject}>
-                  {isCreatingProject ? 'Creating...' : 'Create Project'}
-                </button>
-              </form>
-            </div>
-
-            <div className="phase2-card phase3-card">
-              <h3>Sync And File Inventory</h3>
-              <p className="status-row">
-                Active project: <strong>{projects.find((project) => project.id === selectedProjectId)?.name ?? 'None selected'}</strong>
-              </p>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => void handleRunManualSync()}
-                disabled={!selectedProjectId || isSyncing}
+        {/* â"€â"€ Dashboard (authenticated, set up) â"€â"€â"€â"€â"€â"€ */}
+        {isAuthenticated && !isLoading && !onboardingLoading && !isOnboarding ? (
+          <div>
+            {/* Quick action cards */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gap: '16px', marginBottom: '24px',
+            }}>
+              {/* Open Workspace */}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={handleOpenAiChat}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleOpenAiChat(); }}
+                style={{
+                  background: 'linear-gradient(135deg, #0078d4 0%, #005a9e 100%)',
+                  borderRadius: '12px', padding: '24px', color: '#fff', cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(0,120,212,0.28)', outline: 'none',
+                }}
               >
-                {isSyncing ? 'Syncing...' : 'Run Manual Sync'}
-              </button>
-              {isSyncing ? (
-                <p className="phase2-note" aria-live="polite">
-                  Sync in progress ({syncElapsedSeconds}s). Downloaded files: {syncProgress?.downloadedFileCount ?? 0}.
-                </p>
-              ) : null}
-              {syncProgress ? (
-                <>
-                  <p className="status-row">
-                    Sync download progress:{' '}
-                    <strong>{syncProgress.completionPercent}%</strong>
-                  </p>
-                  <div className="sync-progress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={syncProgress.completionPercent}>
-                    <div
-                      className="sync-progress-fill"
-                      style={{ width: `${syncProgress.completionPercent}%` }}
-                    />
-                  </div>
-                </>
-              ) : null}
-              {isSyncProgressLoading && isSyncing ? <p className="phase2-note">Updating sync progress...</p> : null}
-              {syncStatusMessage ? <p className="phase2-note">{syncStatusMessage}</p> : null}
-              {syncError ? <p className="page-error sync-error">{syncError}</p> : null}
-              {lastSyncSummary ? <p className="phase2-note">{lastSyncSummary}</p> : null}
-              <p className="status-row">
-                Indexing completion:{' '}
-                <strong>{indexingProgress ? `${indexingProgress.completionPercent}%` : 'Not available'}</strong>
-              </p>
-              <div className="indexing-progress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={indexingProgress?.completionPercent ?? 0}>
                 <div
-                  className="indexing-progress-fill"
-                  style={{ width: `${indexingProgress?.completionPercent ?? 0}%` }}
-                />
-              </div>
-              {isIndexingProgressLoading ? (
-                <p className="phase2-note">Updating indexing progress...</p>
-              ) : indexingProgress ? (
-                <>
-                  <p className="phase2-note">
-                    Indexed {indexingProgress.indexed}, processing {indexingProgress.processing}, pending {indexingProgress.pending}, skipped {indexingProgress.skipped}, failed {indexingProgress.failed}.
-                  </p>
-                  <p className="phase2-note">
-                    Processable files: {indexingProgress.processableTotal} of {indexingProgress.total} inventory files.
-                  </p>
-                  {indexingProgress.paused ? (
-                    <p className="page-error sync-error">
-                      Indexing paused{indexingProgress.pauseReasonCode ? ` [${indexingProgress.pauseReasonCode}]` : ''}: {indexingProgress.pauseMessage ?? 'Unknown pause reason.'}
-                    </p>
-                  ) : null}
-                  {indexingProgress.circuitOpen ? (
-                    <p className="phase2-note">
-                      Circuit breaker is open. Remaining files stay pending until provider recovery.
-                    </p>
-                  ) : null}
-                </>
-              ) : null}
-              <p className="status-row">
-                Inventory count: <strong>{projectFilesTotal}</strong>
-              </p>
-
-              {isProjectFilesLoading ? (
-                <p>Loading file inventory...</p>
-              ) : projectFiles.length === 0 ? (
-                <p>No files in inventory yet. Run manual sync to populate files.</p>
-              ) : (
-                <ul className="inventory-list">
-                  {projectFiles.map((file) => {
-                    const isUnsupportedType = (file.tags ?? []).includes('unsupported_type');
-                    const isOversize = (file.tags ?? []).includes('oversize');
-                    const skippedReason = isOversize ? 'Skipped: oversize' : isUnsupportedType ? 'Skipped: unsupported' : null;
-
-                    return (
-                      <li key={file.id} className="inventory-item">
-                        <p className="inventory-name">{file.fileName}</p>
-                        <p className="inventory-meta">{file.filePath}</p>
-                        <p className="inventory-meta">
-                          Status: <strong>{skippedReason ? 'skipped' : file.indexStatus}</strong>
-                          {skippedReason ? <span className="inventory-unsupported">{skippedReason}</span> : null}
-                        </p>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-
-              <div className="diagnostics-panel">
-                <h4>Indexing Diagnostics</h4>
-                <p className="phase2-note">
-                  Use this to verify indexed chunks and run a retrieval preview query.
-                </p>
-                <div className="diagnostics-actions">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => selectedProjectId && void loadProjectChunks(selectedProjectId)}
-                    disabled={!selectedProjectId || isChunksLoading}
-                  >
-                    {isChunksLoading ? 'Loading Chunks...' : 'Load Chunks'}
-                  </button>
-                </div>
-                <p className="status-row">
-                  Chunk count: <strong>{projectChunks.length}</strong>
-                </p>
-                {indexingProgress?.anomalies && indexingProgress.anomalies.length > 0 ? (
-                  <ul className="diagnostics-list">
-                    {indexingProgress.anomalies.map((anomaly) => (
-                      <li key={anomaly.type} className="diagnostics-item">
-                        <p>
-                          <strong>{anomaly.type}</strong> ({anomaly.count})
-                        </p>
-                        <p className="inventory-meta">{anomaly.message}</p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {indexingProgress?.groupedFailureReasons && indexingProgress.groupedFailureReasons.length > 0 ? (
-                  <>
-                    <p className="phase2-note">Top failure reasons</p>
-                    <ul className="diagnostics-list">
-                      {indexingProgress.groupedFailureReasons.map((reason) => (
-                        <li key={`${reason.stage}:${reason.errorCode}`} className="diagnostics-item">
-                          <p>
-                            <strong>{reason.stage}</strong> / {reason.errorCode} ({reason.count})
-                          </p>
-                          <p className="inventory-meta">{reason.lastMessage}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                ) : null}
-                {projectChunks.length > 0 ? (
-                  <ul className="diagnostics-list">
-                    {projectChunks.slice(0, 5).map((chunk) => (
-                      <li key={chunk.id} className="diagnostics-item">
-                        <p>
-                          <strong>{chunk.fileName}</strong> (chunk {chunk.chunkIndex})
-                        </p>
-                        <p className="inventory-meta">{chunk.chunkText.slice(0, 120)}{chunk.chunkText.length > 120 ? '...' : ''}</p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-
-                <form
-                  className="project-form diagnostics-form"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    if (selectedProjectId) {
-                      void runRetrievalPreview(selectedProjectId, retrievalQuery);
-                    }
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 700,
+                    marginBottom: '12px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
-                  <label htmlFor="retrieval-query">Retrieval Query</label>
-                  <input
-                    id="retrieval-query"
-                    value={retrievalQuery}
-                    onChange={(event) => setRetrievalQuery(event.target.value)}
-                    placeholder="latest permit status"
-                  />
-                  <button
-                    type="submit"
-                    className="btn btn-secondary"
-                    disabled={!selectedProjectId || isRetrievalLoading}
-                  >
-                    {isRetrievalLoading ? 'Running Preview...' : 'Preview Retrieval'}
-                  </button>
-                </form>
-
-                {retrievalSources.length > 0 ? (
-                  <ul className="diagnostics-list">
-                    {retrievalSources.map((source) => (
-                      <li key={source.fileId} className="diagnostics-item">
-                        <p>
-                          <strong>{source.fileName}</strong>
-                        </p>
-                        <p className="inventory-meta">Relevance: {Math.round(source.relevance * 100)}%</p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {diagnosticsError ? <p className="page-error sync-error">{diagnosticsError}</p> : null}
+                  {activeProject?.name ?? 'Project'}
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px' }}>Open Project Workspace</h3>
+                <p style={{ fontSize: '13px', opacity: 0.85, margin: 0, lineHeight: '1.5' }}>
+                  File explorer, PDF viewer, and AI assistant in a three-panel workspace.
+                </p>
               </div>
 
-              <div className="diagnostics-panel ai-chat-panel" id="ai-chat-tester">
-                <h4>AI Chat Tester</h4>
-                <p className="phase2-note">
-                  Send a question to the Phase 4.5c coordinator agent for the selected project.
-                </p>
-                <form className="project-form diagnostics-form" onSubmit={(event) => void handleRunAiChat(event)}>
-                  <label htmlFor="chat-prompt">Question</label>
-                  <textarea
-                    id="chat-prompt"
-                    className="chat-textarea"
-                    value={chatPrompt}
-                    onChange={(event) => setChatPrompt(event.target.value)}
-                    placeholder="What are schedule and cost risks we should notify the owner about this week?"
-                  />
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={!selectedProjectId || isChatLoading}
-                  >
-                    {isChatLoading ? 'Sending...' : 'Send To AI Chat'}
-                  </button>
-                </form>
-
-                {chatRouteSummary ? <p className="phase2-note">{chatRouteSummary}</p> : null}
-                {chatAnswer ? <p className="chat-answer">{chatAnswer}</p> : null}
-                {chatSources.length > 0 ? (
-                  <ul className="diagnostics-list">
-                    {chatSources.map((source) => (
-                      <li key={source.fileId} className="diagnostics-item">
-                        <p>
-                          <strong>{source.fileName}</strong>
-                        </p>
-                        <p className="inventory-meta">Relevance: {Math.round(source.relevance * 100)}%</p>
-                      </li>
-                    ))}
-                  </ul>
+              {/* OneDrive */}
+              <div style={sty.card}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: 0, flex: 1 }}>OneDrive</h3>
+                  <span style={{
+                    fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
+                    background: oneDriveStatus?.connected ? '#dcfce7' : '#fef9c3',
+                    color: oneDriveStatus?.connected ? '#166534' : '#92400e',
+                  }}>
+                    {oneDriveStatus?.connected ? 'Connected' : 'Not Connected'}
+                  </span>
+                </div>
+                {oneDriveStatus?.accountEmail ? (
+                  <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 4px' }}>{oneDriveStatus.accountEmail}</p>
                 ) : null}
-                {chatError ? <p className="page-error sync-error">{chatError}</p> : null}
+                {(oneDriveStatus?.fileCount ?? 0) > 0 ? (
+                  <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 16px' }}>{oneDriveStatus?.fileCount} files detected</p>
+                ) : (
+                  <div style={{ height: '16px' }} />
+                )}
+                {oneDriveStatus?.connected ? (
+                  <button type="button" onClick={handleOpenOneDrive} style={sty.btnSecondary}>
+                    Open OneDrive
+                  </button>
+                ) : (
+                  <button type="button" onClick={handleStartOneDriveConnect} style={sty.btnPrimary}>
+                    Connect OneDrive
+                  </button>
+                )}
+              </div>
+
+              {/* Sync & Index */}
+              <div style={sty.card}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: 0 }}>Sync & Index</h3>
+                </div>
+                <div style={{ marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <span style={{ fontSize: '12px', color: '#6b7280' }}>Indexing progress</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>
+                      {indexingProgress ? `${indexingProgress.completionPercent}%` : '--'}
+                    </span>
+                  </div>
+                  <div style={{ height: '6px', background: '#e5e7eb', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', background: '#0078d4', borderRadius: '3px',
+                      width: `${indexingProgress?.completionPercent ?? 0}%`, transition: 'width 0.3s',
+                    }} />
+                  </div>
+                  {indexingProgress ? (
+                    <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '5px' }}>
+                      {indexingProgress.indexed} indexed | {indexingProgress.pending} pending | {indexingProgress.failed} failed
+                    </p>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleRunManualSync()}
+                  disabled={!selectedProjectId || isSyncing}
+                  style={{
+                    ...sty.btnSecondary,
+                    opacity: !selectedProjectId ? 0.5 : 1,
+                    cursor: !selectedProjectId || isSyncing ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {isSyncing ? `Syncing... (${syncElapsedSeconds}s)` : 'Run Sync'}
+                </button>
+                {syncStatusMessage ? (
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px', lineHeight: '1.5' }}>{syncStatusMessage}</p>
+                ) : null}
+                {syncError ? (
+                  <p style={{ fontSize: '12px', color: '#d83b01', marginTop: '8px' }}>{syncError}</p>
+                ) : null}
               </div>
             </div>
-          </div>
 
-          {onboardingError || oneDriveMessageFromUrl ? (
-            <p className="page-error">{onboardingError ?? oneDriveMessageFromUrl}</p>
-          ) : null}
-        </div>
-      ) : (
-        <div className="landing">
-          <div className="hero">
-            <h2>Welcome to Contractor Dashboard</h2>
-            <p>
-              {isLoading
-                ? 'Restoring your session...'
-                : error ?? 'Manage your projects efficiently across all platforms'}
-            </p>
-            <Link href="/login" className="btn btn-primary btn-lg">
-              Sign In
-            </Link>
+            {/* Project Settings */}
+            <div style={{ ...sty.card, marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: '0 0 20px' }}>
+                Project Setup
+              </h3>
+
+              {/* Projects list */}
+              {projects.length > 0 ? (
+                <div style={{ marginBottom: '24px' }}>
+                  <span style={sty.label}>Your Projects</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {projects.map((project) => (
+                      <button
+                        key={project.id}
+                        type="button"
+                        onClick={() => handleSelectProject(project.id)}
+                        style={{
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        padding: '11px 14px', borderRadius: '10px',
+                        border: `1.5px solid ${selectedProjectId === project.id ? '#0078d4' : '#e5e7eb'}`,
+                        background: selectedProjectId === project.id ? '#eff6ff' : '#f9fafb',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: '13px', fontWeight: 600, color: '#111827', margin: 0 }}>{project.name}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Change folder */}
+              <div style={{ marginBottom: '20px' }}>
+                <span style={sty.label}>Change Project Folder</span>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => void loadOneDriveFolders()}
+                    disabled={!oneDriveStatus?.connected || isOneDriveFoldersLoading}
+                    style={{ ...sty.btnSecondary, opacity: !oneDriveStatus?.connected ? 0.5 : 1 }}
+                  >
+                    {isOneDriveFoldersLoading ? 'Loading...' : 'Browse Folders'}
+                  </button>
+                  {oneDriveFolders.length > 0 ? (
+                    <>
+                      <select
+                        value={selectedMainFolderId}
+                        onChange={(e) => setSelectedMainFolderId(e.target.value)}
+                        style={{
+                          padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e5e7eb',
+                          fontSize: '13px', color: '#111827', outline: 'none', background: '#fff', minWidth: '180px',
+                        }}
+                      >
+                        <option value="">Select folder...</option>
+                        {oneDriveFolders.map((folder) => (
+                          <option key={folder.id} value={folder.id}>{folder.name}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => void handleApplyMainProjectFolder()}
+                        disabled={!selectedProjectId || !selectedMainFolderId || isUpdatingMainFolder}
+                        style={{
+                          ...sty.btnPrimary,
+                          opacity: !selectedProjectId || !selectedMainFolderId ? 0.5 : 1,
+                          cursor: !selectedProjectId || !selectedMainFolderId ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        {isUpdatingMainFolder ? 'Applying...' : 'Apply & Re-index'}
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+                {oneDriveFolderError ? (
+                  <p style={{ fontSize: '12px', color: '#d83b01', marginTop: '8px' }}>{oneDriveFolderError}</p>
+                ) : null}
+              </div>
+
+              {/* Add project */}
+              <details>
+                <summary style={{ fontSize: '13px', color: '#6b7280', cursor: 'pointer', fontWeight: 500, userSelect: 'none' }}>
+                  + Add another project
+                </summary>
+                <form onSubmit={handleCreateProject} style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    placeholder="Project name"
+                    style={sty.input}
+                  />
+                  <input
+                    value={folderId}
+                    onChange={(e) => setFolderId(e.target.value)}
+                    placeholder="OneDrive folder URL or ID"
+                    style={sty.input}
+                  />
+                  <button type="submit" disabled={isCreatingProject} style={{ ...sty.btnPrimary, alignSelf: 'flex-start' }}>
+                    {isCreatingProject ? 'Creating...' : 'Create Project'}
+                  </button>
+                </form>
+              </details>
+            </div>
+
+            {/* Project Files */}
+            {projectFilesTotal > 0 ? (
+              <div style={sty.card}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                    Project Files
+                    <span style={{
+                      marginLeft: '8px', fontSize: '12px', fontWeight: 600, padding: '2px 8px',
+                      borderRadius: '12px', background: '#f3f4f6', color: '#6b7280',
+                    }}>{projectFilesTotal}</span>
+                  </h3>
+                  <button type="button" onClick={handleOpenAiChat} style={{
+                    background: 'none', border: 'none', fontSize: '13px',
+                    color: '#0078d4', cursor: 'pointer', fontWeight: 600,
+                  }}>
+                    Open in Workspace &rarr;
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {projectFiles.slice(0, 6).map((file) => {
+                    const ext = file.fileName.toLowerCase().split('.').pop() ?? '';
+                    const icon = ext === 'pdf' ? '[PDF]' : ['doc', 'docx'].includes(ext) ? '[DOC]' : ['xls', 'xlsx'].includes(ext) ? '[XLS]' : ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? '[IMG]' : '[DOC]';
+                    return (
+                      <div key={file.id} style={{
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '8px 12px', background: '#f9fafb',
+                        borderRadius: '8px', border: '1px solid #e5e7eb',
+                      }}>
+                        <span style={{ fontSize: '16px', flexShrink: 0 }}>{icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: '13px', fontWeight: 500, color: '#111827', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {file.fileName}
+                          </p>
+                          <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.filePath}</p>
+                        </div>
+                        <span style={{
+                          fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600, flexShrink: 0,
+                          background: file.indexStatus === 'indexed' ? '#dcfce7' : file.indexStatus === 'failed' ? '#fef2f2' : '#fef9c3',
+                          color: file.indexStatus === 'indexed' ? '#166534' : file.indexStatus === 'failed' ? '#b91c1c' : '#92400e',
+                        }}>
+                          {file.indexStatus}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {projectFilesTotal > 6 ? (
+                    <p style={{ fontSize: '12px', color: '#9ca3af', textAlign: 'center', padding: '6px' }}>
+                      +{projectFilesTotal - 6} more files -- open workspace to see all
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {onboardingError || oneDriveMessageFromUrl ? (
+              <div style={{
+                marginTop: '16px', padding: '12px 16px', background: '#fef2f2',
+                border: '1px solid #fecaca', borderRadius: '10px', fontSize: '13px', color: '#b91c1c',
+              }}>
+                {onboardingError ?? oneDriveMessageFromUrl}
+              </div>
+            ) : null}
           </div>
-        </div>
-      )}
+        ) : null}
+
+      </main>
     </div>
   );
 }

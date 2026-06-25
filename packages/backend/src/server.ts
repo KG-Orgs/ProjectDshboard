@@ -7,6 +7,8 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import express, { type Express, Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
+import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import { initializeDb } from "./db";
 import type {
   AuthLoginRequest,
@@ -16,6 +18,7 @@ import type {
   OneDriveConnectRequest,
   OneDriveSyncRequest,
   SendChatMessageRequest,
+  UpdateChatSessionRequest,
   UpdateProjectFolderRequest,
   UpdateProjectFeatureRequest,
 } from "@contractor/shared";
@@ -30,6 +33,7 @@ import {
   healthService,
   indexingService,
   onedriveService,
+  pdfMarkupService,
   projectService,
   retrievalService,
   startIndexingWorker,
@@ -206,6 +210,56 @@ function parseSendChatMessageRequest(body: unknown): Omit<SendChatMessageRequest
         : undefined,
     feedback: parsedFeedback,
   };
+}
+
+interface MarkupExportRow {
+  projectName: string;
+  fileName: string;
+  pageNumber: number;
+  markupType: string;
+  category: string;
+  comment: string;
+  status: string;
+  assignedTo: string;
+  createdBy: string;
+  createdDate: string;
+  updatedDate: string;
+  measurementValue: string;
+  measurementUnit: string;
+}
+
+function toMarkupExportRows(
+  projectName: string,
+  fileName: string,
+  markups: Array<{
+    pageNumber: number;
+    type: string;
+    category: string;
+    comment?: string;
+    status: string;
+    assignedTo?: string;
+    createdBy: string;
+    createdAt: Date;
+    updatedAt: Date;
+    measurement?: { value?: number; unit?: string };
+  }>
+): MarkupExportRow[] {
+  return markups.map((markup) => ({
+    projectName,
+    fileName,
+    pageNumber: markup.pageNumber,
+    markupType: markup.type,
+    category: markup.category,
+    comment: markup.comment ?? "",
+    status: markup.status,
+    assignedTo: markup.assignedTo ?? "",
+    createdBy: markup.createdBy,
+    createdDate: markup.createdAt.toISOString(),
+    updatedDate: markup.updatedAt.toISOString(),
+    measurementValue:
+      typeof markup.measurement?.value === "number" ? String(markup.measurement.value) : "",
+    measurementUnit: markup.measurement?.unit ?? "",
+  }));
 }
 
 // ================================
@@ -502,6 +556,157 @@ async function createApp(): Promise<Express> {
     res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
     res.send(fileContent.buffer);
   }));
+  app.get("/api/projects/:id/files/:fileId/markups", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
+    const projectId = toUuid(req.params.id);
+    const fileId = toUuid(req.params.fileId);
+    const pageNumberRaw = typeof req.query.page === "string" ? Number(req.query.page) : undefined;
+    const pageNumber = Number.isFinite(pageNumberRaw) && Number(pageNumberRaw) > 0
+      ? Math.floor(Number(pageNumberRaw))
+      : undefined;
+
+    await projectService.getProjectOrThrow(projectId, req.orgId);
+    const file = await projectService.getProjectFileById(projectId, fileId);
+    if (!file) {
+      res.status(404).json({ error: "file_not_found", message: "Project file not found" });
+      return;
+    }
+
+    const markups = await pdfMarkupService.list(projectId, fileId, pageNumber);
+    res.json({ markups });
+  }));
+  app.post("/api/projects/:id/files/:fileId/markups", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
+    const projectId = toUuid(req.params.id);
+    const fileId = toUuid(req.params.fileId);
+
+    await projectService.getProjectOrThrow(projectId, req.orgId);
+    const file = await projectService.getProjectFileById(projectId, fileId);
+    if (!file) {
+      res.status(404).json({ error: "file_not_found", message: "Project file not found" });
+      return;
+    }
+
+    const body = req.body as {
+      pageNumber?: number;
+      type?: string;
+      coordinates?: Record<string, unknown>;
+      measurement?: { kind?: "calibration" | "length" | "area" | "count"; value?: number; unit?: string };
+      category?: string;
+      status?: string;
+      comment?: string;
+      assignedTo?: string;
+    };
+
+    if (!body || typeof body !== "object" || typeof body.type !== "string" || !body.type.trim()) {
+      res.status(400).json({ error: "invalid_request", message: "type is required" });
+      return;
+    }
+
+    const markup = await pdfMarkupService.create(projectId, fileId, req.user?.name ?? "Unknown", {
+      pageNumber: Number(body.pageNumber ?? 1),
+      type: body.type,
+      coordinates: body.coordinates,
+      measurement: body.measurement,
+      category: body.category,
+      status: body.status,
+      comment: body.comment,
+      assignedTo: body.assignedTo,
+    });
+
+    res.status(201).json({ markup });
+  }));
+  app.patch("/api/projects/:id/files/:fileId/markups/:markupId", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
+    const projectId = toUuid(req.params.id);
+    const fileId = toUuid(req.params.fileId);
+    const markupId = toUuid(req.params.markupId);
+
+    await projectService.getProjectOrThrow(projectId, req.orgId);
+    const file = await projectService.getProjectFileById(projectId, fileId);
+    if (!file) {
+      res.status(404).json({ error: "file_not_found", message: "Project file not found" });
+      return;
+    }
+
+    const body = req.body as {
+      pageNumber?: number;
+      type?: string;
+      coordinates?: Record<string, unknown>;
+      measurement?: { kind?: "calibration" | "length" | "area" | "count"; value?: number; unit?: string };
+      category?: string;
+      status?: string;
+      comment?: string;
+      assignedTo?: string;
+    };
+
+    const markup = await pdfMarkupService.update(projectId, fileId, markupId, {
+      pageNumber: body?.pageNumber,
+      type: body?.type,
+      coordinates: body?.coordinates,
+      measurement: body?.measurement,
+      category: body?.category,
+      status: body?.status,
+      comment: body?.comment,
+      assignedTo: body?.assignedTo,
+    });
+
+    if (!markup) {
+      res.status(404).json({ error: "markup_not_found", message: "Markup not found" });
+      return;
+    }
+
+    res.json({ markup });
+  }));
+  app.delete("/api/projects/:id/files/:fileId/markups/:markupId", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
+    const projectId = toUuid(req.params.id);
+    const fileId = toUuid(req.params.fileId);
+    const markupId = toUuid(req.params.markupId);
+
+    await projectService.getProjectOrThrow(projectId, req.orgId);
+    const file = await projectService.getProjectFileById(projectId, fileId);
+    if (!file) {
+      res.status(404).json({ error: "file_not_found", message: "Project file not found" });
+      return;
+    }
+
+    const removed = await pdfMarkupService.remove(projectId, fileId, markupId);
+    if (!removed) {
+      res.status(404).json({ error: "markup_not_found", message: "Markup not found" });
+      return;
+    }
+
+    res.status(204).send();
+  }));
+  app.get("/api/projects/:id/files/:fileId/markups/export", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
+    const projectId = toUuid(req.params.id);
+    const fileId = toUuid(req.params.fileId);
+    const format = typeof req.query.format === "string" ? req.query.format.toLowerCase() : "csv";
+
+    const project = await projectService.getProjectOrThrow(projectId, req.orgId);
+    const file = await projectService.getProjectFileById(projectId, fileId);
+    if (!file) {
+      res.status(404).json({ error: "file_not_found", message: "Project file not found" });
+      return;
+    }
+
+    const markups = await pdfMarkupService.list(projectId, fileId);
+    const rows = toMarkupExportRows(project.name, file.fileName, markups);
+
+    if (format === "xlsx") {
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Markups");
+      const workbookBuffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer;
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename=\"${file.fileName.replace(/\"/g, "")}-markups.xlsx\"`);
+      res.send(workbookBuffer);
+      return;
+    }
+
+    const csv = Papa.unparse(rows);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename=\"${file.fileName.replace(/\"/g, "")}-markups.csv\"`);
+    res.send(csv);
+  }));
   app.get("/api/projects/:id/indexing/progress", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
     await projectService.getProjectOrThrow(projectId, req.orgId);
@@ -620,6 +825,15 @@ async function createApp(): Promise<Express> {
   app.post("/api/chat/sessions", requireAuthenticatedRequest, handleCreateChatSession);
   app.get("/api/chat/sessions", requireAuthenticatedRequest, asyncHandler(async (_req, res) => {
     res.json(await chatService.listSessionsForUser(_req.user));
+  }));
+  app.patch("/api/chat/sessions/:id", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
+    const sessionId = toUuid(req.params.id);
+    const { title, pinned } = req.body as { title?: string; pinned?: boolean };
+    res.json(await chatService.updateSession(sessionId, { title, pinned }, req.user));
+  }));
+  app.delete("/api/chat/sessions/:id", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
+    await chatService.deleteSession(toUuid(req.params.id), req.user);
+    res.status(204).end();
   }));
   app.post("/api/chat/sessions/:id/message", requireAuthenticatedRequest, handleSendChatMessage);
   app.get("/api/chat/sessions/:id/messages", requireAuthenticatedRequest, asyncHandler(async (req, res) => {

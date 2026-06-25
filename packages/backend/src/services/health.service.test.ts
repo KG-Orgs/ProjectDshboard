@@ -7,6 +7,8 @@ const BASE_TEST_ENV: AppEnv = {
   apiBaseUrl: "http://localhost:3001",
   deepseekChatModel: "deepseek-v3.2",
   deepseekChatEndpoint: "https://api.deepseek.com/v1/chat/completions",
+  classifierModel: "gpt-4.1-nano",
+  classifierEndpoint: "https://api.openai.com/v1/chat/completions",
   oauthRedirectUri: "http://localhost:3000/auth/callback",
   onedriveApiEndpoint: "https://graph.microsoft.com/v1.0",
   openAiEmbeddingModel: "text-embedding-3-small",

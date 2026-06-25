@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { FormEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode, Suspense, isValidElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,9 +6,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useConversationStore } from './useConversationStore';
 import './workspace.css';
 
-const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false, loading: () => null });
+const ConstructionPdfViewer = dynamic(() => import('./ConstructionPdfViewer'), { ssr: false, loading: () => null });
 
 type DocKind = 'pdf' | 'txt' | 'docx' | 'xlsx' | 'image';
 
@@ -46,6 +47,7 @@ interface ChatSessionRecord {
   id: string;
   projectId: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 interface ChatSessionsListResponse {
@@ -83,6 +85,7 @@ interface ProjectFilesListResponse {
 interface ProjectsListResponse {
   projects: Array<{
     id: string;
+    name: string;
   }>;
 }
 
@@ -105,12 +108,42 @@ interface ViewerSearchHit {
   excerpt: string;
 }
 
+interface PdfCitationRequest {
+  fileId: string;
+  pageNumber: number;
+  boundingBox?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  textSnippet?: string;
+}
+
+interface OpenPdfCitationArgs {
+  fileId: string;
+  pageNumber: number;
+  boundingBox?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  textSnippet?: string;
+}
+
+declare global {
+  interface Window {
+    openPdfCitation?: (args: OpenPdfCitationArgs) => Promise<void>;
+  }
+}
+
 const DOC_LIBRARY: WorkspaceDoc[] = [
   {
     id: 'doc-structural-report',
     title: 'structural-report.pdf',
     kind: 'pdf',
-    url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    url: '/sample.pdf',
     source: 'library',
   },
   {
@@ -302,20 +335,105 @@ function CodeBlock({ code }: { code: string }) {
   };
 
   return (
-    <div className="group relative my-3 overflow-hidden rounded-xl border border-slate-700/80 bg-slate-950">
+    <div className="group relative my-2 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
       <button
         type="button"
         onClick={() => void handleCopy()}
-        className="absolute right-2 top-2 rounded-md border border-slate-600 bg-slate-900 px-2 py-1 text-[11px] text-slate-200 opacity-0 transition group-hover:opacity-100"
+        className="absolute right-2 top-2 rounded border border-gray-300 bg-white px-2 py-0.5 text-[11px] text-gray-600 opacity-0 transition group-hover:opacity-100"
       >
         {copied ? 'Copied' : 'Copy'}
       </button>
-      <pre className="overflow-x-auto p-4 text-xs leading-6 text-slate-200">
+      <pre className="overflow-x-auto p-4 text-xs leading-6 text-gray-700">
         <code>{code}</code>
       </pre>
     </div>
   );
 }
+
+// --- File explorer types & helpers -------------------------------------------
+
+interface WsFile {
+  id: string;
+  fileName: string;
+  filePath: string;
+  indexStatus: string;
+}
+
+interface FolderNode {
+  path: string;
+  name: string;
+  files: WsFile[];
+}
+
+function getFileIcon(fileName: string): string {
+  const ext = fileName.toLowerCase().split('.').pop() ?? '';
+  if (ext === 'pdf') return '[PDF]';
+  if (['doc', 'docx'].includes(ext)) return '[DOC]';
+  if (['xls', 'xlsx', 'csv'].includes(ext)) return '[XLS]';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '[IMG]';
+  if (['dwg', 'dxf'].includes(ext)) return '[DWG]';
+  if (['mpp'].includes(ext)) return '[SCH]';
+  if (['rfi'].includes(ext) || fileName.toLowerCase().includes('rfi')) return '[RFI]';
+  return '[DOC]';
+}
+
+function buildFolderTree(files: WsFile[]): FolderNode[] {
+  const map = new Map<string, WsFile[]>();
+  for (const file of files) {
+    const parts = file.filePath.replace(/\\/g, '/').split('/');
+    parts.pop();
+    const folder = parts.filter(Boolean).join('/') || 'Project Files';
+    if (!map.has(folder)) map.set(folder, []);
+    map.get(folder)!.push(file);
+  }
+  return Array.from(map.entries()).map(([path, nodeFiles]) => ({
+    path,
+    name: path.split('/').filter(Boolean).pop() ?? path,
+    files: nodeFiles,
+  }));
+}
+
+interface FolderSectionProps {
+  folder: FolderNode;
+  isExpanded: boolean;
+  activeFileId: string | undefined;
+  onToggle: () => void;
+  onFileClick: (file: WsFile) => void;
+}
+
+function FolderSection({ folder, isExpanded, activeFileId, onToggle, onFileClick }: FolderSectionProps) {
+  return (
+    <div>
+      <button type="button" className="folder-header-btn" onClick={onToggle}>
+        <span className={`folder-chevron ${isExpanded ? 'open' : ''}`}>&rsaquo;</span>
+        <span>[DIR]</span>
+        <span className="file-name-text">{folder.name}</span>
+        <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#9ca3af', flexShrink: 0, paddingLeft: '4px' }}>
+          {folder.files.length}
+        </span>
+      </button>
+      {isExpanded ? (
+        <div>
+          {folder.files.map((file) => (
+            <button
+              key={file.id}
+              type="button"
+              className={`file-row-btn ${activeFileId === file.id ? 'active' : ''}`}
+              onClick={() => onFileClick(file)}
+              title={file.fileName}
+            >
+              <span style={{ flexShrink: 0 }}>{getFileIcon(file.fileName)}</span>
+              <span className="file-name-text">{file.fileName}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+
+
 
 function ChatWorkspacePageContent() {
   const router = useRouter();
@@ -327,10 +445,6 @@ function ChatWorkspacePageContent() {
     ? `/?projectId=${encodeURIComponent(projectId)}`
     : '/';
 
-  const [panelRatio, setPanelRatio] = useState(50);
-  const [isDraggingDivider, setIsDraggingDivider] = useState(false);
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
-
   const [openDocs, setOpenDocs] = useState<WorkspaceDoc[]>([]);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [viewerLoading, setViewerLoading] = useState(false);
@@ -338,12 +452,10 @@ function ChatWorkspacePageContent() {
   const [viewerSearchError, setViewerSearchError] = useState<string | null>(null);
   const [viewerSearchBusy, setViewerSearchBusy] = useState(false);
   const [viewerSearchAppliedTerm, setViewerSearchAppliedTerm] = useState('');
-  const [pdfZoom, setPdfZoom] = useState(120);
-  const [pdfPageCount, setPdfPageCount] = useState(0);
-  const [pdfRenderError, setPdfRenderError] = useState<string | null>(null);
   const [activePdfPage, setActivePdfPage] = useState<number | undefined>(undefined);
   // Tracks the page currently visible in the viewer (scroll-driven). Never fed back into targetPage.
   const [displayedPdfPage, setDisplayedPdfPage] = useState<number | undefined>(undefined);
+  const [citationRequest, setCitationRequest] = useState<PdfCitationRequest | null>(null);
   const [isDropActive, setIsDropActive] = useState(false);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -354,7 +466,28 @@ function ChatWorkspacePageContent() {
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
 
+  const {
+    createSession: storeCreateSession,
+    setActiveSession: storeSetActiveSession,
+    fetchSessions: storeFetchSessions,
+  } = useConversationStore();
+
   const [workspaceSearch, setWorkspaceSearch] = useState('');
+
+  // -- File explorer state ----------------------------------------------------
+  const [wsFiles, setWsFiles] = useState<WsFile[]>([]);
+  const [wsFilesLoading, setWsFilesLoading] = useState(false);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [fileSearch, setFileSearch] = useState('');
+
+  // -- Panel widths (px) ------------------------------------------------------
+  const [leftPanelWidth, setLeftPanelWidth] = useState(248);
+  const [rightPanelWidth, setRightPanelWidth] = useState(380);
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [isDraggingLeft, setIsDraggingLeft] = useState(false);
+  const [isDraggingRight, setIsDraggingRight] = useState(false);
+  const [projectDisplayName, setProjectDisplayName] = useState<string>('');
 
   const panelRootRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -364,11 +497,6 @@ function ChatWorkspacePageContent() {
   const docDetailCacheRef = useRef<Map<string, DocumentDetailResponse>>(new Map());
 
   useEffect(() => {
-    if (queryProjectId) {
-      setInferredProjectId(null);
-      return;
-    }
-
     let cancelled = false;
 
     const resolveProjectFromApi = async () => {
@@ -379,13 +507,30 @@ function ChatWorkspacePageContent() {
         }
 
         const payload = (await response.json()) as ProjectsListResponse;
-        const fallbackProjectId = payload.projects?.[0]?.id;
-        if (!fallbackProjectId || cancelled) {
-          return;
+        const projectList = payload.projects ?? [];
+        const selectedProjectId = queryProjectId ?? projectId;
+
+        if (selectedProjectId) {
+          const selectedProject = projectList.find((project) => project.id === selectedProjectId);
+          if (!cancelled) {
+            setProjectDisplayName(selectedProject?.name ?? '');
+          }
         }
 
-        setInferredProjectId(fallbackProjectId);
-        router.replace(`/workspace/chat?projectId=${encodeURIComponent(fallbackProjectId)}`);
+        if (!queryProjectId) {
+          const fallbackProjectId = projectList[0]?.id;
+          if (!fallbackProjectId || cancelled) {
+            return;
+          }
+
+          setInferredProjectId(fallbackProjectId);
+          if (!projectDisplayName) {
+            setProjectDisplayName(projectList[0]?.name ?? '');
+          }
+          router.replace(`/workspace/chat?projectId=${encodeURIComponent(fallbackProjectId)}`);
+        } else if (!cancelled) {
+          setInferredProjectId(null);
+        }
       } catch {
         // Keep current state when project lookup fails; send handler will surface a clear error.
       }
@@ -396,7 +541,7 @@ function ChatWorkspacePageContent() {
     return () => {
       cancelled = true;
     };
-  }, [queryProjectId, router]);
+  }, [projectId, projectDisplayName, queryProjectId, router]);
 
   const activeDoc = useMemo(
     () => openDocs.find((doc) => doc.id === activeDocId) ?? null,
@@ -440,12 +585,9 @@ function ChatWorkspacePageContent() {
       setViewerLoading(false);
       setActivePdfPage(undefined);
       setDisplayedPdfPage(undefined);
-      setPdfPageCount(0);
-      setPdfRenderError(null);
       return;
     }
 
-    setPdfRenderError(null);
     setActivePdfPage(activeDoc.page);
   }, [activeDoc]);
 
@@ -611,7 +753,7 @@ function ChatWorkspacePageContent() {
             searchTerm: existing.searchTerm,
           url: previewUrl ?? existing.url,
         }
-      : createDocFromFileName(fileName, { projectId: projectId ?? undefined, fileId: resolvedFileId });
+      : { ...createDocFromFileName(fileName, { projectId: projectId ?? undefined, fileId: resolvedFileId }), ...(page != null ? { page } : {}) };
 
     openDoc(doc);
   }, [openDoc, openDocs, projectId, resolveProjectFileIdByName]);
@@ -625,19 +767,11 @@ function ChatWorkspacePageContent() {
   }, []);
 
   useEffect(() => {
-    const cached = window.localStorage.getItem(`workspace-chat-${projectId}`);
-    if (!cached) {
-      setMessages([
-        {
-          id: uid('m'),
-          role: 'assistant',
-          content:
-            'Workspace memory restored. I can open docs, cross-reference clauses, and summarize critical findings with citation chips.',
-        },
-      ]);
-      return;
-    }
-
+    // Only restore from localStorage for the active session; skip if we
+    // already have messages (e.g. loaded from DB via loadSessionHistory).
+    if (!chatSessionId || messages.length > 0) return;
+    const cached = window.localStorage.getItem(`workspace-chat-session-${chatSessionId}`);
+    if (!cached) return;
     try {
       const parsed = JSON.parse(cached) as Array<ChatMessage & { references?: Array<ChatReference | string> }>;
       const normalized = parsed.map((message) => ({
@@ -650,17 +784,74 @@ function ChatWorkspacePageContent() {
             )
           : undefined,
       }));
-      setMessages(normalized);
+      if (normalized.length > 0) setMessages(normalized);
     } catch {
-      setMessages([]);
+      // ignore corrupted cache
     }
-  }, [projectId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatSessionId]);
 
   useEffect(() => {
-    if (messages.length > 0) {
-      window.localStorage.setItem(`workspace-chat-${projectId}`, JSON.stringify(messages));
+    if (chatSessionId && messages.length > 0) {
+      window.localStorage.setItem(`workspace-chat-session-${chatSessionId}`, JSON.stringify(messages));
     }
-  }, [messages, projectId]);
+  }, [messages, chatSessionId]);
+
+  // -- Load history for a previous session ---------------------------------
+  // Defined here so it can be referenced by the loadSession startup effect below.
+  const loadSessionHistory = useCallback(async (sessionId: string) => {
+    setChatError(null);
+    setIsTyping(false);
+    setMessages([]);
+
+    try {
+      const response = await fetch(
+        `/api/chat/sessions/${encodeURIComponent(sessionId)}/messages`,
+        { method: 'GET', cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+        setChatError(`Failed to load conversation history (${response.status}).`);
+        setChatSessionId(null);
+        return;
+      }
+
+      const payload = (await response.json()) as { messages: Array<{ id: string; role: 'user' | 'assistant'; content: string; sources?: unknown[]; createdAt: string }> };
+      const restored: ChatMessage[] = (payload.messages ?? []).map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        references: Array.isArray(m.sources)
+          ? (m.sources as Array<{ fileName?: string; fileId?: string; displayName?: string }>)
+              .filter((s) => s.fileName)
+              .map((s) => ({
+                fileName: s.fileName ?? '',
+                displayName: s.displayName,
+                fileId: s.fileId,
+              }))
+          : undefined,
+      }));
+
+      setChatSessionId(sessionId);
+      setMessages(
+        restored.length > 0
+          ? restored
+          : [
+              {
+                id: uid('m'),
+                role: 'assistant',
+                content: 'Session loaded. Continue the conversation below.',
+              },
+            ]
+      );
+    } catch {
+      setChatError('Failed to load conversation history.');
+    }
+  }, []);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -675,16 +866,22 @@ function ChatWorkspacePageContent() {
         const payload = (await response.json()) as ChatSessionsListResponse;
         const matching = (payload.sessions ?? [])
           .filter((session) => session.projectId === projectId)
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          .sort((a, b) => new Date(b.updatedAt ?? b.createdAt).getTime() - new Date(a.updatedAt ?? a.createdAt).getTime());
 
-        setChatSessionId(matching[0]?.id ?? null);
+        const latestId = matching[0]?.id ?? null;
+        setChatSessionId(latestId);
+        if (latestId) {
+          storeSetActiveSession(latestId);
+          // Auto-load the most recent session's messages on page open
+          await loadSessionHistory(latestId);
+        }
       } catch {
         setChatSessionId(null);
       }
     };
 
     void loadSession();
-  }, [projectId]);
+  }, [projectId, storeSetActiveSession, loadSessionHistory]);
 
   useEffect(() => {
     if (chatScrollRef.current) {
@@ -731,16 +928,24 @@ function ChatWorkspacePageContent() {
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
-      if (!isDraggingDivider || !panelRootRef.current) {
-        return;
-      }
-
+      if (!panelRootRef.current) return;
       const rect = panelRootRef.current.getBoundingClientRect();
-      const ratio = ((event.clientX - rect.left) / rect.width) * 100;
-      setPanelRatio(Math.max(28, Math.min(72, ratio)));
+      const totalWidth = rect.width;
+
+      if (isDraggingLeft) {
+        const newLeft = event.clientX - rect.left - 4;
+        setLeftPanelWidth(Math.max(160, Math.min(400, newLeft)));
+      }
+      if (isDraggingRight) {
+        const newRight = rect.right - event.clientX - 4;
+        setRightPanelWidth(Math.max(280, Math.min(Math.round(totalWidth * 0.45), newRight)));
+      }
     };
 
-    const handleMouseUp = () => setIsDraggingDivider(false);
+    const handleMouseUp = () => {
+      setIsDraggingLeft(false);
+      setIsDraggingRight(false);
+    };
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
@@ -749,7 +954,7 @@ function ChatWorkspacePageContent() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDraggingDivider]);
+  }, [isDraggingLeft, isDraggingRight]);
 
   const handleCloseTab = (docId: string) => {
     setOpenDocs((current) => {
@@ -798,7 +1003,7 @@ function ChatWorkspacePageContent() {
 
     if (!response.ok) {
       if (response.status === 401) {
-        // Session expired after backend restart — redirect to re-login
+        // Session expired after backend restart -- redirect to re-login
         window.location.href = '/login';
         throw new Error('Your session has expired. Redirecting to login...');
       }
@@ -814,8 +1019,42 @@ function ChatWorkspacePageContent() {
     }
 
     setChatSessionId(sessionId);
+    storeSetActiveSession(sessionId);
+    // Refresh sidebar history so the new session appears immediately
+    void storeFetchSessions();
     return sessionId;
-  }, [chatSessionId, projectId]);
+  }, [chatSessionId, projectId, storeFetchSessions, storeSetActiveSession]);
+
+  // -- Sidebar: create a brand-new chat -------------------------------------
+  const handleSidebarNewChat = useCallback(async (): Promise<string | null> => {
+    if (!projectId) return null;
+    // Clear current message window and viewer state (optimistic)
+    setMessages([]);
+    setChatSessionId(null);
+    setChatError(null);
+    setIsTyping(false);
+    setOpenDocs([]);
+    setActiveDocId(null);
+    setViewerLoading(false);
+    setActivePdfPage(undefined);
+    setDisplayedPdfPage(undefined);
+
+    try {
+      const newId = await storeCreateSession(projectId);
+      setChatSessionId(newId);
+      storeSetActiveSession(newId);
+      setMessages([
+        {
+          id: uid('m'),
+          role: 'assistant',
+          content: 'New conversation started. How can I help you today?',
+        },
+      ]);
+      return newId;
+    } catch {
+      return null;
+    }
+  }, [projectId, storeCreateSession, storeSetActiveSession]);
 
   const streamAssistantMessage = useCallback(async (fullText: string, references: ChatReference[], suggestions?: string[]) => {
     setMessages((current) => [
@@ -970,11 +1209,6 @@ function ChatWorkspacePageContent() {
         searchInputRef.current?.focus();
       }
 
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
-        event.preventDefault();
-        setLeftCollapsed((current) => !current);
-      }
-
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault();
         void handleSendPrompt();
@@ -996,6 +1230,81 @@ function ChatWorkspacePageContent() {
     const lowered = workspaceSearch.toLowerCase();
     return DOC_LIBRARY.filter((doc) => doc.title.toLowerCase().includes(lowered));
   }, [workspaceSearch]);
+
+  // -- Fetch project files for the left panel explorer -----------------------
+  useEffect(() => {
+    if (!projectId) {
+      setWsFiles([]);
+      return;
+    }
+
+    let cancelled = false;
+    setWsFilesLoading(true);
+
+    fetch(`/api/projects/${encodeURIComponent(projectId)}/files?page=1&pageSize=300`, { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
+      .then((data: { files: WsFile[] }) => {
+        if (cancelled) return;
+        const files = data.files ?? [];
+        setWsFiles(files);
+        // Auto-expand first folder
+        const tree = buildFolderTree(files);
+        if (tree[0]) {
+          setExpandedFolders(new Set([tree[0].path]));
+        }
+      })
+      .catch(() => { if (!cancelled) setWsFiles([]); })
+      .finally(() => { if (!cancelled) setWsFilesLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [projectId]);
+
+  const folderTree = useMemo(() => {
+    const filtered = fileSearch.trim()
+      ? wsFiles.filter((f) => f.fileName.toLowerCase().includes(fileSearch.toLowerCase()))
+      : wsFiles;
+    return buildFolderTree(filtered);
+  }, [wsFiles, fileSearch]);
+
+  const handleExplorerFileClick = useCallback(
+    (file: WsFile) => {
+      void openOrCreateDoc(file.fileName, undefined, file.id);
+    },
+    [openOrCreateDoc]
+  );
+
+  useEffect(() => {
+    window.openPdfCitation = async (args: OpenPdfCitationArgs) => {
+      const candidate = wsFiles.find((file) => file.id === args.fileId);
+      if (!candidate) {
+        return;
+      }
+
+      await openOrCreateDoc(candidate.fileName, args.pageNumber, args.fileId);
+      setCitationRequest({
+        fileId: args.fileId,
+        pageNumber: args.pageNumber,
+        boundingBox: args.boundingBox,
+        textSnippet: args.textSnippet,
+      });
+      setActivePdfPage(args.pageNumber);
+    };
+
+    return () => {
+      if (window.openPdfCitation) {
+        delete window.openPdfCitation;
+      }
+    };
+  }, [openOrCreateDoc, wsFiles]);
+
+  const toggleFolder = useCallback((path: string) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }, []);
 
   const handleDropFiles = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -1028,18 +1337,21 @@ function ChatWorkspacePageContent() {
   const renderDocumentBody = () => {
     if (!activeDoc) {
       return (
-        <div className="flex h-full min-h-[360px] items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-900/50">
-          <p className="text-lg font-medium text-slate-300">Ask AI to open a document</p>
+        <div className="viewer-empty">
+          <div className="viewer-empty-icon">[ ]</div>
+          <p style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Select a document to preview it here</p>
+          <p style={{ fontSize: '12px', lineHeight: '1.6', maxWidth: '200px' }}>
+            Supported: PDFs, drawings, specifications, RFIs, submittals, schedules, and photos.
+          </p>
         </div>
       );
     }
 
     if (viewerLoading && activeDoc.kind !== 'pdf') {
       return (
-        <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-          <div className="h-6 w-52 animate-pulse rounded bg-slate-700/70" />
-          <div className="h-56 animate-pulse rounded-xl bg-slate-800/80" />
-          <div className="h-4 w-72 animate-pulse rounded bg-slate-700/50" />
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ height: '20px', width: '200px', background: '#e5e7eb', borderRadius: '4px', animation: 'pulse 1.5s infinite' }} />
+          <div style={{ height: '200px', background: '#f3f4f6', borderRadius: '8px', animation: 'pulse 1.5s infinite' }} />
         </div>
       );
     }
@@ -1047,124 +1359,43 @@ function ChatWorkspacePageContent() {
     if (activeDoc.kind === 'pdf') {
       if (!activeDoc.url) {
         return (
-          <div className="flex h-[66vh] flex-col justify-center rounded-xl border border-slate-700 bg-slate-900/80 p-6 text-slate-300">
-            <h4 className="text-lg font-semibold text-slate-100">PDF Preview Unavailable</h4>
-            <p className="mt-2 text-sm text-slate-400">
-              This referenced PDF was opened from chat citations, but no preview URL is available yet.
+          <div style={{ padding: '24px', color: '#6b7280' }}>
+            <h4 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>PDF Preview Unavailable</h4>
+            <p style={{ fontSize: '13px', lineHeight: '1.6' }}>
+              This PDF was opened from a citation, but no preview URL is available yet.
             </p>
-            <p className="mt-2 text-sm text-slate-400">
-              File: <span className="font-medium text-slate-200">{activeDoc.title}</span>
+            <p style={{ fontSize: '13px', marginTop: '8px' }}>
+              File: <strong style={{ color: '#111827' }}>{activeDoc.title}</strong>
             </p>
           </div>
         );
       }
-
-      const activePage = Math.min(Math.max(activePdfPage ?? activeDoc.page ?? 1, 1), Math.max(pdfPageCount, 1));
-      const thumbStart = Math.max(1, activePage - 3);
-      const thumbEnd = Math.min(Math.max(pdfPageCount, 1), thumbStart + 6);
-      const thumbPages = Array.from({ length: Math.max(thumbEnd - thumbStart + 1, 0) }, (_, index) => thumbStart + index);
-
       return (
-        <div className="flex h-full gap-3">
-          <aside className="hidden w-16 shrink-0 space-y-2 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900/80 p-2 lg:block">
-            {thumbPages.map((page) => {
-              return (
-                <button
-                  key={`thumb-${page}`}
-                  type="button"
-                  onClick={() => setActivePdfPage(page)}
-                  className={`h-14 w-full rounded-md border text-xs ${
-                    activePage === page
-                      ? 'border-blue-400 bg-blue-500/25 text-blue-100'
-                      : 'border-slate-700 bg-slate-800 text-slate-300'
-                  }`}
-                >
-                  Pg {page}
-                </button>
-              );
-            })}
-          </aside>
-          <div className="flex flex-col gap-1.5">
-          <div className="relative h-[66vh] w-full overflow-hidden rounded-xl border border-slate-700 bg-slate-950">
-            {viewerLoading ? (
-              <div className="absolute inset-0 z-10 space-y-3 bg-slate-950/80 p-5">
-                <div className="h-6 w-52 animate-pulse rounded bg-slate-700/70" />
-                <div className="h-56 animate-pulse rounded-xl bg-slate-800/80" />
-                <div className="h-4 w-72 animate-pulse rounded bg-slate-700/50" />
-              </div>
-            ) : null}
-            <PdfViewer
-              url={activeDoc.url}
-              docKey={activeDoc.id}
-              targetPage={activePage}
-              zoom={pdfZoom}
-              onVisiblePageChange={(page) => setDisplayedPdfPage(page)}
-              onPageCount={(count) => {
-                setPdfPageCount(count);
-                setActivePdfPage((current) => {
-                  const next = current ?? activeDoc.page ?? 1;
-                  return Math.min(Math.max(next, 1), count);
-                });
-                setPdfRenderError(null);
-              }}
-              onReady={() => setViewerLoading(false)}
-            />
-          </div>
-          {/* Page indicator */}
-          <div className="flex items-center justify-center gap-2 rounded-b-xl border border-t-0 border-slate-700 bg-slate-900/80 px-3 py-1.5">
-            <button
-              type="button"
-              disabled={activePage <= 1}
-              onClick={() => setActivePdfPage(Math.max(1, activePage - 1))}
-              className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-700 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Previous page"
-            >
-              ‹
-            </button>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const input = (e.currentTarget.elements.namedItem('pageInput') as HTMLInputElement);
-                const val = Number.parseInt(input.value, 10);
-                if (Number.isFinite(val) && val >= 1 && val <= pdfPageCount) {
-                  setActivePdfPage(val);
-                } else {
-                  input.value = String(activePage);
-                }
-              }}
-              className="flex items-center gap-1.5 text-sm text-slate-300"
-            >
-              <input
-                name="pageInput"
-                key={displayedPdfPage ?? activePage}
-                defaultValue={displayedPdfPage ?? activePage}
-                type="number"
-                min={1}
-                max={pdfPageCount || 1}
-                className="w-12 rounded border border-slate-600 bg-slate-800 px-1.5 py-0.5 text-center text-sm text-slate-100 [appearance:textfield] focus:border-blue-500 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                aria-label="Current page"
-              />
-              <span className="text-slate-500">/</span>
-              <span className="min-w-[1.5rem] text-center text-slate-400">{pdfPageCount || '—'}</span>
-            </form>
-            <button
-              type="button"
-              disabled={activePage >= pdfPageCount}
-              onClick={() => setActivePdfPage(Math.min(pdfPageCount, activePage + 1))}
-              className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-700 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Next page"
-            >
-              ›
-            </button>
-          </div>
-          </div>
-        </div>
+        <ConstructionPdfViewer
+          projectId={projectId}
+          fileId={activeDoc.fileId}
+          fileName={activeDoc.title}
+          url={activeDoc.url}
+          initialPage={activePdfPage ?? activeDoc.page ?? 1}
+          citationRequest={
+            citationRequest && activeDoc.fileId && citationRequest.fileId === activeDoc.fileId
+              ? citationRequest
+              : null
+          }
+          onCitationHandled={() => {
+            setCitationRequest(null);
+          }}
+          onVisiblePageChange={(page) => {
+            setDisplayedPdfPage(page);
+            setActivePdfPage(page);
+          }}
+        />
       );
     }
 
     if (activeDoc.kind === 'txt') {
       return (
-        <div className="h-[66vh] overflow-auto rounded-xl border border-slate-700 bg-slate-950 p-4 font-mono text-sm leading-7 text-slate-200">
+        <div style={{ height: '100%', overflow: 'auto', padding: '16px', fontFamily: 'Consolas, monospace', fontSize: '13px', lineHeight: '1.7', color: '#374151', background: '#fafafa', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
           {highlightText(activeDoc.text ?? 'No text available.', viewerSearchAppliedTerm)}
         </div>
       );
@@ -1172,139 +1403,116 @@ function ChatWorkspacePageContent() {
 
     if (activeDoc.kind === 'image') {
       return (
-        <div className="flex h-[66vh] items-center justify-center overflow-hidden rounded-xl border border-slate-700 bg-slate-950 p-3">
+        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', padding: '12px' }}>
           <img
             src={activeDoc.url}
             alt={activeDoc.title}
-            className="max-h-full w-auto rounded-lg object-contain shadow-2xl"
+            style={{ maxHeight: '100%', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain' }}
           />
         </div>
       );
     }
 
     return (
-      <div className="flex h-[66vh] flex-col justify-center rounded-xl border border-slate-700 bg-slate-900/80 p-6 text-slate-300">
-        <h4 className="text-lg font-semibold text-slate-100">Preview Ready</h4>
-        <p className="mt-2 text-sm text-slate-400">
+      <div style={{ padding: '24px', color: '#6b7280' }}>
+        <h4 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>Preview Ready</h4>
+        <p style={{ fontSize: '13px', lineHeight: '1.6' }}>
           {activeDoc.kind === 'docx'
-            ? 'DOCX rendering is available in the full backend integration. For now, metadata and citation linking are enabled.'
-            : 'Excel preview is staged. AI can still read and cite this file during response composition.'}
+            ? 'DOCX rendering will be available in a future update. AI can still read and cite this file.'
+            : 'Excel preview is coming soon. AI can still read and cite this file.'}
         </p>
       </div>
     );
   };
 
-  const leftWidth = leftCollapsed ? '0%' : `${panelRatio}%`;
-  const rightWidth = leftCollapsed ? '100%' : `${100 - panelRatio}%`;
-
   const markdownComponents = useMemo(() => ({
     h1({ children }: { children?: ReactNode }) {
-      return <h1 className="mb-2 mt-1 text-base font-bold text-slate-100">{children}</h1>;
+      return <h1 style={{ fontSize: '15px', fontWeight: 700, color: '#111827', marginBottom: '8px', marginTop: '4px' }}>{children}</h1>;
     },
     h2({ children }: { children?: ReactNode }) {
-      return <h2 className="mb-2 mt-1 text-sm font-bold text-slate-100">{children}</h2>;
+      return <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: '6px', marginTop: '4px' }}>{children}</h2>;
     },
     h3({ children }: { children?: ReactNode }) {
-      return <h3 className="mb-1.5 mt-1 text-sm font-semibold text-slate-200">{children}</h3>;
+      return <h3 style={{ fontSize: '13.5px', fontWeight: 600, color: '#374151', marginBottom: '4px', marginTop: '4px' }}>{children}</h3>;
     },
     ul({ children }: { children?: ReactNode }) {
-      return <ul className="mb-1 mt-1 space-y-1 pl-4">{children}</ul>;
+      return <ul style={{ paddingLeft: '16px', marginBottom: '6px', marginTop: '4px' }}>{children}</ul>;
     },
     ol({ children }: { children?: ReactNode }) {
-      return <ol className="mb-1 mt-1 list-decimal space-y-1 pl-5 text-sm text-slate-200">{children}</ol>;
+      return <ol style={{ paddingLeft: '18px', marginBottom: '6px', marginTop: '4px', listStyleType: 'decimal' }}>{children}</ol>;
     },
     li({ children }: { children?: ReactNode }) {
-      if (!hasRenderableListItemText(children)) {
-        return null;
-      }
-
-      return (
-        <li className="flex gap-2 text-sm leading-5 text-slate-200">
-          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
-          <span>{children}</span>
-        </li>
-      );
+      if (!hasRenderableListItemText(children)) return null;
+      return <li style={{ fontSize: '13.5px', lineHeight: '1.6', color: '#374151', marginBottom: '3px' }}>{children}</li>;
     },
     p({ children }: { children?: ReactNode }) {
-      return <p className="text-sm leading-6 text-slate-200">{children}</p>;
+      return <p style={{ fontSize: '13.5px', lineHeight: '1.6', color: '#374151', marginBottom: '6px' }}>{children}</p>;
     },
     strong({ children }: { children?: ReactNode }) {
-      return <strong className="font-semibold text-slate-100">{children}</strong>;
+      return <strong style={{ fontWeight: 600, color: '#111827' }}>{children}</strong>;
     },
     code({ className, children }: { className?: string; children?: ReactNode }) {
       const codeText = String(children).replace(/\n$/, '');
-
       if (className && className.includes('language-')) {
         return <CodeBlock code={codeText} />;
       }
-
-      return <code className="rounded bg-slate-800 px-1 py-0.5 text-xs">{children}</code>;
+      return <code style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '4px', padding: '1px 5px', fontSize: '12px', fontFamily: 'Consolas, monospace' }}>{children}</code>;
     },
   }), []);
 
   const renderedChatMessages = useMemo(() => messages.map((message) => {
     const isAssistant = message.role === 'assistant';
-
     return (
       <motion.div
         key={message.id}
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`flex ${isAssistant ? 'justify-start' : 'justify-end'}`}
+        style={{ display: 'flex', justifyContent: isAssistant ? 'flex-start' : 'flex-end' }}
       >
-        <div
-          className={`max-w-[88%] rounded-2xl border px-4 py-3 ${
-            isAssistant
-              ? 'border-slate-700 bg-slate-900 text-slate-100'
-              : 'border-blue-400/40 bg-blue-500/20 text-blue-50'
-          }`}
-        >
+        <div className={isAssistant ? 'chat-bubble-assistant' : 'chat-bubble-user'}>
           {isAssistant ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
               {sanitizeAssistantMarkdown(message.content)}
             </ReactMarkdown>
           ) : (
-            <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
+            <p style={{ whiteSpace: 'pre-wrap', fontSize: '13.5px', lineHeight: '1.55', margin: 0 }}>{message.content}</p>
           )}
 
           {message.references?.length ? (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {message.references.map((reference) => (
                 <button
                   key={`${message.id}-${reference.fileId ?? reference.fileName}`}
                   type="button"
+                  className="source-chip"
                   onClick={() => {
-                    const trustedSuggestedPages =
-                      reference.pageOrigin === 'exact' ? reference.suggestedPages : undefined;
+                    const trustedSuggestedPages = reference.pageOrigin === 'exact' ? reference.suggestedPages : undefined;
                     void openOrCreateDoc(
                       reference.fileName,
-                      reference.pageOrigin === 'exact'
-                        ? (reference.bestPage ?? trustedSuggestedPages?.[0])
-                        : undefined,
+                      reference.pageOrigin === 'exact' ? (reference.bestPage ?? trustedSuggestedPages?.[0]) : undefined,
                       reference.fileId
                     );
                   }}
-                  className="rounded-full border border-blue-400/50 bg-blue-500/15 px-2.5 py-1 text-xs text-blue-100 transition hover:bg-blue-500/30"
                 >
-                  {reference.displayName ?? reference.fileName}
+                  [DOC] {reference.displayName ?? reference.fileName}
                   {reference.pageOrigin === 'exact' && reference.suggestedPages && reference.suggestedPages.length > 0
-                    ? ` (p. ${reference.suggestedPages.join(", ")})`
-                    : ""}
+                    ? ` · p. ${reference.suggestedPages.join(', ')}`
+                    : ''}
                 </button>
               ))}
             </div>
           ) : null}
 
           {!message.isStreaming && message.suggestions?.length ? (
-            <div className="mt-3 border-t border-slate-700/60 pt-3">
-              <p className="mb-1.5 text-[10px] uppercase tracking-widest text-slate-500">Next steps</p>
-              <div className="flex flex-wrap gap-1.5">
+            <div style={{ marginTop: '10px', borderTop: '1px solid #e5e7eb', paddingTop: '10px' }}>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9ca3af', marginBottom: '6px' }}>Follow-up</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {message.suggestions.map((suggestion) => (
                   <button
                     key={`${message.id}-sug-${suggestion}`}
                     type="button"
+                    className="ws-chip"
                     onClick={() => void handleSendPrompt(suggestion)}
-                    className="rounded-full border border-slate-600 bg-slate-800/80 px-2.5 py-1 text-xs text-slate-300 transition hover:border-blue-400 hover:text-blue-100"
                   >
                     {suggestion}
                   </button>
@@ -1314,7 +1522,7 @@ function ChatWorkspacePageContent() {
           ) : null}
 
           {message.isStreaming ? (
-            <span className="mt-2 inline-flex h-2 w-2 animate-pulse rounded-full bg-blue-400" />
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#0078d4', marginTop: '6px', animation: 'pulse 1s infinite' }} />
           ) : null}
         </div>
       </motion.div>
@@ -1322,328 +1530,339 @@ function ChatWorkspacePageContent() {
   }), [handleSendPrompt, markdownComponents, messages, openOrCreateDoc]);
 
   return (
-    <div className="workspace-root min-h-screen bg-workspace-950 text-slate-100">
-      <div className="pointer-events-none absolute inset-0 bg-transparent" />
-
-      <header className="relative z-10 flex h-16 items-center justify-between border-b border-slate-800/90 px-4 md:px-6">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleBackToDashboard}
-            className="rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-200 transition hover:border-blue-400"
-          >
-            Back
-          </button>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/90 text-sm font-semibold text-white shadow-glow">
-            AI
-          </div>
-          <div>
-            <p className="text-sm font-semibold tracking-wide text-slate-100">Contractor Workspace</p>
-            <p className="text-xs text-slate-400">Project {projectId}</p>
-          </div>
+    <div className="workspace-root">
+      {/* Top Bar */}
+      <header className="ws-topbar">
+        <button
+          type="button"
+          onClick={handleBackToDashboard}
+          style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', color: '#374151', fontFamily: 'inherit', flexShrink: 0 }}
+        >
+           Dashboard
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <div style={{ width: '28px', height: '28px', background: '#0078d4', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '11px', fontWeight: 700 }}>AI</div>
+          <span style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>ContractorAI</span>
         </div>
-
-        <div className="mx-4 hidden flex-1 md:block md:max-w-xl">
-          <label className="relative block">
-            <span className="pointer-events-none absolute left-3 top-2.5 text-xs text-slate-500">Search (Ctrl+K)</span>
-            <input
-              ref={searchInputRef}
-              value={workspaceSearch}
-              onChange={(event) => setWorkspaceSearch(event.target.value)}
-              className="h-11 w-full rounded-xl border border-slate-700 bg-slate-900/90 px-3 pt-4 text-sm text-slate-100 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-500/40"
-              placeholder=""
-            />
-          </label>
+        {projectId ? (
+          <>
+            <div style={{ width: '1px', height: '16px', background: '#e5e7eb' }} />
+            <span style={{ fontSize: '13px', color: '#6b7280', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {projectDisplayName || `Project ${projectId.slice(0, 8)}...`}
+            </span>
+          </>
+        ) : null}
+        <div style={{ flex: 1 }} />
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <input
+            ref={searchInputRef}
+            value={workspaceSearch}
+            onChange={(e) => setWorkspaceSearch(e.target.value)}
+            placeholder="Search (Ctrl+K)"
+            style={{ height: '32px', width: '180px', borderRadius: '8px', border: '1px solid #e5e7eb', padding: '0 12px', fontSize: '12px', outline: 'none', background: '#f9fafb' }}
+          />
         </div>
-
-        <div className="flex items-center gap-2">
-          <button type="button" className="toolbar-icon" aria-label="Notifications">
-            N
-          </button>
-          <button type="button" className="toolbar-icon" aria-label="Settings">
-            S
-          </button>
-          <div className="h-9 w-9 rounded-full border border-slate-600 bg-slate-800 text-center text-xs leading-9 text-slate-200">
-            GK
-          </div>
+        <button
+          type="button"
+          onClick={() => void handleSidebarNewChat()}
+          style={{ background: '#0078d4', color: '#fff', border: 'none', borderRadius: '7px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+        >
+          + New Chat
+        </button>
+        <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#1d4ed8', flexShrink: 0 }}>
+          GK
         </div>
       </header>
 
-      <main className="relative z-10 p-3 md:p-4">
-        <div
-          ref={panelRootRef}
-          className="flex h-[calc(100vh-5.6rem)] flex-col gap-3 md:flex-row md:gap-0"
-        >
-          <motion.section
-            animate={{ width: leftWidth, opacity: leftCollapsed ? 0 : 1 }}
-            transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-            className={`workspace-panel overflow-hidden rounded-panel border border-slate-800 bg-workspace-900/90 shadow-panel ${
-              leftCollapsed ? 'hidden md:block' : 'block'
-            }`}
-            style={{ width: leftWidth }}
-            onDragOver={(event) => {
-              event.preventDefault();
-              setIsDropActive(true);
-            }}
-            onDragLeave={() => setIsDropActive(false)}
-            onDrop={handleDropFiles}
-          >
-            <div className="flex h-full flex-col">
-              <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 px-3 py-2">
-                <button
-                  type="button"
-                  onClick={() => setLeftCollapsed(true)}
-                  className="rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-200 transition hover:border-blue-400"
-                >
-                  Collapse (Ctrl+B)
-                </button>
-                <input
-                  ref={viewerSearchInputRef}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      void runViewerSearch(event.currentTarget.value);
-                    }
-                  }}
-                  placeholder="Search in document"
-                  className="min-w-[160px] flex-1 rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-100 outline-none focus:border-blue-400"
+      {/* Three Panels */}
+      <div className="ws-panels" ref={panelRootRef}>
+
+        {/* Panel 1: File Explorer */}
+        <section className="ws-panel" style={{ width: leftPanelCollapsed ? 28 : leftPanelWidth, flexShrink: 0, overflow: 'hidden' }}>
+          <div className="ws-panel-header" style={{ justifyContent: 'space-between' }}>
+            {!leftPanelCollapsed ? <span className="ws-panel-title">Project Files</span> : <span />}
+            <button
+              type="button"
+              onClick={() => setLeftPanelCollapsed((c) => !c)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
+              title={leftPanelCollapsed ? 'Expand panel' : 'Collapse panel'}
+            >
+              {leftPanelCollapsed ? '\u25b6' : '\u25c4'}
+            </button>
+          </div>
+          <div style={{ display: leftPanelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+          {/* File search */}
+          <div style={{ padding: '6px 8px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
+            <input
+              type="text"
+              value={fileSearch}
+              onChange={(e) => setFileSearch(e.target.value)}
+              placeholder="Search files..."
+              style={{ width: '100%', padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '12px', outline: 'none', background: '#f9fafb' }}
+            />
+          </div>
+          {/* Tree */}
+          <div className="file-explorer-body">
+            {wsFilesLoading ? (
+              <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af' }}>Loading project files...</div>
+            ) : folderTree.length > 0 ? (
+              folderTree.map((folder) => (
+                <FolderSection
+                  key={folder.path}
+                  folder={folder}
+                  isExpanded={expandedFolders.has(folder.path)}
+                  activeFileId={activeDoc?.fileId}
+                  onToggle={() => toggleFolder(folder.path)}
+                  onFileClick={handleExplorerFileClick}
                 />
-                <button
-                  type="button"
-                  onClick={() => void runViewerSearch()}
-                  className="rounded border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs text-slate-200 transition hover:border-blue-400"
-                >
-                  {viewerSearchBusy ? 'Finding...' : 'Find'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (viewerSearchInputRef.current) {
-                      viewerSearchInputRef.current.value = '';
-                    }
-                    setViewerSearchAppliedTerm('');
-                    setViewerSearchResults([]);
-                    setViewerSearchError(null);
-                  }}
-                  className="rounded border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs text-slate-200 transition hover:border-blue-400"
-                >
-                  Clear
-                </button>
-                {activeDoc?.kind === 'pdf' ? (
-                  <div className="flex items-center gap-1 text-xs text-slate-300">
-                    <button
-                      type="button"
-                      onClick={() => setPdfZoom((current) => Math.max(60, current - 10))}
-                      className="rounded border border-slate-700 bg-slate-800 px-2 py-1"
-                    >
-                      -
-                    </button>
-                    <span className="w-10 text-center">{pdfZoom}%</span>
-                    <button
-                      type="button"
-                      onClick={() => setPdfZoom((current) => Math.min(220, current + 10))}
-                      className="rounded border border-slate-700 bg-slate-800 px-2 py-1"
-                    >
-                      +
-                    </button>
-                  </div>
-                ) : null}
+              ))
+            ) : (
+              <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af', lineHeight: '1.6' }}>
+                {fileSearch.trim()
+                  ? 'No matching files'
+                  : !projectId
+                    ? 'Open a project from the dashboard.'
+                    : 'No project files yet. Run a sync from the dashboard.'}
               </div>
-
-              {(viewerSearchAppliedTerm || viewerSearchError) ? (
-                <div className="max-h-36 overflow-y-auto border-b border-slate-800 bg-slate-900/85 px-3 py-2">
-                  {viewerSearchError ? (
-                    <p className="text-xs text-rose-300">{viewerSearchError}</p>
-                  ) : null}
-                  {!viewerSearchError && viewerSearchResults.length > 0 ? (
-                    <>
-                      <p className="mb-2 text-xs text-slate-300">
-                        {viewerSearchResults.length} match{viewerSearchResults.length === 1 ? '' : 'es'} for "{viewerSearchAppliedTerm}"
-                      </p>
-                      <div className="space-y-1">
-                        {viewerSearchResults.map((hit) => (
-                          <button
-                            key={hit.id}
-                            type="button"
-                            onClick={() => {
-                              if (!activeDoc) {
-                                return;
-                              }
-                              if (typeof hit.pageNumber === 'number') {
-                                jumpToPdfPage(hit.pageNumber);
-                              }
-                            }}
-                            className="block w-full rounded border border-slate-700 bg-slate-800/90 px-2 py-1 text-left text-xs text-slate-200 transition hover:border-blue-400"
-                          >
-                            <span className="mr-2 text-blue-300">
-                              {typeof hit.pageNumber === 'number' ? `p.${hit.pageNumber}` : `chunk ${hit.chunkIndex}`}
-                            </span>
-                            <span>{hit.excerpt}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-              ) : null}
-
-              <div className="border-b border-slate-800 bg-slate-900/70 px-2 py-1.5">
-                <div className="flex gap-1 overflow-x-auto whitespace-nowrap">
-                  {openDocs.map((doc) => (
-                    <button
-                      key={doc.id}
-                      type="button"
-                      onClick={() => setActiveDocId(doc.id)}
-                      className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs transition ${
-                        doc.id === activeDocId
-                          ? 'border-blue-400 bg-blue-500/20 text-blue-100'
-                          : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500'
-                      }`}
-                    >
-                      <span>{doc.title}</span>
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleCloseTab(doc.id);
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.stopPropagation();
-                            handleCloseTab(doc.id);
-                          }
-                        }}
-                        className="rounded px-1 text-slate-400 hover:bg-slate-700 hover:text-slate-100"
-                      >
-                        x
-                      </span>
-                    </button>
-                  ))}
-                </div>
+            )}
+            {/* DOC_LIBRARY sample files */}
+            {filteredLibrary.length > 0 ? (
+              <div style={{ borderTop: '1px solid #f3f4f6', padding: '8px 0 4px' }}>
+                <p style={{ fontSize: '10px', color: '#9ca3af', padding: '0 10px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Sample Files
+                </p>
+                {filteredLibrary.map((doc) => (
+                  <button
+                    key={doc.id}
+                    type="button"
+                    className={`file-row-btn ${activeDoc?.id === doc.id ? 'active' : ''}`}
+                    onClick={() => openDoc(doc)}
+                  >
+                    <span style={{ flexShrink: 0 }}>
+                      {doc.kind === 'pdf' ? 'DOC' : doc.kind === 'image' ? 'DOC' : doc.kind === 'xlsx' ? 'DOC' : doc.kind === 'docx' ? 'DOC' : 'DOC'}
+                    </span>
+                    <span className="file-name-text">{doc.title}</span>
+                  </button>
+                ))}
               </div>
+            ) : null}
+          </div>
+          </div>
+        </section>
 
-              <div className="relative flex-1 overflow-hidden p-3">{renderDocumentBody()}</div>
+        {/* Divider 1 */}
+        <div className="ws-divider" onMouseDown={() => setIsDraggingLeft(true)}>
+          <div className="ws-divider-handle" />
+        </div>
 
-              <div className="border-t border-slate-800 p-3">
-                <p className="mb-2 text-xs uppercase tracking-[0.22em] text-slate-500">Available Files</p>
-                <div className="flex flex-wrap gap-2">
-                  {filteredLibrary.map((doc) => (
-                    <button
-                      key={doc.id}
-                      type="button"
-                      onClick={() => openDoc(doc)}
-                      className="rounded-full border border-slate-700 bg-slate-800/90 px-3 py-1 text-xs text-slate-200 transition hover:border-blue-400"
+        {/* Panel 2: Document Viewer */}
+        <section
+          className="ws-panel"
+          style={{ flex: 1, minWidth: 200, overflow: 'hidden' }}
+          onDragOver={(e) => { e.preventDefault(); setIsDropActive(true); }}
+          onDragLeave={() => setIsDropActive(false)}
+          onDrop={handleDropFiles}
+        >
+          {/* Viewer toolbar */}
+          <div style={{ flexShrink: 0, borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+            {/* Doc tabs */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', overflowX: 'auto', minHeight: '40px' }}>
+              {openDocs.length === 0 ? (
+                <span style={{ fontSize: '12px', color: '#9ca3af' }}>No documents open -- select a file from the left panel</span>
+              ) : (
+                openDocs.map((doc) => (
+                  <button
+                    key={doc.id}
+                    type="button"
+                    className={`doc-tab ${doc.id === activeDocId ? 'active' : ''}`}
+                    onClick={() => setActiveDocId(doc.id)}
+                  >
+                    <span>
+                      {doc.kind === 'pdf' ? 'DOC' : doc.kind === 'image' ? 'DOC' : doc.kind === 'xlsx' ? 'DOC' : doc.kind === 'docx' ? 'DOC' : 'DOC'}
+                    </span>
+                    <span>{doc.title}</span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      style={{ fontSize: '11px', color: '#9ca3af', padding: '0 2px', cursor: 'pointer', lineHeight: 1 }}
+                      onClick={(e) => { e.stopPropagation(); handleCloseTab(doc.id); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleCloseTab(doc.id); } }}
                     >
-                      {doc.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      x
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
-
-            <AnimatePresence>
-              {isDropActive ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="pointer-events-none absolute inset-0 m-3 flex items-center justify-center rounded-panel border-2 border-dashed border-blue-400 bg-slate-900/75"
-                >
-                  <p className="text-sm font-semibold text-blue-100">Drop files to open in viewer</p>
-                </motion.div>
+            {/* Search + zoom */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 10px 7px', flexWrap: 'wrap' }}>
+              <input
+                ref={viewerSearchInputRef}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void runViewerSearch(e.currentTarget.value); } }}
+                placeholder="Search in document"
+                style={{ flex: 1, minWidth: '120px', padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '12px', outline: 'none', background: '#fff' }}
+                disabled={activeDoc?.kind === 'pdf'}
+              />
+              <button
+                type="button"
+                onClick={() => void runViewerSearch()}
+                style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', background: '#fff', fontSize: '12px', cursor: 'pointer' }}
+                disabled={activeDoc?.kind === 'pdf'}
+              >
+                {viewerSearchBusy ? '...' : 'Find'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (viewerSearchInputRef.current) viewerSearchInputRef.current.value = '';
+                  setViewerSearchAppliedTerm('');
+                  setViewerSearchResults([]);
+                  setViewerSearchError(null);
+                }}
+                style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', background: '#fff', fontSize: '12px', cursor: 'pointer', color: '#6b7280' }}
+              >
+                Clear
+              </button>
+              {activeDoc?.kind === 'pdf' ? (
+                <p style={{ fontSize: '12px', color: '#64748b', marginLeft: 'auto' }}>
+                  PDF search and navigation are available in the viewer toolbar below.
+                </p>
               ) : null}
-            </AnimatePresence>
-          </motion.section>
+            </div>
+          </div>
+          {/* Search results */}
+          {(activeDoc?.kind !== 'pdf' && (viewerSearchAppliedTerm || viewerSearchError)) ? (
+            <div style={{ maxHeight: '110px', overflowY: 'auto', borderBottom: '1px solid #e5e7eb', background: '#fafafa', padding: '7px 10px', flexShrink: 0 }}>
+              {viewerSearchError ? <p style={{ fontSize: '12px', color: '#d83b01' }}>{viewerSearchError}</p> : null}
+              {!viewerSearchError && viewerSearchResults.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
+                    {viewerSearchResults.length} match{viewerSearchResults.length === 1 ? '' : 'es'} for &ldquo;{viewerSearchAppliedTerm}&rdquo;
+                  </p>
+                  {viewerSearchResults.map((hit) => (
+                    <button
+                      key={hit.id}
+                      type="button"
+                      className="search-result-btn"
+                      onClick={() => { if (typeof hit.pageNumber === 'number') jumpToPdfPage(hit.pageNumber); }}
+                    >
+                      <span style={{ color: '#0078d4', marginRight: '6px', fontSize: '11px' }}>
+                        {typeof hit.pageNumber === 'number' ? `p.${hit.pageNumber}` : `chunk ${hit.chunkIndex}`}
+                      </span>
+                      {hit.excerpt}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {/* Viewer body */}
+          <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+            {isDropActive ? (
+              <div style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,246,255,0.92)', border: '2px dashed #0078d4', margin: '8px', borderRadius: '8px' }}>
+                <p style={{ fontSize: '14px', fontWeight: 600, color: '#0078d4' }}>Drop files to open in viewer</p>
+              </div>
+            ) : null}
+            <div style={{ height: '100%', overflow: 'hidden', padding: '8px' }}>
+              {renderDocumentBody()}
+            </div>
+          </div>
+        </section>
 
-          <div
-            className="hidden w-2 cursor-col-resize items-center justify-center bg-transparent md:flex"
-            onMouseDown={() => setIsDraggingDivider(true)}
-          >
-            <div className="h-24 w-1 rounded bg-slate-700/80" />
+        {/* Divider 2 */}
+        <div className="ws-divider" onMouseDown={() => setIsDraggingRight(true)}>
+          <div className="ws-divider-handle" />
+        </div>
+
+        {/* Panel 3: AI Chat */}
+        <section className="ws-panel" style={{ width: rightPanelCollapsed ? 28 : rightPanelWidth, flexShrink: 0, minWidth: rightPanelCollapsed ? 28 : 280 }}>
+          <div className="ws-panel-header" style={{ justifyContent: 'space-between' }}>
+            {!rightPanelCollapsed ? <span className="ws-panel-title">AI Assistant</span> : <span />}
+            {!rightPanelCollapsed ? (
+              <button
+                type="button"
+                onClick={() => void handleSidebarNewChat()}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#0078d4', fontWeight: 600, fontFamily: 'inherit', padding: '2px 0' }}
+              >
+                + New Chat
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setRightPanelCollapsed((c) => !c)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
+              title={rightPanelCollapsed ? 'Expand panel' : 'Collapse panel'}
+            >
+              {rightPanelCollapsed ? '\u25c4' : '\u25b6'}
+            </button>
+          </div>
+          <div style={{ display: rightPanelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+
+          {/* Messages */}
+          <div ref={chatScrollRef} className="chat-messages-scroll">
+            {messages.length === 0 ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '36px', marginBottom: '12px', opacity: 0.5 }}>[ ]</div>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ask about your project</p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', lineHeight: '1.6', maxWidth: '200px' }}>
+                  Questions about documents, RFIs, submittals, schedules, and field coordination.
+                </p>
+              </div>
+            ) : renderedChatMessages}
+            {isTyping ? (
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '4px 18px 18px 18px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="typing-dots"><span /><span /><span /></div>
+                  {statusMessage ? <span style={{ fontSize: '11px', color: '#9ca3af' }}>{statusMessage}</span> : null}
+                </div>
+              </div>
+            ) : null}
           </div>
 
-          <motion.section
-            animate={{ width: rightWidth }}
-            transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-            className="workspace-panel flex-1 overflow-hidden rounded-panel border border-slate-800 bg-workspace-900/90 shadow-panel"
-            style={{ width: rightWidth }}
-          >
-            <div className="flex h-full flex-col">
-              <div ref={chatScrollRef} className="chat-scroll flex-1 space-y-4 overflow-y-auto p-4">
-                {renderedChatMessages}
-
-                {isTyping ? (
-                  <div className="flex justify-start">
-                    <div className="flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3">
-                      <div className="typing-dots">
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-                      {statusMessage ? (
-                        <span className="text-xs text-slate-400">{statusMessage}</span>
-                      ) : null}
-                    </div>
-                  </div>
-                ) : null}
+          {/* Input */}
+          <div className="chat-input-area">
+            {messages.length === 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '8px' }}>
+                {SUGGESTED_PROMPTS.slice(0, 3).map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    className="ws-chip"
+                    onClick={() => {
+                      if (promptInputRef.current) promptInputRef.current.value = prompt;
+                      promptInputRef.current?.focus();
+                    }}
+                  >
+                    {prompt.length > 36 ? `${prompt.slice(0, 36)}...` : prompt}
+                  </button>
+                ))}
               </div>
-
-              <div className="border-t border-slate-800 p-3 md:p-4">
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {SUGGESTED_PROMPTS.map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      onClick={() => {
-                        if (promptInputRef.current) {
-                          promptInputRef.current.value = prompt;
-                        }
-                        promptInputRef.current?.focus();
-                      }}
-                      className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs text-slate-200 transition hover:border-blue-400 hover:text-blue-100"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-
-                <form
-                  onSubmit={(event: FormEvent) => {
-                    event.preventDefault();
-                    void handleSendPrompt();
-                  }}
-                  className="rounded-2xl border border-slate-700 bg-slate-900/90 p-2"
+            ) : null}
+            <form
+              onSubmit={(e: FormEvent) => { e.preventDefault(); void handleSendPrompt(); }}
+              className="chat-input-box"
+            >
+              {chatError ? <p style={{ padding: '8px 14px 0', fontSize: '12px', color: '#d83b01', lineHeight: '1.5' }}>{chatError}</p> : null}
+              <textarea
+                ref={promptInputRef}
+                onKeyDown={handlePromptKeyDown}
+                className="chat-textarea"
+                placeholder="Ask about project documents, RFIs, submittals, schedules..."
+              />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px 8px', gap: '6px' }}>
+                <button
+                  type="submit"
+                  style={{ background: '#0078d4', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                 >
-                  {chatError ? <p className="px-2 pb-2 text-xs text-rose-300">{chatError}</p> : null}
-                  <textarea
-                    ref={promptInputRef}
-                    onKeyDown={handlePromptKeyDown}
-                    className="min-h-[120px] w-full resize-none rounded-xl border border-transparent bg-slate-900 p-3 text-sm leading-6 text-slate-100 outline-none transition focus:border-blue-400"
-                    placeholder="Ask AI to analyze, compare, summarize, and cite relevant project documents..."
-                  />
-                  <div className="flex items-center justify-between gap-2 p-2">
-                    <div className="flex items-center gap-2">
-                      <button type="button" className="toolbar-chip" aria-label="Attach file">
-                        Attach
-                      </button>
-                      <button type="button" className="toolbar-chip" aria-label="Voice input">
-                        Voice
-                      </button>
-                    </div>
-                    <button
-                      type="submit"
-                      className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-400"
-                    >
-                      Send (Ctrl+Enter)
-                    </button>
-                  </div>
-                </form>
+                  Send
+                </button>
               </div>
-            </div>
-          </motion.section>
-        </div>
-      </main>
+            </form>
+          </div>
+          </div>
+        </section>
+
+      </div>
     </div>
   );
 }
@@ -1655,3 +1874,4 @@ export default function ChatWorkspacePage() {
     </Suspense>
   );
 }
+
