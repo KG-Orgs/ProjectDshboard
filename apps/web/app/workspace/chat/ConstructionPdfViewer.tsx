@@ -160,9 +160,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const pdfRef = useRef<pdfjs.PDFDocumentProxy | null>(null);
   const textCacheRef = useRef<Map<number, string>>(new Map());
   const panStartRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
-  const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const continuousScrollRef = useRef<HTMLDivElement | null>(null);
-  const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
   const navScrollPageRef = useRef<number | null>(null);
   const suppressIntersectionRef = useRef(false);
   const markupDragRef = useRef<{ markupId: string; handle: string; startPoint: Point; startCoords: Record<string, unknown> } | null>(null);
@@ -280,24 +278,8 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     }
   }, [goToPage, numPages]);
 
-  const registerContinuousPageRef = useCallback((pageNumber: number) => (el: HTMLDivElement | null) => {
-    const observer = intersectionObserverRef.current;
-    const prev = pageRefs.current.get(pageNumber);
-    if (prev && observer) observer.unobserve(prev);
-    if (el) {
-      pageRefs.current.set(pageNumber, el);
-      if (observer) observer.observe(el);
-    } else {
-      pageRefs.current.delete(pageNumber);
-    }
-  }, []);
-
   useEffect(() => {
-    if (scrollMode !== 'continuous' || numPages === 0) {
-      intersectionObserverRef.current?.disconnect();
-      intersectionObserverRef.current = null;
-      return;
-    }
+    if (scrollMode !== 'continuous' || numPages === 0) return;
 
     const root = continuousScrollRef.current;
     if (!root) return;
@@ -318,25 +300,19 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           setPage((curr) => (curr === mostVisible ? curr : mostVisible));
         }
       },
-      { root, threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
+      { root, threshold: [0, 0.25, 0.5, 0.75, 1] },
     );
 
-    intersectionObserverRef.current = observer;
-    for (const [, el] of pageRefs.current) observer.observe(el);
+    root.querySelectorAll<HTMLElement>('[data-page]').forEach((el) => observer.observe(el));
 
-    return () => {
-      observer.disconnect();
-      if (intersectionObserverRef.current === observer) {
-        intersectionObserverRef.current = null;
-      }
-    };
+    return () => observer.disconnect();
   }, [scrollMode, numPages]);
 
   useEffect(() => {
     if (scrollMode !== 'continuous') return;
     if (navScrollPageRef.current !== page) return;
     navScrollPageRef.current = null;
-    const el = pageRefs.current.get(page);
+    const el = continuousScrollRef.current?.querySelector<HTMLElement>(`[data-page="${page}"]`);
     if (el) {
       suppressIntersectionRef.current = true;
       el.scrollIntoView?.({ behavior: 'auto', block: 'nearest' });
@@ -357,7 +333,13 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     textCacheRef.current.clear();
     pdfRef.current = null;
     void loadMarkups();
-  }, [url, fileId, initialPage, loadMarkups]);
+  }, [url, fileId, loadMarkups]);
+
+  useEffect(() => {
+    if (initialPage == null) return;
+    navScrollPageRef.current = initialPage;
+    setPage((curr) => (curr === initialPage ? curr : initialPage));
+  }, [initialPage]);
 
   useEffect(() => { onVisiblePageChange?.(page); }, [page, onVisiblePageChange]);
   useEffect(() => { latestMarkupsRef.current = markups; }, [markups]);
@@ -969,8 +951,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                   <div
                     key={`cont-${p}`}
                     data-page={p}
-                    ref={registerContinuousPageRef(p)}
-                    className={`pdf-continuous-page${p === page ? ' pdf-continuous-page--active' : ''}`}
+                    className="pdf-continuous-page"
                     style={{
                       position: 'relative',
                       minWidth: continuousPageSlotSize.width,

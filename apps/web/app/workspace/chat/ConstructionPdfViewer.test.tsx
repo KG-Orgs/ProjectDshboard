@@ -419,8 +419,56 @@ describe('ConstructionPdfViewer – continuous scroll mode', () => {
     });
 
     expect(document.querySelectorAll('[data-page]').length).toBe(4);
-    expect(document.querySelector('[data-page="2"]')).toHaveClass('pdf-continuous-page--active');
     expect(document.querySelectorAll('[data-testid^="pdf-page-"]').length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('changing initialPage does not reset loaded page count', async () => {
+    const { rerender } = render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 6 }));
+    enableContinuousScrollMode();
+
+    expect(document.querySelectorAll('[data-page]').length).toBe(6);
+
+    rerender(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={4} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('spinbutton')).toHaveValue(4);
+    });
+    expect(document.querySelectorAll('[data-page]').length).toBe(6);
+    expect(document.querySelectorAll('[data-testid^="pdf-page-"]').length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('scroll-driven page updates do not wipe pages when initialPage prop changes from parent', async () => {
+    const onVisiblePageChange = vi.fn();
+    const { rerender } = render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        initialPage={1}
+        onVisiblePageChange={onVisiblePageChange}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
+    enableContinuousScrollMode();
+
+    const page3Container = document.querySelector('[data-page="3"]') as HTMLElement;
+    act(() => {
+      _lastObserver!.trigger(page3Container, 0.75);
+    });
+
+    await waitFor(() => {
+      expect(onVisiblePageChange).toHaveBeenCalledWith(3);
+    });
+
+    rerender(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        initialPage={3}
+        onVisiblePageChange={onVisiblePageChange}
+      />,
+    );
+
+    expect(document.querySelectorAll('[data-page]').length).toBe(5);
+    expect(document.querySelectorAll('[data-testid^="pdf-page-"]').length).toBeGreaterThanOrEqual(5);
   });
 
   it('explicit page navigation scrolls the target page into view', async () => {

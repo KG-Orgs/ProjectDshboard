@@ -1233,7 +1233,6 @@ function ChatWorkspacePageContent() {
           }}
           onVisiblePageChange={(page) => {
             setDisplayedPdfPage(page);
-            setActivePdfPage(page);
           }}
         />
       );
