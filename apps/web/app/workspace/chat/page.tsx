@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuthStore } from '@contractor/shared';
 import { useConversationStore } from './useConversationStore';
 import './workspace.css';
 
@@ -87,25 +88,6 @@ interface ProjectsListResponse {
     id: string;
     name: string;
   }>;
-}
-
-interface DocumentDetailChunk {
-  chunkIndex: number;
-  chunkText: string;
-  pageNumber?: number;
-}
-
-interface DocumentDetailResponse {
-  fileId: string;
-  fileName: string;
-  chunks: DocumentDetailChunk[];
-}
-
-interface ViewerSearchHit {
-  id: string;
-  chunkIndex: number;
-  pageNumber?: number;
-  excerpt: string;
 }
 
 interface PdfCitationRequest {
@@ -251,42 +233,6 @@ function createDocFromFileName(
     ...baseDoc,
     url: projectFileUrl,
   };
-}
-
-function highlightText(content: string, query: string): Array<string | JSX.Element> {
-  if (!query.trim()) {
-    return [content];
-  }
-
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'ig');
-  const parts = content.split(regex);
-
-  return parts.map((part, idx) =>
-    idx % 2 === 1 ? (
-      <mark key={`hit-${idx}`} className="rounded bg-yellow-300 px-0.5 font-semibold text-slate-950">
-        {part}
-      </mark>
-    ) : (
-      part
-    )
-  );
-}
-
-function buildChunkExcerpt(text: string, query: string): string {
-  const normalizedQuery = query.trim().toLowerCase();
-  const normalizedText = text.toLowerCase();
-  const matchIndex = normalizedText.indexOf(normalizedQuery);
-
-  if (matchIndex === -1) {
-    return text.slice(0, 180).trim();
-  }
-
-  const start = Math.max(0, matchIndex - 60);
-  const end = Math.min(text.length, matchIndex + normalizedQuery.length + 90);
-  const prefix = start > 0 ? "..." : "";
-  const suffix = end < text.length ? "..." : "";
-  return `${prefix}${text.slice(start, end).replace(/\s+/g, " ").trim()}${suffix}`;
 }
 
 function extractNodeText(node: ReactNode): string {
@@ -438,6 +384,7 @@ function FolderSection({ folder, isExpanded, activeFileId, onToggle, onFileClick
 function ChatWorkspacePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuthStore();
   const queryProjectId = searchParams?.get('projectId') ?? null;
   const [inferredProjectId, setInferredProjectId] = useState<string | null>(null);
   const projectId = queryProjectId ?? inferredProjectId;
@@ -448,10 +395,6 @@ function ChatWorkspacePageContent() {
   const [openDocs, setOpenDocs] = useState<WorkspaceDoc[]>([]);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [viewerLoading, setViewerLoading] = useState(false);
-  const [viewerSearchResults, setViewerSearchResults] = useState<ViewerSearchHit[]>([]);
-  const [viewerSearchError, setViewerSearchError] = useState<string | null>(null);
-  const [viewerSearchBusy, setViewerSearchBusy] = useState(false);
-  const [viewerSearchAppliedTerm, setViewerSearchAppliedTerm] = useState('');
   const [activePdfPage, setActivePdfPage] = useState<number | undefined>(undefined);
   // Tracks the page currently visible in the viewer (scroll-driven). Never fed back into targetPage.
   const [displayedPdfPage, setDisplayedPdfPage] = useState<number | undefined>(undefined);
@@ -472,29 +415,34 @@ function ChatWorkspacePageContent() {
     fetchSessions: storeFetchSessions,
   } = useConversationStore();
 
-  const [workspaceSearch, setWorkspaceSearch] = useState('');
+  const [fileSearch, setFileSearch] = useState('');
 
   // -- File explorer state ----------------------------------------------------
   const [wsFiles, setWsFiles] = useState<WsFile[]>([]);
   const [wsFilesLoading, setWsFilesLoading] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  const [fileSearch, setFileSearch] = useState('');
+
+  const userInitials = useMemo(() => {
+    const source = user?.name?.trim() || user?.email || 'U';
+    const parts = source.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+    }
+    return source.slice(0, 2).toUpperCase();
+  }, [user?.email, user?.name]);
 
   // -- Panel widths (px) ------------------------------------------------------
-  const [leftPanelWidth, setLeftPanelWidth] = useState(248);
-  const [rightPanelWidth, setRightPanelWidth] = useState(380);
-  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(220);
+  const [rightPanelWidth, setRightPanelWidth] = useState(340);
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(true);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [isDraggingRight, setIsDraggingRight] = useState(false);
   const [projectDisplayName, setProjectDisplayName] = useState<string>('');
 
   const panelRootRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const viewerSearchInputRef = useRef<HTMLInputElement | null>(null);
   const promptInputRef = useRef<HTMLTextAreaElement | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
-  const docDetailCacheRef = useRef<Map<string, DocumentDetailResponse>>(new Map());
   const projectDisplayNameRef = useRef('');
 
   useEffect(() => {
@@ -603,109 +551,6 @@ function ChatWorkspacePageContent() {
 
     setActivePdfPage((current) => (current === page ? current : page));
   }, []);
-
-  const runViewerSearch = useCallback(async (rawTerm?: string) => {
-    const term = (rawTerm ?? viewerSearchInputRef.current?.value ?? '').trim();
-    if (!term) {
-      setViewerSearchAppliedTerm('');
-      setViewerSearchResults([]);
-      setViewerSearchError(null);
-      return;
-    }
-
-    if (!activeDoc) {
-      setViewerSearchResults([]);
-      setViewerSearchError('Open a document first, then run search.');
-      return;
-    }
-
-    setViewerSearchBusy(true);
-    setViewerSearchAppliedTerm(term);
-    setViewerSearchError(null);
-
-    try {
-      if (activeDoc.kind === 'txt') {
-        const text = activeDoc.text ?? '';
-        const lowered = text.toLowerCase();
-        const loweredTerm = term.toLowerCase();
-        const hits: ViewerSearchHit[] = [];
-        let cursor = 0;
-
-        while (cursor < lowered.length && hits.length < 25) {
-          const next = lowered.indexOf(loweredTerm, cursor);
-          if (next === -1) {
-            break;
-          }
-          const start = Math.max(0, next - 60);
-          const end = Math.min(text.length, next + loweredTerm.length + 90);
-          const excerpt = `${start > 0 ? '...' : ''}${text.slice(start, end).replace(/\s+/g, ' ').trim()}${end < text.length ? '...' : ''}`;
-          hits.push({
-            id: `txt-hit-${next}`,
-            chunkIndex: hits.length + 1,
-            excerpt,
-          });
-          cursor = next + loweredTerm.length;
-        }
-
-        setViewerSearchResults(hits);
-        if (hits.length === 0) {
-          setViewerSearchError(`No matches found for "${term}" in this document.`);
-        }
-        return;
-      }
-
-      if (!activeDoc.fileId || !projectId) {
-        setViewerSearchResults([]);
-        setViewerSearchError('Indexed search is unavailable for this document.');
-        return;
-      }
-
-      const activeFileId = activeDoc.fileId;
-
-      const cached = docDetailCacheRef.current.get(activeFileId);
-      const detail = cached
-        ? cached
-        : await (async () => {
-            const response = await fetch(
-              `/api/files/${encodeURIComponent(activeFileId)}?projectId=${encodeURIComponent(projectId)}`,
-              { method: 'GET', cache: 'no-store' }
-            );
-
-            if (!response.ok) {
-              throw new Error(`Document search failed (${response.status}).`);
-            }
-
-            const payload = (await response.json()) as DocumentDetailResponse;
-            docDetailCacheRef.current.set(activeFileId, payload);
-            return payload;
-          })();
-      const loweredTerm = term.toLowerCase();
-      const hits = (detail.chunks ?? [])
-        .filter((chunk) => chunk.chunkText.toLowerCase().includes(loweredTerm))
-        .slice(0, 25)
-        .map((chunk) => ({
-          id: `${chunk.chunkIndex}-${chunk.pageNumber ?? 'na'}`,
-          chunkIndex: chunk.chunkIndex,
-          pageNumber: chunk.pageNumber,
-          excerpt: buildChunkExcerpt(chunk.chunkText, term),
-        }));
-
-      setViewerSearchResults(hits);
-      if (hits.length === 0) {
-        setViewerSearchError(`No matches found for "${term}" in indexed text.`);
-      }
-
-      const firstPageHit = hits.find((hit) => typeof hit.pageNumber === 'number');
-      if (firstPageHit && activeDoc.kind === 'pdf') {
-        jumpToPdfPage(firstPageHit.pageNumber);
-      }
-    } catch (error) {
-      setViewerSearchResults([]);
-      setViewerSearchError(error instanceof Error ? error.message : 'Search failed.');
-    } finally {
-      setViewerSearchBusy(false);
-    }
-  }, [activeDoc, jumpToPdfPage, projectId]);
 
   const resolveProjectFileIdByName = useCallback(async (fileName: string): Promise<string | undefined> => {
     if (!projectId) {
@@ -1204,11 +1049,6 @@ function ChatWorkspacePageContent() {
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-      }
-
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault();
         void handleSendPrompt();
@@ -1221,15 +1061,6 @@ function ChatWorkspacePageContent() {
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [handleSendPrompt]);
-
-  const filteredLibrary = useMemo(() => {
-    if (!workspaceSearch.trim()) {
-      return DOC_LIBRARY;
-    }
-
-    const lowered = workspaceSearch.toLowerCase();
-    return DOC_LIBRARY.filter((doc) => doc.title.toLowerCase().includes(lowered));
-  }, [workspaceSearch]);
 
   // -- Fetch project files for the left panel explorer -----------------------
   useEffect(() => {
@@ -1247,11 +1078,6 @@ function ChatWorkspacePageContent() {
         if (cancelled) return;
         const files = data.files ?? [];
         setWsFiles(files);
-        // Auto-expand first folder
-        const tree = buildFolderTree(files);
-        if (tree[0]) {
-          setExpandedFolders(new Set([tree[0].path]));
-        }
       })
       .catch(() => { if (!cancelled) setWsFiles([]); })
       .finally(() => { if (!cancelled) setWsFilesLoading(false); });
@@ -1395,8 +1221,8 @@ function ChatWorkspacePageContent() {
 
     if (activeDoc.kind === 'txt') {
       return (
-        <div style={{ height: '100%', overflow: 'auto', padding: '16px', fontFamily: 'Consolas, monospace', fontSize: '13px', lineHeight: '1.7', color: '#374151', background: '#fafafa', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-          {highlightText(activeDoc.text ?? 'No text available.', viewerSearchAppliedTerm)}
+        <div style={{ height: '100%', overflow: 'auto', padding: '16px', fontFamily: 'Consolas, monospace', fontSize: '13px', lineHeight: '1.7', color: '#374151', background: '#fafafa' }}>
+          {activeDoc.text ?? 'No text available.'}
         </div>
       );
     }
@@ -1533,44 +1359,40 @@ function ChatWorkspacePageContent() {
     <div className="workspace-root">
       {/* Top Bar */}
       <header className="ws-topbar">
-        <button
-          type="button"
-          onClick={handleBackToDashboard}
-          style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', color: '#374151', fontFamily: 'inherit', flexShrink: 0 }}
-        >
-           Dashboard
+        <button type="button" className="ws-topbar-btn" onClick={handleBackToDashboard}>
+          Back
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-          <div style={{ width: '28px', height: '28px', background: '#0078d4', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '11px', fontWeight: 700 }}>AI</div>
-          <span style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>ContractorAI</span>
-        </div>
+        <span className="ws-topbar-title">ContractorAI</span>
         {projectId ? (
           <>
-            <div style={{ width: '1px', height: '16px', background: '#e5e7eb' }} />
-            <span style={{ fontSize: '13px', color: '#6b7280', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div className="ws-topbar-divider" />
+            <span className="ws-topbar-subtitle" title={projectDisplayName || projectId}>
               {projectDisplayName || `Project ${projectId.slice(0, 8)}...`}
             </span>
           </>
         ) : null}
         <div style={{ flex: 1 }} />
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <input
-            ref={searchInputRef}
-            value={workspaceSearch}
-            onChange={(e) => setWorkspaceSearch(e.target.value)}
-            placeholder="Search (Ctrl+K)"
-            style={{ height: '32px', width: '180px', borderRadius: '8px', border: '1px solid #e5e7eb', padding: '0 12px', fontSize: '12px', outline: 'none', background: '#f9fafb' }}
-          />
-        </div>
         <button
           type="button"
-          onClick={() => void handleSidebarNewChat()}
-          style={{ background: '#0078d4', color: '#fff', border: 'none', borderRadius: '7px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+          className="ws-panel-toggle"
+          onClick={() => setLeftPanelCollapsed((c) => !c)}
+          title={leftPanelCollapsed ? 'Show project files' : 'Hide project files'}
         >
-          + New Chat
+          Files
         </button>
-        <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#1d4ed8', flexShrink: 0 }}>
-          GK
+        <button
+          type="button"
+          className="ws-panel-toggle"
+          onClick={() => setRightPanelCollapsed((c) => !c)}
+          title={rightPanelCollapsed ? 'Show AI assistant' : 'Hide AI assistant'}
+        >
+          Chat
+        </button>
+        <button type="button" className="ws-topbar-btn-primary" onClick={() => void handleSidebarNewChat()}>
+          New
+        </button>
+        <div className="ws-user-avatar" title={user?.email ?? 'Signed in user'}>
+          {userInitials}
         </div>
       </header>
 
@@ -1578,30 +1400,42 @@ function ChatWorkspacePageContent() {
       <div className="ws-panels" ref={panelRootRef}>
 
         {/* Panel 1: File Explorer */}
-        <section className="ws-panel" style={{ width: leftPanelCollapsed ? 28 : leftPanelWidth, flexShrink: 0, overflow: 'hidden' }}>
-          <div className="ws-panel-header" style={{ justifyContent: 'space-between' }}>
-            {!leftPanelCollapsed ? <span className="ws-panel-title">Project Files</span> : <span />}
+        <section
+          className={`ws-panel ${leftPanelCollapsed ? 'ws-panel-collapsed' : ''}`}
+          style={{ width: leftPanelCollapsed ? 32 : leftPanelWidth, flexShrink: 0, overflow: 'hidden' }}
+        >
+          {leftPanelCollapsed ? (
             <button
               type="button"
-              onClick={() => setLeftPanelCollapsed((c) => !c)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
-              title={leftPanelCollapsed ? 'Expand panel' : 'Collapse panel'}
+              className="ws-panel-expand-btn"
+              onClick={() => setLeftPanelCollapsed(false)}
+              title="Show project files"
             >
-              {leftPanelCollapsed ? '\u25b6' : '\u25c4'}
+              Files
+            </button>
+          ) : (
+            <>
+          <div className="ws-panel-header" style={{ justifyContent: 'space-between' }}>
+            <span className="ws-panel-title">Files</span>
+            <button
+              type="button"
+              onClick={() => setLeftPanelCollapsed(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
+              title="Collapse panel"
+            >
+              {'\u25c4'}
             </button>
           </div>
-          <div style={{ display: leftPanelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-          {/* File search */}
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <div style={{ padding: '6px 8px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
             <input
               type="text"
               value={fileSearch}
               onChange={(e) => setFileSearch(e.target.value)}
-              placeholder="Search files..."
+              placeholder="Filter files..."
               style={{ width: '100%', padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '12px', outline: 'none', background: '#f9fafb' }}
             />
           </div>
-          {/* Tree */}
           <div className="file-explorer-body">
             {wsFilesLoading ? (
               <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af' }}>Loading project files...</div>
@@ -1625,35 +1459,18 @@ function ChatWorkspacePageContent() {
                     : 'No project files yet. Run a sync from the dashboard.'}
               </div>
             )}
-            {/* DOC_LIBRARY sample files */}
-            {filteredLibrary.length > 0 ? (
-              <div style={{ borderTop: '1px solid #f3f4f6', padding: '8px 0 4px' }}>
-                <p style={{ fontSize: '10px', color: '#9ca3af', padding: '0 10px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Sample Files
-                </p>
-                {filteredLibrary.map((doc) => (
-                  <button
-                    key={doc.id}
-                    type="button"
-                    className={`file-row-btn ${activeDoc?.id === doc.id ? 'active' : ''}`}
-                    onClick={() => openDoc(doc)}
-                  >
-                    <span style={{ flexShrink: 0 }}>
-                      {doc.kind === 'pdf' ? 'DOC' : doc.kind === 'image' ? 'DOC' : doc.kind === 'xlsx' ? 'DOC' : doc.kind === 'docx' ? 'DOC' : 'DOC'}
-                    </span>
-                    <span className="file-name-text">{doc.title}</span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
           </div>
           </div>
+            </>
+          )}
         </section>
 
         {/* Divider 1 */}
+        {!leftPanelCollapsed ? (
         <div className="ws-divider" onMouseDown={() => setIsDraggingLeft(true)}>
           <div className="ws-divider-handle" />
         </div>
+        ) : null}
 
         {/* Panel 2: Document Viewer */}
         <section
@@ -1663,12 +1480,9 @@ function ChatWorkspacePageContent() {
           onDragLeave={() => setIsDropActive(false)}
           onDrop={handleDropFiles}
         >
-          {/* Viewer toolbar */}
-          <div style={{ flexShrink: 0, borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
-            {/* Doc tabs */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', overflowX: 'auto', minHeight: '40px' }}>
+          <div className="viewer-doc-tabs">
               {openDocs.length === 0 ? (
-                <span style={{ fontSize: '12px', color: '#9ca3af' }}>No documents open -- select a file from the left panel</span>
+                <span className="viewer-doc-tabs-empty">Open a file from Files or ask the AI to cite a document</span>
               ) : (
                 openDocs.map((doc) => (
                   <button
@@ -1676,136 +1490,75 @@ function ChatWorkspacePageContent() {
                     type="button"
                     className={`doc-tab ${doc.id === activeDocId ? 'active' : ''}`}
                     onClick={() => setActiveDocId(doc.id)}
+                    title={doc.title}
                   >
-                    <span>
-                      {doc.kind === 'pdf' ? 'DOC' : doc.kind === 'image' ? 'DOC' : doc.kind === 'xlsx' ? 'DOC' : doc.kind === 'docx' ? 'DOC' : 'DOC'}
-                    </span>
                     <span>{doc.title}</span>
                     <span
                       role="button"
                       tabIndex={0}
-                      style={{ fontSize: '11px', color: '#9ca3af', padding: '0 2px', cursor: 'pointer', lineHeight: 1 }}
+                      style={{ fontSize: '11px', opacity: 0.75, padding: '0 2px', cursor: 'pointer', lineHeight: 1 }}
                       onClick={(e) => { e.stopPropagation(); handleCloseTab(doc.id); }}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleCloseTab(doc.id); } }}
                     >
-                      x
+                      ×
                     </span>
                   </button>
                 ))
               )}
-            </div>
-            {/* Search + zoom */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 10px 7px', flexWrap: 'wrap' }}>
-              <input
-                ref={viewerSearchInputRef}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void runViewerSearch(e.currentTarget.value); } }}
-                placeholder="Search in document"
-                style={{ flex: 1, minWidth: '120px', padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '12px', outline: 'none', background: '#fff' }}
-                disabled={activeDoc?.kind === 'pdf'}
-              />
-              <button
-                type="button"
-                onClick={() => void runViewerSearch()}
-                style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', background: '#fff', fontSize: '12px', cursor: 'pointer' }}
-                disabled={activeDoc?.kind === 'pdf'}
-              >
-                {viewerSearchBusy ? '...' : 'Find'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (viewerSearchInputRef.current) viewerSearchInputRef.current.value = '';
-                  setViewerSearchAppliedTerm('');
-                  setViewerSearchResults([]);
-                  setViewerSearchError(null);
-                }}
-                style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', background: '#fff', fontSize: '12px', cursor: 'pointer', color: '#6b7280' }}
-              >
-                Clear
-              </button>
-              {activeDoc?.kind === 'pdf' ? (
-                <p style={{ fontSize: '12px', color: '#64748b', marginLeft: 'auto' }}>
-                  PDF search and navigation are available in the viewer toolbar below.
-                </p>
-              ) : null}
-            </div>
           </div>
-          {/* Search results */}
-          {(activeDoc?.kind !== 'pdf' && (viewerSearchAppliedTerm || viewerSearchError)) ? (
-            <div style={{ maxHeight: '110px', overflowY: 'auto', borderBottom: '1px solid #e5e7eb', background: '#fafafa', padding: '7px 10px', flexShrink: 0 }}>
-              {viewerSearchError ? <p style={{ fontSize: '12px', color: '#d83b01' }}>{viewerSearchError}</p> : null}
-              {!viewerSearchError && viewerSearchResults.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
-                    {viewerSearchResults.length} match{viewerSearchResults.length === 1 ? '' : 'es'} for &ldquo;{viewerSearchAppliedTerm}&rdquo;
-                  </p>
-                  {viewerSearchResults.map((hit) => (
-                    <button
-                      key={hit.id}
-                      type="button"
-                      className="search-result-btn"
-                      onClick={() => { if (typeof hit.pageNumber === 'number') jumpToPdfPage(hit.pageNumber); }}
-                    >
-                      <span style={{ color: '#0078d4', marginRight: '6px', fontSize: '11px' }}>
-                        {typeof hit.pageNumber === 'number' ? `p.${hit.pageNumber}` : `chunk ${hit.chunkIndex}`}
-                      </span>
-                      {hit.excerpt}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-          {/* Viewer body */}
-          <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+          <div className="viewer-stage">
             {isDropActive ? (
-              <div style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,246,255,0.92)', border: '2px dashed #0078d4', margin: '8px', borderRadius: '8px' }}>
-                <p style={{ fontSize: '14px', fontWeight: 600, color: '#0078d4' }}>Drop files to open in viewer</p>
+              <div style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.55)', border: '2px dashed #60a5fa' }}>
+                <p style={{ fontSize: '14px', fontWeight: 600, color: '#e0f2fe' }}>Drop files to open</p>
               </div>
             ) : null}
-            <div style={{ height: '100%', overflow: 'hidden', padding: '8px' }}>
-              {renderDocumentBody()}
-            </div>
+            {renderDocumentBody()}
           </div>
         </section>
 
         {/* Divider 2 */}
+        {!rightPanelCollapsed ? (
         <div className="ws-divider" onMouseDown={() => setIsDraggingRight(true)}>
           <div className="ws-divider-handle" />
         </div>
+        ) : null}
 
         {/* Panel 3: AI Chat */}
-        <section className="ws-panel" style={{ width: rightPanelCollapsed ? 28 : rightPanelWidth, flexShrink: 0, minWidth: rightPanelCollapsed ? 28 : 280 }}>
-          <div className="ws-panel-header" style={{ justifyContent: 'space-between' }}>
-            {!rightPanelCollapsed ? <span className="ws-panel-title">AI Assistant</span> : <span />}
-            {!rightPanelCollapsed ? (
-              <button
-                type="button"
-                onClick={() => void handleSidebarNewChat()}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#0078d4', fontWeight: 600, fontFamily: 'inherit', padding: '2px 0' }}
-              >
-                + New Chat
-              </button>
-            ) : null}
+        <section
+          className={`ws-panel ${rightPanelCollapsed ? 'ws-panel-collapsed' : ''}`}
+          style={{ width: rightPanelCollapsed ? 32 : rightPanelWidth, flexShrink: 0, minWidth: rightPanelCollapsed ? 32 : 300 }}
+        >
+          {rightPanelCollapsed ? (
             <button
               type="button"
-              onClick={() => setRightPanelCollapsed((c) => !c)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
-              title={rightPanelCollapsed ? 'Expand panel' : 'Collapse panel'}
+              className="ws-panel-expand-btn"
+              onClick={() => setRightPanelCollapsed(false)}
+              title="Show AI assistant"
             >
-              {rightPanelCollapsed ? '\u25c4' : '\u25b6'}
+              Chat
+            </button>
+          ) : (
+            <>
+          <div className="ws-panel-header" style={{ justifyContent: 'space-between' }}>
+            <span className="ws-panel-title">Assistant</span>
+            <button
+              type="button"
+              onClick={() => setRightPanelCollapsed(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
+              title="Collapse panel"
+            >
+              {'\u25b6'}
             </button>
           </div>
-          <div style={{ display: rightPanelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
 
           {/* Messages */}
           <div ref={chatScrollRef} className="chat-messages-scroll">
             {messages.length === 0 ? (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', textAlign: 'center' }}>
-                <div style={{ fontSize: '36px', marginBottom: '12px', opacity: 0.5 }}>[ ]</div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', textAlign: 'center' }}>
                 <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ask about your project</p>
-                <p style={{ fontSize: '12px', color: '#9ca3af', lineHeight: '1.6', maxWidth: '200px' }}>
-                  Questions about documents, RFIs, submittals, schedules, and field coordination.
+                <p style={{ fontSize: '12px', color: '#9ca3af', lineHeight: '1.6', maxWidth: '220px' }}>
+                  Documents open in the viewer when cited.
                 </p>
               </div>
             ) : renderedChatMessages}
@@ -1823,17 +1576,14 @@ function ChatWorkspacePageContent() {
           <div className="chat-input-area">
             {messages.length === 0 ? (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '8px' }}>
-                {SUGGESTED_PROMPTS.slice(0, 3).map((prompt) => (
+                {SUGGESTED_PROMPTS.slice(0, 2).map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
                     className="ws-chip"
-                    onClick={() => {
-                      if (promptInputRef.current) promptInputRef.current.value = prompt;
-                      promptInputRef.current?.focus();
-                    }}
+                    onClick={() => void handleSendPrompt(prompt)}
                   >
-                    {prompt.length > 36 ? `${prompt.slice(0, 36)}...` : prompt}
+                    {prompt.length > 42 ? `${prompt.slice(0, 42)}...` : prompt}
                   </button>
                 ))}
               </div>
@@ -1847,12 +1597,12 @@ function ChatWorkspacePageContent() {
                 ref={promptInputRef}
                 onKeyDown={handlePromptKeyDown}
                 className="chat-textarea"
-                placeholder="Ask about project documents, RFIs, submittals, schedules..."
+                placeholder="Ask about drawings, specs, RFIs..."
               />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px 8px', gap: '6px' }}>
                 <button
                   type="submit"
-                  style={{ background: '#0078d4', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ background: '#0078d4', color: '#fff', border: 'none', borderRadius: '8px', padding: '7px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   Send
                 </button>
@@ -1860,6 +1610,8 @@ function ChatWorkspacePageContent() {
             </form>
           </div>
           </div>
+            </>
+          )}
         </section>
 
       </div>

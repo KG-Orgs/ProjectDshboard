@@ -92,7 +92,7 @@ function buildUserFromIdToken(idToken?: string): AuthSession["user"] {
     email,
     name: displayName,
     orgId: toUuid(String(tenantIdClaim)),
-    role: "admin",
+    role: "member",
     createdAt: new Date(),
   };
 }
@@ -164,13 +164,15 @@ async function persistSession(session: AuthSession): Promise<void> {
     .returning({
       id: users.id,
       orgId: users.orgId,
+      role: users.role,
     });
 
   const persistedUser = persistedUsers[0];
   if (persistedUser) {
-    // Reuse canonical IDs from the DB to keep downstream FK writes consistent.
+    // Reuse canonical IDs and role from the DB so admin grants survive re-login.
     session.user.id = toUuid(persistedUser.id);
     session.user.orgId = toUuid(persistedUser.orgId);
+    session.user.role = persistedUser.role;
     session.organization.id = session.user.orgId;
   }
 

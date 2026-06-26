@@ -59,10 +59,39 @@ vi.mock('framer-motion', () => {
   };
 });
 
+vi.mock('@contractor/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@contractor/shared')>();
+  return {
+    ...actual,
+    useAuthStore: () => ({
+      user: {
+        id: 'user-1',
+        email: 'jane@contractor.ai',
+        name: 'Jane Contractor',
+        orgId: 'org-1',
+        role: 'member',
+        createdAt: new Date().toISOString(),
+      },
+      isAuthenticated: true,
+      isLoading: false,
+      error: null,
+    }),
+  };
+});
+
+async function revealFileTree(user: ReturnType<typeof userEvent.setup>) {
+  const expandFiles =
+    screen.getAllByRole('button', { name: 'Files' }).find((btn) => btn.classList.contains('ws-panel-expand-btn'))
+    ?? screen.getAllByRole('button', { name: 'Files' })[0];
+  await user.click(expandFiles);
+  const folderBtn = await screen.findByRole('button', { name: /Project Files/i });
+  await user.click(folderBtn);
+}
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 const PROJECT_ID = 'proj-tree-test';
 
-// All files share one folder so the auto-expanded first folder reveals them all.
+// All files share one folder; expand Files panel and folder before interacting.
 const PROJECT_FILES = [
   {
     id: 'file-pdf-001',
@@ -143,9 +172,11 @@ describe('Open PDF from project file tree', () => {
   });
 
   it('lists PDF files from the project in the left file explorer panel', async () => {
+    const user = userEvent.setup();
     vi.stubGlobal('fetch', makeFetch());
 
     render(<ChatWorkspacePage />);
+    await revealFileTree(user);
 
     await waitFor(() => {
       expect(screen.getByText('foundation-drawings.pdf')).toBeInTheDocument();
@@ -154,9 +185,11 @@ describe('Open PDF from project file tree', () => {
   });
 
   it('also lists non-PDF project files alongside PDFs', async () => {
+    const user = userEvent.setup();
     vi.stubGlobal('fetch', makeFetch());
 
     render(<ChatWorkspacePage />);
+    await revealFileTree(user);
 
     await waitFor(() => {
       expect(screen.getByText('specifications.docx')).toBeInTheDocument();
@@ -168,6 +201,7 @@ describe('Open PDF from project file tree', () => {
     vi.stubGlobal('fetch', makeFetch());
 
     render(<ChatWorkspacePage />);
+    await revealFileTree(user);
 
     // Wait for file tree to load
     const fileBtn = await screen.findByRole('button', { name: /foundation-drawings\.pdf/i });
@@ -186,6 +220,7 @@ describe('Open PDF from project file tree', () => {
     vi.stubGlobal('fetch', makeFetch());
 
     render(<ChatWorkspacePage />);
+    await revealFileTree(user);
 
     await screen.findByText('foundation-drawings.pdf');
     await user.click(screen.getByRole('button', { name: /foundation-drawings\.pdf/i }));
@@ -202,6 +237,7 @@ describe('Open PDF from project file tree', () => {
     vi.stubGlobal('fetch', makeFetch());
 
     render(<ChatWorkspacePage />);
+    await revealFileTree(user);
 
     await screen.findByText('foundation-drawings.pdf');
     await user.click(screen.getByRole('button', { name: /foundation-drawings\.pdf/i }));
@@ -220,6 +256,7 @@ describe('Open PDF from project file tree', () => {
     vi.stubGlobal('fetch', makeFetch());
 
     render(<ChatWorkspacePage />);
+    await revealFileTree(user);
 
     const fileBtn = await screen.findByRole('button', { name: /foundation-drawings\.pdf/i });
     await user.click(fileBtn);
@@ -234,6 +271,7 @@ describe('Open PDF from project file tree', () => {
     vi.stubGlobal('fetch', makeFetch());
 
     render(<ChatWorkspacePage />);
+    await revealFileTree(user);
 
     // Open first PDF via the file tree button
     const btn1 = await screen.findByRole('button', { name: /foundation-drawings\.pdf/i });

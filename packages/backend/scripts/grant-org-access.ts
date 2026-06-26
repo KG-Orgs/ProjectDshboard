@@ -13,6 +13,7 @@
  *   pnpm grant:org-access -- --email georgegao1997@gmail.com
  *   pnpm grant:org-access -- --email user@example.com --org-id <uuid>
  *   pnpm grant:org-access -- --email user@example.com --project-id 731cfd5d-e647-4551-89e7-0a3cc4915115
+ *   pnpm grant:org-access -- --email user@example.com --role admin
  */
 import { config } from "dotenv";
 import { eq } from "drizzle-orm";
@@ -21,12 +22,16 @@ import { initializeDb, organizations, projects, users } from "../src/db";
 
 const DEFAULT_MLJ017_PROJECT_ID = "731cfd5d-e647-4551-89e7-0a3cc4915115";
 
+const USER_ROLES = ["super", "admin", "pm", "member"] as const;
+type UserRole = (typeof USER_ROLES)[number];
+
 function parseArgs(argv: string[]): {
   email?: string;
   orgId?: string;
   projectId?: string;
+  role?: UserRole;
 } {
-  const result: { email?: string; orgId?: string; projectId?: string } = {};
+  const result: { email?: string; orgId?: string; projectId?: string; role?: UserRole } = {};
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--email" && argv[i + 1]) {
       result.email = argv[i + 1].trim().toLowerCase();
@@ -36,6 +41,12 @@ function parseArgs(argv: string[]): {
       i += 1;
     } else if (argv[i] === "--project-id" && argv[i + 1]) {
       result.projectId = argv[i + 1];
+      i += 1;
+    } else if (argv[i] === "--role" && argv[i + 1]) {
+      const role = argv[i + 1].trim().toLowerCase() as UserRole;
+      if (USER_ROLES.includes(role)) {
+        result.role = role;
+      }
       i += 1;
     }
   }
@@ -51,7 +62,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const { email, orgId: orgIdArg, projectId: projectIdArg } = parseArgs(
+  const { email, orgId: orgIdArg, projectId: projectIdArg, role: roleArg } = parseArgs(
     process.argv.slice(2)
   );
 
@@ -98,6 +109,7 @@ async function main(): Promise<void> {
       email: users.email,
       orgId: users.orgId,
       name: users.name,
+      role: users.role,
     })
     .from(users)
     .where(eq(users.email, email))
@@ -110,8 +122,14 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  if (existing.orgId === targetOrgId) {
+  const orgChanged = existing.orgId !== targetOrgId;
+  const roleChanged = Boolean(roleArg && existing.role !== roleArg);
+
+  if (!orgChanged && !roleChanged) {
     console.log(`User ${email} already belongs to org "${org.name}" (${targetOrgId}).`);
+    if (roleArg) {
+      console.log(`  role: ${existing.role}`);
+    }
     console.log("");
     console.log("Next: open the app and select the project in the dashboard or chat workspace.");
     return;
@@ -119,13 +137,21 @@ async function main(): Promise<void> {
 
   await db
     .update(users)
-    .set({ orgId: targetOrgId })
+    .set({
+      ...(orgChanged ? { orgId: targetOrgId } : {}),
+      ...(roleArg ? { role: roleArg } : {}),
+    })
     .where(eq(users.email, email));
 
-  console.log("Organization access granted:");
+  console.log("User access updated:");
   console.log(`  user: ${existing.name} <${email}>`);
   console.log(`  org: ${org.name} (${targetOrgId})`);
-  console.log(`  was: ${existing.orgId}`);
+  if (orgChanged) {
+    console.log(`  was org: ${existing.orgId}`);
+  }
+  if (roleArg) {
+    console.log(`  role: ${roleArg}${existing.role !== roleArg ? ` (was ${existing.role})` : ""}`);
+  }
   console.log("");
   console.log("Next:");
   console.log("  1. User signs in at /login (Microsoft OAuth)");

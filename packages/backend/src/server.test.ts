@@ -117,6 +117,7 @@ describe("backend server", () => {
     expect(createResponse.status).toBe(200);
     expect(createResponse.body.project.name).toBe("Airport Expansion");
     expect(createResponse.body.project.onedriveFolderId).toBe("folder-123");
+    expect(login.body.user.role).toBe("member");
 
     const listResponse = await request(app)
       .get("/api/projects")

@@ -131,6 +131,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const panStartRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const continuousScrollRef = useRef<HTMLDivElement | null>(null);
+  const pageNavIntentRef = useRef(false);
   const markupDragRef = useRef<{ markupId: string; handle: string; startPoint: Point; startCoords: Record<string, unknown> } | null>(null);
   const latestMarkupsRef = useRef<Markup[]>([]);
   const markupResizeDragRef = useRef<{ startY: number; startH: number } | null>(null);
@@ -143,7 +144,8 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const [fitMode, setFitMode] = useState<FitMode>('manual');
   const [rotation, setRotation] = useState(0);
   const [tab, setTab] = useState<SidebarTab>('thumbnails');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [showMarkupTools, setShowMarkupTools] = useState(false);
   const [tool, setTool] = useState<Tool>('pan');
   const [unit, setUnit] = useState<(typeof UNITS)[number]>('ft');
   const [isPanning, setIsPanning] = useState(false);
@@ -171,7 +173,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const [outline, setOutline] = useState<OutlineItem[] | null>(null);
   const [scrollMode, setScrollMode] = useState<'single' | 'continuous'>('continuous');
   const [markupPanelHeight, setMarkupPanelHeight] = useState(200);
-  const [markupPanelCollapsed, setMarkupPanelCollapsed] = useState(false);
+  const [markupPanelCollapsed, setMarkupPanelCollapsed] = useState(true);
 
   const scale = useMemo(() => {
     const host = viewerRef.current;
@@ -217,6 +219,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     }
   }, [projectId, fileId]);
 
+  const goToPage = useCallback((nextPage: number) => {
+    pageNavIntentRef.current = true;
+    setPage(nextPage);
+  }, []);
+
   const jumpToOutlineItem = useCallback(async (dest: string | unknown[] | null) => {
     const doc = pdfRef.current;
     if (!doc || !dest) return;
@@ -229,12 +236,12 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const ref = explicitDest[0];
       if (ref && typeof ref === 'object' && 'num' in ref) {
         const pageIndex = await doc.getPageIndex(ref as { num: number; gen: number });
-        setPage(clamp(pageIndex + 1, 1, Math.max(1, numPages)));
+        goToPage(clamp(pageIndex + 1, 1, Math.max(1, numPages)));
       }
     } catch {
       // ignore invalid destinations
     }
-  }, [numPages]);
+  }, [goToPage, numPages]);
 
   useEffect(() => {
     if (scrollMode !== 'continuous' || !continuousScrollRef.current || numPages === 0) return;
@@ -260,12 +267,14 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   }, [scrollMode, numPages]);
 
   useEffect(() => {
-    if (scrollMode !== 'continuous') return;
+    if (scrollMode !== 'continuous' || !pageNavIntentRef.current) return;
+    pageNavIntentRef.current = false;
     const el = pageRefs.current.get(page);
     if (el) el.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }, [page, scrollMode]);
 
   useEffect(() => {
+    pageNavIntentRef.current = true;
     setPage(initialPage ?? 1);
     setNumPages(0);
     setSearchApplied('');
@@ -283,7 +292,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   useEffect(() => {
     if (!citationRequest || citationRequest.fileId !== fileId) return;
     const nextPage = clamp(toPositiveInt(citationRequest.pageNumber), 1, Math.max(1, numPages || toPositiveInt(citationRequest.pageNumber)));
-    setPage(nextPage);
+    goToPage(nextPage);
     setCitationFlash({
       ...citationRequest,
       pageNumber: nextPage,
@@ -292,7 +301,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     const timer = window.setTimeout(() => setCitationFlash(null), 5000);
     onCitationHandled?.();
     return () => window.clearTimeout(timer);
-  }, [citationRequest, fileId, numPages, onCitationHandled]);
+  }, [citationRequest, fileId, goToPage, numPages, onCitationHandled]);
 
   const saveMarkup = useCallback(async (markupId: string, patch: Partial<Markup>) => {
     if (!projectId || !fileId) return;
@@ -405,12 +414,12 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       else if (nextHits.length === 0) setSearchMsg(`No matches found for "${term}".`);
 
       setHits(nextHits);
-      if (nextHits.length > 0) { setHitIndex(0); setPage(nextHits[0].pageNumber); }
+      if (nextHits.length > 0) { setHitIndex(0); goToPage(nextHits[0].pageNumber); }
       else setHitIndex(-1);
     } finally {
       setSearchBusy(false);
     }
-  }, [searchTerm]);
+  }, [goToPage, searchTerm]);
 
   useEffect(() => {
     if (!citationRequest || citationRequest.fileId !== fileId) return;
@@ -423,7 +432,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (hits.length === 0) return;
     const next = dir === 1 ? (hitIndex + 1) % hits.length : (hitIndex - 1 + hits.length) % hits.length;
     setHitIndex(next);
-    setPage(hits[next].pageNumber);
+    goToPage(hits[next].pageNumber);
   };
 
   const pagePointFromEvent = (event: ReactMouseEvent<HTMLDivElement>): Point | null => {
@@ -724,10 +733,10 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       <div style={{ flex: '0 0 auto', zIndex: 30, borderBottom: '1px solid #e5e7eb', boxShadow: '0 1px 2px rgba(15,23,42,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', borderBottom: '1px solid #e5e7eb', background: '#f8fafc', flexWrap: 'nowrap', overflowX: 'auto' }}>
           <strong style={{ fontSize: 11, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={fileName}>{fileName}</strong>
-          <button type="button" onClick={() => setPage((c) => Math.max(1, c - 1))} style={compactControlBase}>Prev</button>
-          <input type="number" min={1} max={Math.max(1, numPages)} value={page} onChange={(e) => setPage(clamp(toPositiveInt(e.target.value, page), 1, Math.max(1, numPages || 1)))} style={{ ...compactControlBase, width: 46 }} />
+          <button type="button" onClick={() => goToPage(Math.max(1, page - 1))} style={compactControlBase}>Prev</button>
+          <input type="number" min={1} max={Math.max(1, numPages)} value={page} onChange={(e) => goToPage(clamp(toPositiveInt(e.target.value, page), 1, Math.max(1, numPages || 1)))} style={{ ...compactControlBase, width: 46 }} />
           <span style={{ fontSize: 10, color: '#6b7280' }}>of {numPages || '--'}</span>
-          <button type="button" onClick={() => setPage((c) => Math.min(Math.max(1, numPages), c + 1))} style={compactControlBase}>Next</button>
+          <button type="button" onClick={() => goToPage(Math.min(Math.max(1, numPages), page + 1))} style={compactControlBase}>Next</button>
           <button type="button" onClick={() => { setFitMode('manual'); setZoom((z) => Math.max(40, z - 10)); }} style={compactControlBase}>-</button>
           <span style={{ minWidth: 36, textAlign: 'center', fontSize: 10 }}>{Math.round(scale * 100)}%</span>
           <button type="button" onClick={() => { setFitMode('manual'); setZoom((z) => Math.min(300, z + 10)); }} style={compactControlBase}>+</button>
@@ -735,21 +744,27 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           <button type="button" onClick={() => setFitMode('page')} style={{ ...compactControlBase, background: fitMode === 'page' ? '#e0f2fe' : '#fff' }}>Fit Page</button>
           <button type="button" onClick={() => setRotation((r) => (r + 90) % 360)} style={compactControlBase}>Rotate</button>
           <button type="button" onClick={() => setTool((t) => t === 'pan' ? 'select' : 'pan')} style={{ ...compactControlBase, background: tool === 'pan' ? '#dbeafe' : '#fff' }}>Hand</button>
-          <button type="button" onClick={() => setScrollMode((m) => (m === 'single' ? 'continuous' : 'single'))} style={{ ...compactControlBase, background: scrollMode === 'continuous' ? '#e0f2fe' : '#fff' }}>Continuous</button>
+          <button type="button" onClick={() => setScrollMode((m) => (m === 'single' ? 'continuous' : 'single'))} style={{ ...compactControlBase, background: scrollMode === 'continuous' ? '#e0f2fe' : '#fff' }} title="Toggle continuous scroll">Scroll</button>
+          <button type="button" onClick={() => setShowMarkupTools((v) => !v)} style={{ ...compactControlBase, background: showMarkupTools ? '#e0f2fe' : '#fff' }}>Markups</button>
           <div style={{ flex: 1 }} />
-          <button type="button" onClick={downloadOriginalPdf} style={compactControlBase}>Download PDF</button>
-          <button type="button" onClick={() => void exportComments('csv')} style={compactControlBase}>Export CSV</button>
-          <button type="button" onClick={() => void exportComments('xlsx')} style={compactControlBase}>Export Excel</button>
+          <button type="button" onClick={downloadOriginalPdf} style={compactControlBase} title="Download PDF">Save</button>
         </div>
 
+        {showMarkupTools ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', background: '#fff', flexWrap: 'nowrap', overflowX: 'auto' }}>
           {(['select', 'cloud', 'arrow', 'text', 'highlight', 'line', 'rectangle', 'calibrate', 'length', 'area', 'count'] as Tool[]).map((t) => (
             <button key={t} type="button" onClick={() => setTool(t)} style={{ ...compactControlBase, background: tool === t ? '#dbeafe' : '#fff', textTransform: 'capitalize' }}>{t}</button>
           ))}
           <select value={unit} onChange={(e) => setUnit(e.target.value as (typeof UNITS)[number])} style={compactControlBase}>{UNITS.map((u) => <option key={u} value={u}>{u}</option>)}</select>
           {tool === 'area' && draftAreaPoints.length >= 3 ? <button type="button" onClick={() => void finishArea()} style={{ ...compactControlBase, border: '1px solid #10b981', background: '#dcfce7' }}>Finish Area</button> : null}
-          {selectedMarkup ? <button type="button" onClick={() => void removeMarkup(selectedMarkup.id)} style={{ ...compactControlBase, border: '1px solid #fecaca', background: '#fff1f2', color: '#b91c1c' }}>Delete Selected</button> : null}
+          {selectedMarkup ? <button type="button" onClick={() => void removeMarkup(selectedMarkup.id)} style={{ ...compactControlBase, border: '1px solid #fecaca', background: '#fff1f2', color: '#b91c1c' }}>Delete</button> : null}
           <div style={{ flex: 1 }} />
+          <button type="button" onClick={() => void exportComments('csv')} style={compactControlBase}>CSV</button>
+          <button type="button" onClick={() => void exportComments('xlsx')} style={compactControlBase}>Excel</button>
+        </div>
+        ) : null}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', background: '#fff', flexWrap: 'nowrap', overflowX: 'auto', borderTop: showMarkupTools ? '1px solid #e5e7eb' : undefined }}>
           <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void runSearch(); } }} placeholder="Search this PDF" style={{ ...compactControlBase, width: 170 }} />
           <button type="button" onClick={() => void runSearch()} style={compactControlBase}>{searchBusy ? '...' : 'Find'}</button>
           <button type="button" onClick={() => moveHit(-1)} style={compactControlBase}>Prev Hit</button>
@@ -779,7 +794,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
               {tab === 'thumbnails' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {Array.from({ length: numPages }, (_, i) => i + 1).map((p) => (
-                    <button key={`thumb-${p}`} type="button" onClick={() => setPage(p)} style={{ border: p === page ? '2px solid #2563eb' : '1px solid #e5e7eb', borderRadius: 6, background: '#fff', padding: 6, textAlign: 'left' }}>
+                    <button key={`thumb-${p}`} type="button" onClick={() => goToPage(p)} style={{ border: p === page ? '2px solid #2563eb' : '1px solid #e5e7eb', borderRadius: 6, background: '#fff', padding: 6, textAlign: 'left' }}>
                       <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>Page {p}</div>
                       <div style={{ border: '1px solid #f1f5f9' }}>
                         {pdfRef.current ? (
@@ -815,7 +830,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
               {tab === 'markups' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {markups.map((m) => (
-                    <button key={`m-${m.id}`} type="button" onClick={() => { setSelectedMarkupId(m.id); setPage(m.pageNumber); }} style={{ border: m.id === selectedMarkupId ? '1px solid #93c5fd' : '1px solid #e5e7eb', background: m.id === selectedMarkupId ? '#eff6ff' : '#fff', borderRadius: 6, padding: 6, textAlign: 'left' }}>
+                    <button key={`m-${m.id}`} type="button" onClick={() => { setSelectedMarkupId(m.id); goToPage(m.pageNumber); }} style={{ border: m.id === selectedMarkupId ? '1px solid #93c5fd' : '1px solid #e5e7eb', background: m.id === selectedMarkupId ? '#eff6ff' : '#fff', borderRadius: 6, padding: 6, textAlign: 'left' }}>
                       <div style={{ fontSize: 12, fontWeight: 600 }}>{m.type} · p.{m.pageNumber}</div>
                       <div style={{ fontSize: 11, color: '#6b7280' }}>{m.comment || 'No comment'}</div>
                     </button>
@@ -977,7 +992,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           </thead>
           <tbody>
             {filteredMarkups.map((m) => (
-              <tr key={`row-${m.id}`} style={{ background: m.id === selectedMarkupId ? '#eff6ff' : '#fff' }} onClick={() => { setSelectedMarkupId(m.id); setPage(m.pageNumber); }}>
+              <tr key={`row-${m.id}`} style={{ background: m.id === selectedMarkupId ? '#eff6ff' : '#fff' }} onClick={() => { setSelectedMarkupId(m.id); goToPage(m.pageNumber); }}>
                 <td style={{ padding: '6px 8px', borderBottom: '1px solid #f1f5f9' }}>{m.pageNumber}</td>
                 <td style={{ padding: '6px 8px', borderBottom: '1px solid #f1f5f9' }}>{m.type}</td>
                 <td style={{ padding: '6px 8px', borderBottom: '1px solid #f1f5f9' }}><select value={m.category} onChange={(e) => void saveMarkup(m.id, { category: e.target.value })} style={{ border: '1px solid #d1d5db', borderRadius: 4, fontSize: 12 }}>{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></td>

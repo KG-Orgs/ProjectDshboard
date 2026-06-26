@@ -15,6 +15,26 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams("projectId=project-321"),
 }));
 
+vi.mock("@contractor/shared", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@contractor/shared")>();
+  return {
+    ...actual,
+    useAuthStore: () => ({
+      user: {
+        id: "user-1",
+        email: "jane@contractor.ai",
+        name: "Jane Contractor",
+        orgId: "org-1",
+        role: "member",
+        createdAt: new Date().toISOString(),
+      },
+      isAuthenticated: true,
+      isLoading: false,
+      error: null,
+    }),
+  };
+});
+
 vi.mock("framer-motion", () => {
   const passthrough = ({ children, ...props }: { children?: ReactNode; [key: string]: unknown }) => (
     <div {...props}>{children}</div>
@@ -39,12 +59,39 @@ describe("Workspace chat interactions", () => {
     window.localStorage.clear();
   });
 
-  it("navigates to citation pages and preserves search term across PDF hit clicks", async () => {
+  it("opens cited PDFs and keeps side panels collapsed by default", async () => {
     const user = userEvent.setup();
 
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const method = init?.method ?? "GET";
+
+      if (url.endsWith("/api/projects") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            projects: [{ id: "project-321", name: "North Tower" }],
+          }),
+        });
+      }
+
+      if (url.includes("/api/projects/project-321/files") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            files: [
+              {
+                id: "file-123",
+                fileName: "spec.pdf",
+                filePath: "Project Files/spec.pdf",
+                indexStatus: "indexed",
+              },
+            ],
+          }),
+        });
+      }
 
       if (url.endsWith("/api/chat/sessions") && method === "GET") {
         return Promise.resolve({
@@ -59,6 +106,14 @@ describe("Workspace chat interactions", () => {
               },
             ],
           }),
+        });
+      }
+
+      if (url.includes("/api/chat/sessions/session-1/messages") && method === "GET") {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({ messages: [] }),
         });
       }
 
@@ -82,84 +137,60 @@ describe("Workspace chat interactions", () => {
         });
       }
 
-      if (url.includes("/api/files/file-123?projectId=project-321") && method === "GET") {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => ({
-            fileId: "file-123",
-            fileName: "spec.pdf",
-            chunks: [
-              {
-                chunkIndex: 11,
-                pageNumber: 27,
-                chunkText: "Expansion joints on elevated deck sections need sealant class A.",
-              },
-              {
-                chunkIndex: 16,
-                pageNumber: 31,
-                chunkText: "Expansion joints at wall interface require movement accommodation.",
-              },
-            ],
-          }),
-        });
-      }
-
       return Promise.reject(new Error(`Unexpected request: ${url} (${method})`));
     });
 
-    vi.stubGlobal(
-      "fetch",
-      fetchMock
-    );
+    vi.stubGlobal("fetch", fetchMock);
 
     render(<ChatWorkspacePage />);
 
-    const promptBox = await screen.findByPlaceholderText(
-      "Ask AI to analyze, compare, summarize, and cite relevant project documents..."
-    );
+    expect(screen.queryByPlaceholderText("Search in document")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Files" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Chat" }).length).toBeGreaterThan(0);
+
+    const expandChat =
+      screen.getAllByRole("button", { name: "Chat" }).find((btn) => btn.classList.contains("ws-panel-expand-btn"))
+      ?? screen.getAllByRole("button", { name: "Chat" })[0];
+    await user.click(expandChat);
+
+    const promptBox = await screen.findByPlaceholderText("Ask about drawings, specs, RFIs...");
     await user.type(promptBox, "Show me expansion joint requirements");
-    await user.click(screen.getByRole("button", { name: "Send (Ctrl+Enter)" }));
+    await user.click(screen.getByRole("button", { name: "Send" }));
 
     const citationChip = await screen.findByRole("button", {
-      name: "spec.pdf (p. 27, 31)",
+      name: /\[DOC\]\s*spec\.pdf/i,
     });
     await user.click(citationChip);
 
     await waitFor(() => {
-      expect(screen.getByText("120%")).toBeInTheDocument();
+      expect(screen.getByText("spec.pdf")).toBeInTheDocument();
     });
-
-    const searchBox = screen.getByPlaceholderText("Search in document");
-    await user.clear(searchBox);
-    await user.type(searchBox, "expansion joint");
-    await user.click(screen.getByRole("button", { name: "Find" }));
-
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /p\.31/i })).toBeInTheDocument();
-      expect(screen.getByText(/2 matches for "expansion joint"/i)).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /p\.31/i }));
-
-    await waitFor(() => {
-      expect((screen.getByPlaceholderText("Search in document") as HTMLInputElement).value).toBe("expansion joint");
-    });
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/files/file-123?projectId=project-321",
-      expect.objectContaining({ method: "GET", cache: "no-store" })
-    );
   });
 
-  it("uses high-contrast marks for in-document text highlights", async () => {
-    const user = userEvent.setup();
-
+  it("expands the files panel when the vertical Files control is clicked", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
         const method = init?.method ?? "GET";
+
+        if (url.endsWith("/api/projects") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              projects: [{ id: "project-321", name: "North Tower" }],
+            }),
+          });
+        }
+
+        if (url.includes("/api/projects/project-321/files") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ files: [] }),
+          });
+        }
 
         if (url.endsWith("/api/chat/sessions") && method === "GET") {
           return Promise.resolve({
@@ -173,58 +204,13 @@ describe("Workspace chat interactions", () => {
       })
     );
 
-    render(<ChatWorkspacePage />);
-
-    await user.click(await screen.findByRole("button", { name: "site-notes.txt" }));
-
-    const searchBox = screen.getByPlaceholderText("Search in document");
-    await user.type(searchBox, "critical path");
-    await user.click(screen.getByRole("button", { name: "Find" }));
-
-    const mark = await screen.findByText(/critical path/i, { selector: "mark" });
-    expect(mark).toHaveClass("bg-yellow-300", "font-semibold", "text-slate-950");
-  });
-
-  it("clears viewer search query, hit list, and highlight state", async () => {
     const user = userEvent.setup();
-
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input);
-        const method = init?.method ?? "GET";
-
-        if (url.endsWith("/api/chat/sessions") && method === "GET") {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({ sessions: [] }),
-          });
-        }
-
-        return Promise.reject(new Error(`Unexpected request: ${url} (${method})`));
-      })
-    );
-
     render(<ChatWorkspacePage />);
 
-    await user.click(await screen.findByRole("button", { name: "site-notes.txt" }));
-
-    const searchBox = screen.getByPlaceholderText("Search in document") as HTMLInputElement;
-    await user.type(searchBox, "critical path");
-    await user.click(screen.getByRole("button", { name: "Find" }));
+    await user.click(screen.getAllByRole("button", { name: "Files" })[0]);
 
     await waitFor(() => {
-      expect(screen.getByText(/1 match for "critical path"/i)).toBeInTheDocument();
-    });
-    expect(screen.getByText(/critical path/i, { selector: "mark" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Clear" }));
-
-    await waitFor(() => {
-      expect(searchBox.value).toBe("");
-      expect(screen.queryByText(/match for "critical path"/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/critical path/i, { selector: "mark" })).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Filter files...")).toBeInTheDocument();
     });
   });
 });
