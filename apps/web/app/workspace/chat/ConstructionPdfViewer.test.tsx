@@ -111,6 +111,42 @@ async function simulatePdfLoad(doc: MockDoc) {
   });
 }
 
+/** Sidebar starts collapsed — expand before using Thumbnails / Bookmarks / Markups tabs. */
+function expandSidebar() {
+  fireEvent.click(screen.getByRole('button', { name: '>' }));
+}
+
+function openSidebarTab(tabName: 'Thumbnails' | 'Bookmarks' | 'Markups') {
+  expandSidebar();
+  fireEvent.click(screen.getByRole('button', { name: tabName }));
+}
+
+/** Markup drawing tools and export buttons live behind the Markups toolbar toggle. */
+function expandMarkupTools() {
+  fireEvent.click(screen.getByRole('button', { name: 'Markups' }));
+}
+
+/** Markup table starts collapsed — expand before asserting on table rows/headers. */
+function expandMarkupPanel() {
+  fireEvent.click(screen.getByTitle('Expand markup panel'));
+}
+
+function isContinuousScrollMode() {
+  return document.querySelectorAll('[data-page]').length > 0;
+}
+
+function enableSinglePageMode() {
+  if (isContinuousScrollMode()) {
+    fireEvent.click(screen.getByRole('button', { name: 'Scroll' }));
+  }
+}
+
+function enableContinuousScrollMode() {
+  if (!isContinuousScrollMode()) {
+    fireEvent.click(screen.getByRole('button', { name: 'Scroll' }));
+  }
+}
+
 // ─── tests ────────────────────────────────────────────────────────────────────
 
 describe('ConstructionPdfViewer – bookmark tree', () => {
@@ -131,7 +167,7 @@ describe('ConstructionPdfViewer – bookmark tree', () => {
     await simulatePdfLoad(makeMockDoc({ outline: null }));
 
     // Switch to bookmarks tab
-    fireEvent.click(screen.getByRole('button', { name: 'Bookmarks' }));
+    openSidebarTab('Bookmarks');
 
     expect(screen.getByText('No bookmarks found in this PDF.')).toBeInTheDocument();
   });
@@ -145,7 +181,7 @@ describe('ConstructionPdfViewer – bookmark tree', () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
     await simulatePdfLoad(makeMockDoc({ outline, destinationPage: 2 }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bookmarks' }));
+    openSidebarTab('Bookmarks');
 
     expect(screen.getByRole('button', { name: 'Introduction' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Chapter 1' })).toBeInTheDocument();
@@ -160,7 +196,7 @@ describe('ConstructionPdfViewer – bookmark tree', () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
     await simulatePdfLoad(doc);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bookmarks' }));
+    openSidebarTab('Bookmarks');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Chapter 2' }));
@@ -189,7 +225,7 @@ describe('ConstructionPdfViewer – bookmark tree', () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
     await simulatePdfLoad(makeMockDoc({ outline }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bookmarks' }));
+    openSidebarTab('Bookmarks');
 
     // Root bookmark visible; child initially hidden (depth-1 starts collapsed for depth >= 1)
     // Root is at depth=0, expanded by default. Child should be visible.
@@ -220,7 +256,7 @@ describe('ConstructionPdfViewer – bookmark tree', () => {
     const docWithArrayDest = { ...doc, getOutline: vi.fn().mockResolvedValue(outlineWithArrayDest) };
 
     await simulatePdfLoad(docWithArrayDest);
-    fireEvent.click(screen.getByRole('button', { name: 'Bookmarks' }));
+    openSidebarTab('Bookmarks');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Direct Page' }));
@@ -254,20 +290,28 @@ describe('ConstructionPdfViewer – continuous scroll mode', () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={2} />);
     await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
 
+    enableSinglePageMode();
+
     // In single mode there are NO data-page wrapper divs (only continuous mode adds them)
     expect(document.querySelectorAll('[data-page]').length).toBe(0);
     // Main viewer shows page 2
     expect(screen.getAllByTestId('pdf-page-2').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('clicking "Continuous" renders all pages simultaneously', async () => {
+  it('clicking "Scroll" renders all pages simultaneously in continuous mode', async () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
     await simulatePdfLoad(makeMockDoc({ numPages: 4 }));
 
-    // Single mode: no data-page wrapper containers
+    // Default is continuous scroll — all pages visible without toggling
+    expect(document.querySelectorAll('[data-page]').length).toBe(4);
+    for (let p = 1; p <= 4; p++) {
+      expect(document.querySelector(`[data-page="${p}"]`)).toBeInTheDocument();
+    }
+
+    enableSinglePageMode();
     expect(document.querySelectorAll('[data-page]').length).toBe(0);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Continuous' }));
+    enableContinuousScrollMode();
 
     // Continuous mode: one [data-page] wrapper div per page
     expect(document.querySelectorAll('[data-page]').length).toBe(4);
@@ -280,19 +324,21 @@ describe('ConstructionPdfViewer – continuous scroll mode', () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
-    const contBtn = screen.getByRole('button', { name: 'Continuous' });
-    fireEvent.click(contBtn); // → continuous
     expect(document.querySelectorAll('[data-page]').length).toBe(3);
 
-    fireEvent.click(contBtn); // → back to single
+    const scrollBtn = screen.getByRole('button', { name: 'Scroll' });
+    fireEvent.click(scrollBtn); // → single
     expect(document.querySelectorAll('[data-page]').length).toBe(0);
+
+    fireEvent.click(scrollBtn); // → back to continuous
+    expect(document.querySelectorAll('[data-page]').length).toBe(3);
   });
 
   it('continuous mode page containers have data-page attributes for IntersectionObserver', async () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Continuous' }));
+    enableContinuousScrollMode();
 
     for (let p = 1; p <= 3; p++) {
       const container = document.querySelector(`[data-page="${p}"]`);
@@ -305,7 +351,7 @@ describe('ConstructionPdfViewer – continuous scroll mode', () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
     await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Continuous' }));
+    enableContinuousScrollMode();
 
     // The observer should have been created and have observed the page containers
     expect(_lastObserver).toBeDefined();
@@ -376,6 +422,8 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
+    expandMarkupPanel();
+
     // Wait for markups to appear in the table
     await waitFor(() => {
       expect(document.querySelector('td')).toBeInTheDocument();
@@ -390,12 +438,14 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
 
   it('renders no drag handles when no markup is selected', async () => {
     await renderWithMarkups([makeMarkup()]);
+    enableSinglePageMode();
     expect(document.querySelector('[data-handle]')).toBeNull();
   });
 
   it('shows handles (move + 4 corners) when a rect markup is selected in select mode', async () => {
     const markup = makeMarkup({ coordinates: { x: 0.1, y: 0.1, width: 0.3, height: 0.2 } });
     await renderWithMarkups([markup]);
+    enableSinglePageMode();
     await selectFirstMarkup('rectangle');
 
     await waitFor(() => {
@@ -413,6 +463,7 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
       coordinates: { x1: 0.1, y1: 0.1, x2: 0.5, y2: 0.5 },
     });
     await renderWithMarkups([markup]);
+    enableSinglePageMode();
     await selectFirstMarkup('arrow');
 
     await waitFor(() => {
@@ -452,8 +503,11 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
+    expandMarkupPanel();
+
     // Select the markup
     await selectFirstMarkup('rectangle');
+    enableSinglePageMode();
 
     await waitFor(() => {
       expect(document.querySelector('[data-handle="move"]')).toBeInTheDocument();
@@ -521,7 +575,9 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
+    expandMarkupPanel();
     await selectFirstMarkup('rectangle');
+    enableSinglePageMode();
     await waitFor(() => expect(document.querySelector('[data-handle="se"]')).toBeInTheDocument());
 
     const seHandle = document.querySelector('[data-handle="se"]') as HTMLElement;
@@ -579,7 +635,9 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
+    expandMarkupPanel();
     await selectFirstMarkup('rectangle');
+    enableSinglePageMode();
     await waitFor(() => expect(document.querySelector('[data-handle="move"]')).toBeInTheDocument());
 
     const moveHandle = document.querySelector('[data-handle="move"]') as HTMLElement;
@@ -636,7 +694,9 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
+    expandMarkupPanel();
     await selectFirstMarkup('arrow');
+    enableSinglePageMode();
     await waitFor(() => expect(document.querySelector('[data-handle="p1"]')).toBeInTheDocument());
 
     const p1Handle = document.querySelector('[data-handle="p1"]') as HTMLElement;
@@ -695,7 +755,9 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
+    expandMarkupPanel();
     await selectFirstMarkup('rectangle');
+    enableSinglePageMode();
     await waitFor(() => expect(document.querySelector('[data-handle="move"]')).toBeInTheDocument());
 
     const moveHandle = document.querySelector('[data-handle="move"]') as HTMLElement;
@@ -1257,9 +1319,11 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
       />,
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    expandMarkupPanel();
   }
 
   function getPageHost(): HTMLElement {
+    enableSinglePageMode();
     // The pageHostRef div has a distinctive box-shadow style. The thumbnails
     // sidebar also renders pdf-page-N elements but without this shadow,
     // so querying by style is the most reliable way to find the main host.
@@ -1309,6 +1373,7 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
+    expandMarkupTools();
     fireEvent.click(screen.getByRole('button', { name: 'rectangle' }));
 
     const pageHost = getPageHost();
@@ -1319,6 +1384,8 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
     await act(async () => {
       fireEvent.mouseUp(pageHost);
     });
+
+    expandMarkupPanel();
 
     await waitFor(() => {
       expect(capturedPost.type).toBe('rectangle');
@@ -1368,6 +1435,7 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
+    expandMarkupTools();
     fireEvent.click(screen.getByRole('button', { name: 'arrow' }));
 
     const pageHost = getPageHost();
@@ -1378,6 +1446,8 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
     await act(async () => {
       fireEvent.mouseUp(pageHost);
     });
+
+    expandMarkupPanel();
 
     await waitFor(() => {
       expect(screen.getByRole('cell', { name: 'arrow' })).toBeInTheDocument();
@@ -1457,14 +1527,18 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
+    expandMarkupPanel();
+
     // Wait for the table row to appear
     await waitFor(() => screen.getByRole('cell', { name: 'rectangle' }));
 
     // Select the markup by clicking its table row
     fireEvent.click(screen.getByRole('cell', { name: 'rectangle' }).closest('tr')!);
 
-    // Delete Selected button should now appear
-    const deleteBtn = await screen.findByRole('button', { name: 'Delete Selected' });
+    expandMarkupTools();
+
+    // Delete button should now appear
+    const deleteBtn = await screen.findByRole('button', { name: 'Delete' });
     await act(async () => {
       fireEvent.click(deleteBtn);
     });
@@ -1523,6 +1597,11 @@ describe('ConstructionPdfViewer – save, reopen, export, and download', () => {
     _capturedOnLoadSuccess = undefined;
     _lastObserver = undefined;
     vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+    vi.stubGlobal('URL', {
+      ...globalThis.URL,
+      createObjectURL: vi.fn().mockReturnValue('blob:mock-object-url'),
+      revokeObjectURL: vi.fn(),
+    });
   });
 
   afterEach(() => {
@@ -1542,6 +1621,8 @@ describe('ConstructionPdfViewer – save, reopen, export, and download', () => {
       />,
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
+
+    expandMarkupPanel();
 
     await waitFor(() => {
       expect(screen.getByRole('cell', { name: 'highlight' })).toBeInTheDocument();
@@ -1582,6 +1663,7 @@ describe('ConstructionPdfViewer – save, reopen, export, and download', () => {
       />,
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
+    expandMarkupPanel();
     await waitFor(() => screen.getByRole('cell', { name: 'rectangle' }));
 
     // Switch to a different file
@@ -1627,11 +1709,13 @@ describe('ConstructionPdfViewer – save, reopen, export, and download', () => {
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
+    expandMarkupTools();
+
     // Prevent anchor click from navigating in jsdom
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
+      fireEvent.click(screen.getByRole('button', { name: 'CSV' }));
     });
 
     await waitFor(() => {
@@ -1669,10 +1753,12 @@ describe('ConstructionPdfViewer – save, reopen, export, and download', () => {
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
+    expandMarkupTools();
+
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Excel' }));
     });
 
     await waitFor(() => {
@@ -1701,7 +1787,7 @@ describe('ConstructionPdfViewer – save, reopen, export, and download', () => {
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Download PDF' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
       expect(capturedAnchor).not.toBeNull();
@@ -1718,9 +1804,11 @@ describe('ConstructionPdfViewer – save, reopen, export, and download', () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
-    // Clicking Export CSV should not call fetch
-    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }));
+    expandMarkupTools();
+
+    // Clicking export should not call fetch when projectId / fileId are absent
+    fireEvent.click(screen.getByRole('button', { name: 'CSV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Excel' }));
 
     // No export fetch should have been made
     expect(fetchMock).not.toHaveBeenCalledWith(
