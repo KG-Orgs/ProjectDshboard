@@ -3,7 +3,7 @@
 import { useAuthStore } from '@contractor/shared';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './page.css';
 
 interface HomeProject {
@@ -149,6 +149,8 @@ interface ChatSendResponse {
   };
 }
 
+const PROJECT_STATUS_POLL_INTERVAL_MS = 4000;
+
 export default function Home() {
   const { isAuthenticated, user, hydrate, logout, isLoading, error } = useAuthStore();
   const router = useRouter();
@@ -195,6 +197,10 @@ export default function Home() {
   const [selectedMainFolderId, setSelectedMainFolderId] = useState('');
   const [isUpdatingMainFolder, setIsUpdatingMainFolder] = useState(false);
   const lastProjectSelectionRef = useRef<string | undefined>(undefined);
+  const wasPollingProjectStatusRef = useRef(false);
+  const projectFilesInFlightRef = useRef(false);
+  const indexingProgressInFlightRef = useRef(false);
+  const syncProgressInFlightRef = useRef(false);
   const [userRole, setUserRole] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return window.localStorage.getItem('contractor-ai-user-role') ?? '';
@@ -288,8 +294,16 @@ export default function Home() {
     }
   }, []);
 
-  const loadProjectFiles = useCallback(async (projectId: string) => {
-    setIsProjectFilesLoading(true);
+  const loadProjectFiles = useCallback(async (projectId: string, options?: { background?: boolean }) => {
+    const isBackgroundRefresh = options?.background === true;
+    if (projectFilesInFlightRef.current) {
+      return;
+    }
+
+    projectFilesInFlightRef.current = true;
+    if (!isBackgroundRefresh) {
+      setIsProjectFilesLoading(true);
+    }
 
     try {
       const response = await fetch(
@@ -305,18 +319,31 @@ export default function Home() {
       setProjectFiles(data.files ?? []);
       setProjectFilesTotal(data.total ?? 0);
     } catch (filesError) {
-      setOnboardingError(
-        filesError instanceof Error
-          ? filesError.message
-          : 'Unable to load project file inventory.'
-      );
+      if (!isBackgroundRefresh) {
+        setOnboardingError(
+          filesError instanceof Error
+            ? filesError.message
+            : 'Unable to load project file inventory.'
+        );
+      }
     } finally {
-      setIsProjectFilesLoading(false);
+      projectFilesInFlightRef.current = false;
+      if (!isBackgroundRefresh) {
+        setIsProjectFilesLoading(false);
+      }
     }
   }, []);
 
-  const loadIndexingProgress = useCallback(async (projectId: string) => {
-    setIsIndexingProgressLoading(true);
+  const loadIndexingProgress = useCallback(async (projectId: string, options?: { background?: boolean }) => {
+    const isBackgroundRefresh = options?.background === true;
+    if (indexingProgressInFlightRef.current) {
+      return;
+    }
+
+    indexingProgressInFlightRef.current = true;
+    if (!isBackgroundRefresh) {
+      setIsIndexingProgressLoading(true);
+    }
 
     try {
       const response = await fetch(
@@ -331,13 +358,18 @@ export default function Home() {
       const data = (await response.json()) as IndexingProgressResponse;
       setIndexingProgress(data);
     } catch (progressError) {
-      setOnboardingError(
-        progressError instanceof Error
-          ? progressError.message
-          : 'Unable to load indexing progress.'
-      );
+      if (!isBackgroundRefresh) {
+        setOnboardingError(
+          progressError instanceof Error
+            ? progressError.message
+            : 'Unable to load indexing progress.'
+        );
+      }
     } finally {
-      setIsIndexingProgressLoading(false);
+      indexingProgressInFlightRef.current = false;
+      if (!isBackgroundRefresh) {
+        setIsIndexingProgressLoading(false);
+      }
     }
   }, []);
 
@@ -365,8 +397,16 @@ export default function Home() {
     }
   }, []);
 
-  const loadSyncProgress = useCallback(async (projectId: string) => {
-    setIsSyncProgressLoading(true);
+  const loadSyncProgress = useCallback(async (projectId: string, options?: { background?: boolean }) => {
+    const isBackgroundRefresh = options?.background === true;
+    if (syncProgressInFlightRef.current) {
+      return;
+    }
+
+    syncProgressInFlightRef.current = true;
+    if (!isBackgroundRefresh) {
+      setIsSyncProgressLoading(true);
+    }
 
     try {
       const response = await fetch(
@@ -384,7 +424,10 @@ export default function Home() {
     } catch {
       // Sync progress is best-effort UI feedback and should not block the page.
     } finally {
-      setIsSyncProgressLoading(false);
+      syncProgressInFlightRef.current = false;
+      if (!isBackgroundRefresh) {
+        setIsSyncProgressLoading(false);
+      }
     }
   }, []);
 
@@ -486,22 +529,63 @@ export default function Home() {
     };
   }, [isSyncing]);
 
+  const shouldPollProjectStatus = useMemo(() => {
+    if (!selectedProjectId) {
+      return false;
+    }
+
+    if (isSyncing || syncProgress?.inProgress || oneDriveStatus?.syncInProgress) {
+      return true;
+    }
+
+    if (!indexingProgress) {
+      return false;
+    }
+
+    return indexingProgress.pending > 0 || indexingProgress.processing > 0;
+  }, [selectedProjectId, isSyncing, syncProgress, oneDriveStatus, indexingProgress]);
+
   useEffect(() => {
     if (!selectedProjectId) {
+      wasPollingProjectStatusRef.current = false;
       return;
     }
 
-    const pollId = window.setInterval(() => {
-      void loadOnboardingData({ background: true });
-      void loadProjectFiles(selectedProjectId);
-      void loadIndexingProgress(selectedProjectId);
-      void loadSyncProgress(selectedProjectId);
-    }, 1000);
+    if (wasPollingProjectStatusRef.current && !shouldPollProjectStatus) {
+      void loadProjectFiles(selectedProjectId, { background: true });
+    }
+
+    wasPollingProjectStatusRef.current = shouldPollProjectStatus;
+  }, [selectedProjectId, shouldPollProjectStatus, loadProjectFiles]);
+
+  useEffect(() => {
+    if (!selectedProjectId || !shouldPollProjectStatus) {
+      return;
+    }
+
+    const pollProjectStatus = () => {
+      void loadIndexingProgress(selectedProjectId, { background: true });
+
+      if (isSyncing || syncProgress?.inProgress || oneDriveStatus?.syncInProgress) {
+        void loadSyncProgress(selectedProjectId, { background: true });
+      }
+    };
+
+    pollProjectStatus();
+    const pollId = window.setInterval(pollProjectStatus, PROJECT_STATUS_POLL_INTERVAL_MS);
 
     return () => {
       window.clearInterval(pollId);
     };
-  }, [selectedProjectId, loadOnboardingData, loadProjectFiles, loadIndexingProgress, loadSyncProgress]);
+  }, [
+    selectedProjectId,
+    shouldPollProjectStatus,
+    isSyncing,
+    syncProgress,
+    oneDriveStatus,
+    loadIndexingProgress,
+    loadSyncProgress,
+  ]);
 
   useEffect(() => {
     const query = selectedProjectId

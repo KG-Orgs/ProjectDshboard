@@ -495,6 +495,11 @@ function ChatWorkspacePageContent() {
   const promptInputRef = useRef<HTMLTextAreaElement | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const docDetailCacheRef = useRef<Map<string, DocumentDetailResponse>>(new Map());
+  const projectDisplayNameRef = useRef('');
+
+  useEffect(() => {
+    projectDisplayNameRef.current = projectDisplayName;
+  }, [projectDisplayName]);
 
   useEffect(() => {
     let cancelled = false;
@@ -524,7 +529,7 @@ function ChatWorkspacePageContent() {
           }
 
           setInferredProjectId(fallbackProjectId);
-          if (!projectDisplayName) {
+          if (!projectDisplayNameRef.current) {
             setProjectDisplayName(projectList[0]?.name ?? '');
           }
           router.replace(`/workspace/chat?projectId=${encodeURIComponent(fallbackProjectId)}`);
@@ -541,7 +546,7 @@ function ChatWorkspacePageContent() {
     return () => {
       cancelled = true;
     };
-  }, [projectId, projectDisplayName, queryProjectId, router]);
+  }, [projectId, queryProjectId, router]);
 
   const activeDoc = useMemo(
     () => openDocs.find((doc) => doc.id === activeDocId) ?? null,
