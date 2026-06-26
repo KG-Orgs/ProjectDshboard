@@ -17,8 +17,13 @@ export async function initializeDb(databaseUrl: string) {
     return db;
   }
 
+  const needsSsl =
+    process.env.NODE_ENV === "production" ||
+    /sslmode=require/i.test(databaseUrl) ||
+    /\.neon\.tech/i.test(databaseUrl);
+
   const client = postgres(databaseUrl, {
-    ssl: process.env.NODE_ENV === "production" ? "require" : false,
+    ssl: needsSsl ? "require" : false,
   });
 
   db = drizzle(client, { schema });

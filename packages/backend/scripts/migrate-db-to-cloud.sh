@@ -177,10 +177,14 @@ SELECT 'projects', COUNT(*)::text FROM projects;
 SELECT 'file_records', COUNT(*)::text FROM file_records;
 SELECT 'mlj017', COUNT(*)::text FROM projects WHERE id = '731cfd5d-e647-4551-89e7-0a3cc4915115' OR name ILIKE '%MLJ-017%';
 SELECT 'kyle_user', COUNT(*)::text FROM users WHERE email = 'kyle.xu4@gmail.com';
+SELECT 'file_chunks', COUNT(*)::text FROM file_chunks;
+SELECT 'orphan_chunk_links', COUNT(*)::text FROM chunk_links cl
+  WHERE NOT EXISTS (SELECT 1 FROM file_chunks fc WHERE fc.id = cl.source_chunk_id);
 SQL
 )"
 
   local user_count=0 project_count=0 file_count=0 mlj017_count=0 kyle_count=0
+  local chunk_count=0 orphan_links=0
   while IFS='|' read -r label value; do
     case "$label" in
       users) user_count="$value" ;;
@@ -188,6 +192,8 @@ SQL
       file_records) file_count="$value" ;;
       mlj017) mlj017_count="$value" ;;
       kyle_user) kyle_count="$value" ;;
+      file_chunks) chunk_count="$value" ;;
+      orphan_chunk_links) orphan_links="$value" ;;
     esac
   done <<<"$counts"
 
@@ -197,6 +203,18 @@ SQL
   log "  file_records: $file_count"
   log "  MLJ-017 rows: $mlj017_count"
   log "  kyle user:    $kyle_count"
+  log "  file_chunks:  $chunk_count"
+  log "  orphan links: $orphan_links"
+
+  if [[ "$chunk_count" -lt 900000 ]]; then
+    log_err "verification warning: file_chunks=$chunk_count (expected ~964k). Neon Free tier often fails mid-restore."
+    log_err "  Upgrade Neon to Launch, then: pnpm db:restore-chunks-batched"
+    failed=1
+  fi
+  if [[ "$orphan_links" -gt 1000 ]]; then
+    log_err "verification failed: $orphan_links orphan chunk_links (chunks missing or UUID mismatch)"
+    failed=1
+  fi
 
   if [[ "$user_count" -lt 1 ]]; then
     log_err "verification failed: expected at least 1 user"
@@ -226,6 +244,42 @@ SQL
     exit 1
   fi
   log "Verification passed."
+}
+
+
+with_keepalives_url() {
+  node -e "
+    const raw = process.argv[1];
+    const u = new URL(raw.replace(/^postgresql:/, 'postgres:'));
+    u.searchParams.set('keepalives', '1');
+    u.searchParams.set('keepalives_idle', '30');
+    u.searchParams.set('keepalives_interval', '10');
+    u.searchParams.set('keepalives_count', '10');
+    process.stdout.write(u.toString().replace(/^postgres:/, 'postgresql:'));
+  " "$1"
+}
+
+restore_to_target() {
+  local dump_file="$1"
+  local target_url
+  target_url="$(with_keepalives_url "$TARGET_DATABASE_URL")"
+  local restore_log="${dump_file}.restore.log"
+  local attempt max_attempts=3
+
+  for attempt in $(seq 1 "$max_attempts"); do
+    log "Restoring to target (clean + if-exists), attempt ${attempt}/${max_attempts}..."
+    if pg_restore       --dbname="$target_url"       --clean       --if-exists       --no-owner       --no-acl       --jobs=1       "$dump_file" 2>"$restore_log"; then
+      rm -f "$restore_log"
+      return 0
+    fi
+    if [[ "$attempt" -lt "$max_attempts" ]]; then
+      log "pg_restore attempt ${attempt} failed (see ${restore_log}); retrying in 15s..."
+      sleep 15
+    fi
+  done
+
+  log_err "pg_restore failed after ${max_attempts} attempts (see ${restore_log})."
+  return 1
 }
 
 main() {
@@ -258,20 +312,9 @@ main() {
     --no-acl \
     --file="$dump_file"
 
-  log "Restoring to target (clean + if-exists)..."
-  # pg_restore may emit benign errors; capture but do not print connection details.
-  if ! pg_restore \
-    --dbname="$TARGET_DATABASE_URL" \
-    --clean \
-    --if-exists \
-    --no-owner \
-    --no-acl \
-    --verbose \
-    "$dump_file" 2>"${dump_file}.restore.log"; then
-    log_err "pg_restore reported errors (see ${dump_file}.restore.log). Review and re-run if needed."
+  if ! restore_to_target "$dump_file"; then
     exit 1
   fi
-  rm -f "${dump_file}.restore.log"
 
   run_migrations
 

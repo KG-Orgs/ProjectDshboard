@@ -9,6 +9,8 @@
     "start": "node dist/server.js",
     "db:migrate": "drizzle-kit push:pg --config ./drizzle.config.ts",
     "db:migrate-to-cloud": "bash ./scripts/migrate-db-to-cloud.sh",
+    "db:clean-cloud-chunks": "bash ./scripts/clean-cloud-chunk-state.sh",
+    "db:restore-chunks-batched": "bash ./scripts/restore-chunks-batched.sh",
     "db:studio": "drizzle-kit studio --config ./drizzle.config.ts",
     "test": "vitest run --config ./vitest.config.ts",
     "type-check": "tsc --noEmit",
