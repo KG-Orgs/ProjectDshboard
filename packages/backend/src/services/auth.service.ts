@@ -157,9 +157,8 @@ async function persistSession(session: AuthSession): Promise<void> {
     .onConflictDoUpdate({
       target: users.email,
       set: {
-        orgId: session.user.orgId,
+        // Preserve orgId and role so admin grants (grant-org-access script) survive re-login.
         name: session.user.name,
-        role: session.user.role,
       },
     })
     .returning({
