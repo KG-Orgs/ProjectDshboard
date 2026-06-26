@@ -370,6 +370,74 @@ describe('ConstructionPdfViewer – continuous scroll mode', () => {
       expect(screen.getByRole('spinbutton')).toHaveValue(3);
     });
   });
+
+  it('IntersectionObserver page updates do not call scrollIntoView', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
+    enableContinuousScrollMode();
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('[data-page]').length).toBe(5);
+    });
+
+    scrollIntoView.mockClear();
+
+    const page3Container = document.querySelector('[data-page="3"]') as HTMLElement;
+    act(() => {
+      _lastObserver!.trigger(page3Container, 0.75);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('spinbutton')).toHaveValue(3);
+    });
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('continuous page containers keep min-height while scrolling updates the active page', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 4 }));
+    enableContinuousScrollMode();
+
+    for (let p = 1; p <= 4; p++) {
+      const container = document.querySelector(`[data-page="${p}"]`) as HTMLElement;
+      expect(container).toBeInTheDocument();
+      expect(container.style.minHeight).not.toBe('0px');
+      expect(container.style.minHeight).not.toBe('');
+    }
+
+    const page2Container = document.querySelector('[data-page="2"]') as HTMLElement;
+    act(() => {
+      _lastObserver!.trigger(page2Container, 0.8);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('spinbutton')).toHaveValue(2);
+    });
+
+    expect(document.querySelectorAll('[data-page]').length).toBe(4);
+    expect(document.querySelector('[data-page="2"]')).toHaveClass('pdf-continuous-page--active');
+    expect(document.querySelectorAll('[data-testid^="pdf-page-"]').length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('explicit page navigation scrolls the target page into view', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
+    enableContinuousScrollMode();
+
+    scrollIntoView.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    await waitFor(() => {
+      expect(scrollIntoView).toHaveBeenCalled();
+    });
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -805,7 +873,7 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
     expect(screen.getByText('of 12')).toBeInTheDocument();
   });
 
-  it('file name appears in the viewer toolbar header', async () => {
+  it('does not duplicate the file name in the PDF viewer toolbar', async () => {
     render(
       <ConstructionPdfViewer
         fileName="site-plan-rev3.pdf"
@@ -814,7 +882,7 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
     );
     await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
 
-    expect(screen.getByTitle('site-plan-rev3.pdf')).toHaveTextContent('site-plan-rev3.pdf');
+    expect(screen.queryByTitle('site-plan-rev3.pdf')).not.toBeInTheDocument();
   });
 
   it('Next button increments the current page', async () => {
@@ -1029,171 +1097,14 @@ describe('ConstructionPdfViewer – in-PDF text search', () => {
     vi.unstubAllGlobals();
   });
 
-  it('finds matches across pages and shows the hit count', async () => {
+  it('does not render the in-viewer search toolbar row', async () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
     await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
 
-    fireEvent.change(screen.getByPlaceholderText('Search this PDF'), {
-      target: { value: 'bearing' },
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Find' }));
-    });
-
-    // Two occurrences of "bearing" across pages 1 and 2 → counter shows "1/2"
-    await waitFor(() => {
-      expect(screen.getByText(/1\/2/)).toBeInTheDocument();
-    });
-  });
-
-  it('navigates to the first matching page when search completes', async () => {
-    render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
-    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
-
-    fireEvent.change(screen.getByPlaceholderText('Search this PDF'), {
-      target: { value: 'expansion joint' },
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Find' }));
-    });
-
-    // "expansion joint" only appears on page 3
-    await waitFor(() => {
-      expect(screen.getByRole('spinbutton')).toHaveValue(3);
-    });
-  });
-
-  it('Next Hit moves to the next matching hit', async () => {
-    render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
-    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
-
-    fireEvent.change(screen.getByPlaceholderText('Search this PDF'), {
-      target: { value: 'bearing' },
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Find' }));
-    });
-
-    // Start at page 1 (first hit)
-    await waitFor(() => expect(screen.getByRole('spinbutton')).toHaveValue(1));
-
-    // Click Next Hit → moves to page 2
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Next Hit' }));
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('spinbutton')).toHaveValue(2);
-    });
-  });
-
-  it('Prev Hit cycles back to the previous hit', async () => {
-    render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
-    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
-
-    fireEvent.change(screen.getByPlaceholderText('Search this PDF'), {
-      target: { value: 'bearing' },
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Find' }));
-    });
-
-    // Start at first hit (page 1) — advance once
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Next Hit' }));
-    });
-    await waitFor(() => expect(screen.getByRole('spinbutton')).toHaveValue(2));
-
-    // Now go back
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Prev Hit' }));
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('spinbutton')).toHaveValue(1);
-    });
-  });
-
-  it('shows "0" hit count and a no-matches message when term is not found', async () => {
-    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
-    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
-
-    fireEvent.change(screen.getByPlaceholderText('Search this PDF'), {
-      target: { value: 'xyzno-match-term' },
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Find' }));
-    });
-
-    await waitFor(() => {
-      // Hit counter reads "0" with no results
-      expect(screen.getByText('0')).toBeInTheDocument();
-      expect(screen.getByText(/No matches found/i)).toBeInTheDocument();
-    });
-  });
-
-  it('clears hits and counter when search term is emptied and Find is run again', async () => {
-    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
-    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
-
-    const searchInput = screen.getByPlaceholderText('Search this PDF');
-
-    // Run a search first
-    fireEvent.change(searchInput, { target: { value: 'bearing' } });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Find' }));
-    });
-    await waitFor(() => expect(screen.queryByText('0')).not.toBeInTheDocument());
-
-    // Now clear the search term and re-run
-    fireEvent.change(searchInput, { target: { value: '' } });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Find' }));
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('0')).toBeInTheDocument();
-    });
-  });
-
-  it('shows a scanned-PDF notice when the document contains no extractable text', async () => {
-    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
-    await simulatePdfLoad(makeSearchableMockDoc({ 1: '', 2: '', 3: '' }));
-
-    fireEvent.change(screen.getByPlaceholderText('Search this PDF'), {
-      target: { value: 'anything' },
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Find' }));
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText(/scanned.*OCR/i)).toBeInTheDocument();
-    });
-  });
-
-  it('snippet of the current hit is shown beneath the toolbar', async () => {
-    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
-    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
-
-    fireEvent.change(screen.getByPlaceholderText('Search this PDF'), {
-      target: { value: 'expansion joint' },
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Find' }));
-    });
-
-    await waitFor(() => {
-      // The current hit banner should include the page reference
-      expect(screen.getByText(/p\.3/)).toBeInTheDocument();
-    });
+    expect(screen.queryByPlaceholderText('Search this PDF')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Find' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Prev Hit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next Hit' })).not.toBeInTheDocument();
   });
 });
 

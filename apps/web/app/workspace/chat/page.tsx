@@ -6,6 +6,26 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  ArrowLeft,
+  Bot,
+  ChevronDown,
+  ChevronRight,
+  File,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  Folder,
+  FolderOpen,
+  MessageSquare,
+  PanelLeft,
+  PanelRightClose,
+  Plus,
+  Search,
+  Send,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import { useAuthStore } from '@contractor/shared';
 import { useConversationStore } from './useConversationStore';
 import './workspace.css';
@@ -311,16 +331,14 @@ interface FolderNode {
   files: WsFile[];
 }
 
-function getFileIcon(fileName: string): string {
+function getFileIcon(fileName: string): ReactNode {
   const ext = fileName.toLowerCase().split('.').pop() ?? '';
-  if (ext === 'pdf') return '[PDF]';
-  if (['doc', 'docx'].includes(ext)) return '[DOC]';
-  if (['xls', 'xlsx', 'csv'].includes(ext)) return '[XLS]';
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '[IMG]';
-  if (['dwg', 'dxf'].includes(ext)) return '[DWG]';
-  if (['mpp'].includes(ext)) return '[SCH]';
-  if (['rfi'].includes(ext) || fileName.toLowerCase().includes('rfi')) return '[RFI]';
-  return '[DOC]';
+  const iconClass = 'ws-file-icon';
+  if (ext === 'pdf') return <FileText className={iconClass} aria-hidden />;
+  if (['doc', 'docx'].includes(ext)) return <FileText className={iconClass} aria-hidden />;
+  if (['xls', 'xlsx', 'csv'].includes(ext)) return <FileSpreadsheet className={iconClass} aria-hidden />;
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return <FileImage className={iconClass} aria-hidden />;
+  return <File className={iconClass} aria-hidden />;
 }
 
 function buildFolderTree(files: WsFile[]): FolderNode[] {
@@ -351,8 +369,10 @@ function FolderSection({ folder, isExpanded, activeFileId, onToggle, onFileClick
   return (
     <div>
       <button type="button" className="folder-header-btn" onClick={onToggle}>
-        <span className={`folder-chevron ${isExpanded ? 'open' : ''}`}>&rsaquo;</span>
-        <span>[DIR]</span>
+        <span className={`folder-chevron ${isExpanded ? 'open' : ''}`}>
+          {isExpanded ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
+        </span>
+        {isExpanded ? <FolderOpen size={14} className="ws-folder-icon" aria-hidden /> : <Folder size={14} className="ws-folder-icon" aria-hidden />}
         <span className="file-name-text">{folder.name}</span>
         <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#9ca3af', flexShrink: 0, paddingLeft: '4px' }}>
           {folder.files.length}
@@ -368,7 +388,7 @@ function FolderSection({ folder, isExpanded, activeFileId, onToggle, onFileClick
               onClick={() => onFileClick(file)}
               title={file.fileName}
             >
-              <span style={{ flexShrink: 0 }}>{getFileIcon(file.fileName)}</span>
+              <span className="ws-file-icon-wrap">{getFileIcon(file.fileName)}</span>
               <span className="file-name-text">{file.fileName}</span>
             </button>
           ))}
@@ -435,7 +455,7 @@ function ChatWorkspacePageContent() {
   const [leftPanelWidth, setLeftPanelWidth] = useState(220);
   const [rightPanelWidth, setRightPanelWidth] = useState(340);
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(true);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [isDraggingRight, setIsDraggingRight] = useState(false);
   const [projectDisplayName, setProjectDisplayName] = useState<string>('');
@@ -1293,19 +1313,25 @@ function ChatWorkspacePageContent() {
         key={message.id}
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{ display: 'flex', justifyContent: isAssistant ? 'flex-start' : 'flex-end' }}
+        transition={{ duration: 0.2 }}
+        className={`chat-message-row ${isAssistant ? 'chat-message-row-assistant' : 'chat-message-row-user'}`}
       >
+        {isAssistant ? (
+          <div className="chat-avatar chat-avatar-assistant" aria-hidden>
+            <Bot size={16} />
+          </div>
+        ) : null}
         <div className={isAssistant ? 'chat-bubble-assistant' : 'chat-bubble-user'}>
           {isAssistant ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
               {sanitizeAssistantMarkdown(message.content)}
             </ReactMarkdown>
           ) : (
-            <p style={{ whiteSpace: 'pre-wrap', fontSize: '13.5px', lineHeight: '1.55', margin: 0 }}>{message.content}</p>
+            <p className="chat-user-text">{message.content}</p>
           )}
 
           {message.references?.length ? (
-            <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            <div className="chat-references">
               {message.references.map((reference) => (
                 <button
                   key={`${message.id}-${reference.fileId ?? reference.fileName}`}
@@ -1320,7 +1346,8 @@ function ChatWorkspacePageContent() {
                     );
                   }}
                 >
-                  [DOC] {reference.displayName ?? reference.fileName}
+                  <FileText size={12} aria-hidden />
+                  <span>{reference.displayName ?? reference.fileName}</span>
                   {reference.pageOrigin === 'exact' && reference.suggestedPages && reference.suggestedPages.length > 0
                     ? ` · p. ${reference.suggestedPages.join(', ')}`
                     : ''}
@@ -1330,9 +1357,9 @@ function ChatWorkspacePageContent() {
           ) : null}
 
           {!message.isStreaming && message.suggestions?.length ? (
-            <div style={{ marginTop: '10px', borderTop: '1px solid #e5e7eb', paddingTop: '10px' }}>
-              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9ca3af', marginBottom: '6px' }}>Follow-up</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            <div className="chat-suggestions">
+              <p className="chat-suggestions-label">Follow-up</p>
+              <div className="chat-suggestions-list">
                 {message.suggestions.map((suggestion) => (
                   <button
                     key={`${message.id}-sug-${suggestion}`}
@@ -1348,7 +1375,7 @@ function ChatWorkspacePageContent() {
           ) : null}
 
           {message.isStreaming ? (
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#0078d4', marginTop: '6px', animation: 'pulse 1s infinite' }} />
+            <span className="chat-streaming-dot" aria-label="Streaming response" />
           ) : null}
         </div>
       </motion.div>
@@ -1359,8 +1386,9 @@ function ChatWorkspacePageContent() {
     <div className="workspace-root">
       {/* Top Bar */}
       <header className="ws-topbar">
-        <button type="button" className="ws-topbar-btn" onClick={handleBackToDashboard}>
-          Back
+        <button type="button" className="ws-topbar-btn ws-topbar-btn-icon" onClick={handleBackToDashboard} title="Back to dashboard">
+          <ArrowLeft size={15} aria-hidden />
+          <span>Back</span>
         </button>
         <span className="ws-topbar-title">ContractorAI</span>
         {projectId ? (
@@ -1374,22 +1402,25 @@ function ChatWorkspacePageContent() {
         <div style={{ flex: 1 }} />
         <button
           type="button"
-          className="ws-panel-toggle"
+          className={`ws-panel-toggle ${leftPanelCollapsed ? '' : 'active'}`}
           onClick={() => setLeftPanelCollapsed((c) => !c)}
           title={leftPanelCollapsed ? 'Show project files' : 'Hide project files'}
         >
-          Files
+          <PanelLeft size={14} aria-hidden />
+          <span>Files</span>
         </button>
         <button
           type="button"
-          className="ws-panel-toggle"
+          className={`ws-panel-toggle ${rightPanelCollapsed ? '' : 'active'}`}
           onClick={() => setRightPanelCollapsed((c) => !c)}
           title={rightPanelCollapsed ? 'Show AI assistant' : 'Hide AI assistant'}
         >
-          Chat
+          <MessageSquare size={14} aria-hidden />
+          <span>Chat</span>
         </button>
-        <button type="button" className="ws-topbar-btn-primary" onClick={() => void handleSidebarNewChat()}>
-          New
+        <button type="button" className="ws-topbar-btn-primary ws-topbar-btn-icon" onClick={() => void handleSidebarNewChat()} title="New conversation">
+          <Plus size={14} aria-hidden />
+          <span>New</span>
         </button>
         <div className="ws-user-avatar" title={user?.email ?? 'Signed in user'}>
           {userInitials}
@@ -1401,8 +1432,8 @@ function ChatWorkspacePageContent() {
 
         {/* Panel 1: File Explorer */}
         <section
-          className={`ws-panel ${leftPanelCollapsed ? 'ws-panel-collapsed' : ''}`}
-          style={{ width: leftPanelCollapsed ? 32 : leftPanelWidth, flexShrink: 0, overflow: 'hidden' }}
+          className={`ws-panel ws-panel-left ${leftPanelCollapsed ? 'ws-panel-collapsed' : ''}`}
+          style={{ width: leftPanelCollapsed ? 32 : leftPanelWidth, flexShrink: 0 }}
         >
           {leftPanelCollapsed ? (
             <button
@@ -1411,29 +1442,34 @@ function ChatWorkspacePageContent() {
               onClick={() => setLeftPanelCollapsed(false)}
               title="Show project files"
             >
-              Files
+              <PanelLeft size={16} aria-hidden />
+              <span>Files</span>
             </button>
           ) : (
             <>
-          <div className="ws-panel-header" style={{ justifyContent: 'space-between' }}>
-            <span className="ws-panel-title">Files</span>
+          <div className="ws-panel-header">
+            <span className="ws-panel-title">
+              <Folder size={14} aria-hidden />
+              Files
+            </span>
             <button
               type="button"
+              className="ws-panel-collapse-btn"
               onClick={() => setLeftPanelCollapsed(true)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
               title="Collapse panel"
             >
-              {'\u25c4'}
+              <PanelLeft size={14} aria-hidden />
             </button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-          <div style={{ padding: '6px 8px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
+          <div className="ws-panel-body">
+          <div className="ws-file-search-wrap">
+            <Search size={14} className="ws-file-search-icon" aria-hidden />
             <input
               type="text"
               value={fileSearch}
               onChange={(e) => setFileSearch(e.target.value)}
               placeholder="Filter files..."
-              style={{ width: '100%', padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '12px', outline: 'none', background: '#f9fafb' }}
+              className="ws-file-search-input"
             />
           </div>
           <div className="file-explorer-body">
@@ -1464,13 +1500,10 @@ function ChatWorkspacePageContent() {
             </>
           )}
         </section>
-
         {/* Divider 1 */}
-        {!leftPanelCollapsed ? (
-        <div className="ws-divider" onMouseDown={() => setIsDraggingLeft(true)}>
+        <div className={`ws-divider ${leftPanelCollapsed ? 'ws-divider-hidden' : ''}`} onMouseDown={() => setIsDraggingLeft(true)}>
           <div className="ws-divider-handle" />
         </div>
-        ) : null}
 
         {/* Panel 2: Document Viewer */}
         <section
@@ -1492,15 +1525,17 @@ function ChatWorkspacePageContent() {
                     onClick={() => setActiveDocId(doc.id)}
                     title={doc.title}
                   >
-                    <span>{doc.title}</span>
+                    <FileText size={12} aria-hidden />
+                    <span className="doc-tab-label">{doc.title}</span>
                     <span
                       role="button"
                       tabIndex={0}
-                      style={{ fontSize: '11px', opacity: 0.75, padding: '0 2px', cursor: 'pointer', lineHeight: 1 }}
+                      className="doc-tab-close"
+                      aria-label={`Close ${doc.title}`}
                       onClick={(e) => { e.stopPropagation(); handleCloseTab(doc.id); }}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleCloseTab(doc.id); } }}
                     >
-                      ×
+                      <X size={12} aria-hidden />
                     </span>
                   </button>
                 ))
@@ -1517,15 +1552,13 @@ function ChatWorkspacePageContent() {
         </section>
 
         {/* Divider 2 */}
-        {!rightPanelCollapsed ? (
-        <div className="ws-divider" onMouseDown={() => setIsDraggingRight(true)}>
+        <div className={`ws-divider ${rightPanelCollapsed ? 'ws-divider-hidden' : ''}`} onMouseDown={() => setIsDraggingRight(true)}>
           <div className="ws-divider-handle" />
         </div>
-        ) : null}
 
         {/* Panel 3: AI Chat */}
         <section
-          className={`ws-panel ${rightPanelCollapsed ? 'ws-panel-collapsed' : ''}`}
+          className={`ws-panel ws-panel-right ${rightPanelCollapsed ? 'ws-panel-collapsed' : ''}`}
           style={{ width: rightPanelCollapsed ? 32 : rightPanelWidth, flexShrink: 0, minWidth: rightPanelCollapsed ? 32 : 300 }}
         >
           {rightPanelCollapsed ? (
@@ -1535,38 +1568,48 @@ function ChatWorkspacePageContent() {
               onClick={() => setRightPanelCollapsed(false)}
               title="Show AI assistant"
             >
-              Chat
+              <MessageSquare size={16} aria-hidden />
+              <span>Chat</span>
             </button>
           ) : (
             <>
-          <div className="ws-panel-header" style={{ justifyContent: 'space-between' }}>
-            <span className="ws-panel-title">Assistant</span>
+          <div className="ws-panel-header">
+            <span className="ws-panel-title">
+              <Sparkles size={14} aria-hidden />
+              Assistant
+            </span>
             <button
               type="button"
+              className="ws-panel-collapse-btn"
               onClick={() => setRightPanelCollapsed(true)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
               title="Collapse panel"
             >
-              {'\u25b6'}
+              <PanelRightClose size={14} aria-hidden />
             </button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+          <div className="ws-panel-body chat-panel-body">
 
           {/* Messages */}
           <div ref={chatScrollRef} className="chat-messages-scroll">
             {messages.length === 0 ? (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', textAlign: 'center' }}>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ask about your project</p>
-                <p style={{ fontSize: '12px', color: '#9ca3af', lineHeight: '1.6', maxWidth: '220px' }}>
+              <div className="chat-empty-state">
+                <div className="chat-empty-icon">
+                  <Sparkles size={22} aria-hidden />
+                </div>
+                <p className="chat-empty-title">Ask about your project</p>
+                <p className="chat-empty-subtitle">
                   Documents open in the viewer when cited.
                 </p>
               </div>
             ) : renderedChatMessages}
             {isTyping ? (
-              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '4px 18px 18px 18px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="chat-message-row chat-message-row-assistant">
+                <div className="chat-avatar chat-avatar-assistant" aria-hidden>
+                  <Bot size={16} />
+                </div>
+                <div className="chat-typing-bubble">
                   <div className="typing-dots"><span /><span /><span /></div>
-                  {statusMessage ? <span style={{ fontSize: '11px', color: '#9ca3af' }}>{statusMessage}</span> : null}
+                  {statusMessage ? <span className="chat-typing-status">{statusMessage}</span> : null}
                 </div>
               </div>
             ) : null}
@@ -1575,7 +1618,7 @@ function ChatWorkspacePageContent() {
           {/* Input */}
           <div className="chat-input-area">
             {messages.length === 0 ? (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '8px' }}>
+              <div className="chat-suggested-prompts">
                 {SUGGESTED_PROMPTS.slice(0, 2).map((prompt) => (
                   <button
                     key={prompt}
@@ -1592,19 +1635,22 @@ function ChatWorkspacePageContent() {
               onSubmit={(e: FormEvent) => { e.preventDefault(); void handleSendPrompt(); }}
               className="chat-input-box"
             >
-              {chatError ? <p style={{ padding: '8px 14px 0', fontSize: '12px', color: '#d83b01', lineHeight: '1.5' }}>{chatError}</p> : null}
+              {chatError ? <p className="chat-error">{chatError}</p> : null}
               <textarea
                 ref={promptInputRef}
                 onKeyDown={handlePromptKeyDown}
                 className="chat-textarea"
                 placeholder="Ask about drawings, specs, RFIs..."
+                rows={3}
               />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px 8px', gap: '6px' }}>
+              <div className="chat-input-actions">
                 <button
                   type="submit"
-                  style={{ background: '#0078d4', color: '#fff', border: 'none', borderRadius: '8px', padding: '7px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  className="chat-send-btn"
+                  title="Send message"
+                  aria-label="Send message"
                 >
-                  Send
+                  <Send size={15} aria-hidden />
                 </button>
               </div>
             </form>

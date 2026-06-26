@@ -1,6 +1,6 @@
 'use client';
 
-import { MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MouseEvent as ReactMouseEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -112,6 +112,37 @@ function rectFrom(a: Point, b: Point): { x: number; y: number; width: number; he
 function pointDistance(a: Point, b: Point): number { const dx = a.x - b.x; const dy = a.y - b.y; return Math.sqrt(dx * dx + dy * dy); }
 function polygonArea(points: Point[]): number { if (points.length < 3) return 0; let acc = 0; for (let i = 0; i < points.length; i += 1) { const j = (i + 1) % points.length; acc += points[i].x * points[j].y - points[j].x * points[i].y; } return Math.abs(acc / 2); }
 
+function pageDimensions(rotation: number): { width: number; height: number } {
+  if (rotation % 180 === 0) return { width: 612, height: 792 };
+  return { width: 792, height: 612 };
+}
+
+/** Memoized react-pdf Page — keeps canvases mounted when only the active-page highlight changes. */
+const StablePdfPage = memo(function StablePdfPage({
+  pageNumber,
+  scale,
+  rotation,
+  slotWidth,
+  slotHeight,
+}: {
+  pageNumber: number;
+  scale: number;
+  rotation: number;
+  slotWidth: number;
+  slotHeight: number;
+}) {
+  return (
+    <Page
+      pageNumber={pageNumber}
+      scale={scale}
+      rotate={rotation}
+      renderAnnotationLayer={false}
+      renderTextLayer={false}
+      loading={<div style={{ width: slotWidth, height: slotHeight, background: '#e5e7eb' }} />}
+    />
+  );
+});
+
 function triggerDownloadFromResponse(blob: Blob, filename: string): void {
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
@@ -131,7 +162,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const panStartRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const continuousScrollRef = useRef<HTMLDivElement | null>(null);
-  const pageNavIntentRef = useRef(false);
+  const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
+  const navScrollPageRef = useRef<number | null>(null);
+  const suppressIntersectionRef = useRef(false);
   const markupDragRef = useRef<{ markupId: string; handle: string; startPoint: Point; startCoords: Record<string, unknown> } | null>(null);
   const latestMarkupsRef = useRef<Markup[]>([]);
   const markupResizeDragRef = useRef<{ startY: number; startH: number } | null>(null);
@@ -176,16 +209,20 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const [markupPanelCollapsed, setMarkupPanelCollapsed] = useState(true);
 
   const scale = useMemo(() => {
-    const host = viewerRef.current;
+    const host = viewerRef.current ?? continuousScrollRef.current;
     if (!host) return zoom / 100;
     if (fitMode === 'manual') return zoom / 100;
     const w = host.clientWidth - 40;
     const h = host.clientHeight - 40;
-    const baseW = rotation % 180 === 0 ? 612 : 792;
-    const baseH = rotation % 180 === 0 ? 792 : 612;
+    const { width: baseW, height: baseH } = pageDimensions(rotation);
     if (fitMode === 'width') return Math.max(0.3, w / baseW);
     return Math.max(0.3, Math.min(w / baseW, h / baseH));
   }, [zoom, fitMode, rotation]);
+
+  const continuousPageSlotSize = useMemo(() => {
+    const { width: baseW, height: baseH } = pageDimensions(rotation);
+    return { width: Math.round(baseW * scale), height: Math.round(baseH * scale) };
+  }, [scale, rotation]);
 
   const filteredMarkups = useMemo(() => {
     const assigned = filterAssigned.trim().toLowerCase();
@@ -220,7 +257,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   }, [projectId, fileId]);
 
   const goToPage = useCallback((nextPage: number) => {
-    pageNavIntentRef.current = true;
+    navScrollPageRef.current = nextPage;
     setPage(nextPage);
   }, []);
 
@@ -243,11 +280,31 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     }
   }, [goToPage, numPages]);
 
+  const registerContinuousPageRef = useCallback((pageNumber: number) => (el: HTMLDivElement | null) => {
+    const observer = intersectionObserverRef.current;
+    const prev = pageRefs.current.get(pageNumber);
+    if (prev && observer) observer.unobserve(prev);
+    if (el) {
+      pageRefs.current.set(pageNumber, el);
+      if (observer) observer.observe(el);
+    } else {
+      pageRefs.current.delete(pageNumber);
+    }
+  }, []);
+
   useEffect(() => {
-    if (scrollMode !== 'continuous' || !continuousScrollRef.current || numPages === 0) return;
+    if (scrollMode !== 'continuous' || numPages === 0) {
+      intersectionObserverRef.current?.disconnect();
+      intersectionObserverRef.current = null;
+      return;
+    }
+
     const root = continuousScrollRef.current;
+    if (!root) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
+        if (suppressIntersectionRef.current) return;
         let maxRatio = 0;
         let mostVisible = 0;
         for (const entry of entries) {
@@ -257,24 +314,40 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
             if (p > 0) mostVisible = p;
           }
         }
-        if (mostVisible > 0) setPage(mostVisible);
+        if (mostVisible > 0) {
+          setPage((curr) => (curr === mostVisible ? curr : mostVisible));
+        }
       },
       { root, threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
     );
-      const snap = new Map(pageRefs.current);
-    for (const [, el] of snap) observer.observe(el);
-    return () => observer.disconnect();
+
+    intersectionObserverRef.current = observer;
+    for (const [, el] of pageRefs.current) observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+      if (intersectionObserverRef.current === observer) {
+        intersectionObserverRef.current = null;
+      }
+    };
   }, [scrollMode, numPages]);
 
   useEffect(() => {
-    if (scrollMode !== 'continuous' || !pageNavIntentRef.current) return;
-    pageNavIntentRef.current = false;
+    if (scrollMode !== 'continuous') return;
+    if (navScrollPageRef.current !== page) return;
+    navScrollPageRef.current = null;
     const el = pageRefs.current.get(page);
-    if (el) el.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    if (el) {
+      suppressIntersectionRef.current = true;
+      el.scrollIntoView?.({ behavior: 'auto', block: 'nearest' });
+      window.setTimeout(() => {
+        suppressIntersectionRef.current = false;
+      }, 150);
+    }
   }, [page, scrollMode]);
 
   useEffect(() => {
-    pageNavIntentRef.current = true;
+    navScrollPageRef.current = initialPage ?? 1;
     setPage(initialPage ?? 1);
     setNumPages(0);
     setSearchApplied('');
@@ -427,13 +500,6 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (!snippet) return;
     void runSearch(snippet);
   }, [citationRequest, fileId, runSearch]);
-
-  const moveHit = (dir: 1 | -1) => {
-    if (hits.length === 0) return;
-    const next = dir === 1 ? (hitIndex + 1) % hits.length : (hitIndex - 1 + hits.length) % hits.length;
-    setHitIndex(next);
-    goToPage(hits[next].pageNumber);
-  };
 
   const pagePointFromEvent = (event: ReactMouseEvent<HTMLDivElement>): Point | null => {
     const host = pageHostRef.current;
@@ -717,7 +783,6 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     document.body.removeChild(anchor);
   };
 
-  const currentHit = hitIndex >= 0 ? hits[hitIndex] : null;
   const compactControlBase = {
     border: '1px solid #d1d5db',
     borderRadius: 4,
@@ -732,7 +797,6 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, overflow: 'hidden' }}>
       <div style={{ flex: '0 0 auto', zIndex: 30, borderBottom: '1px solid #e5e7eb', boxShadow: '0 1px 2px rgba(15,23,42,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', borderBottom: '1px solid #e5e7eb', background: '#f8fafc', flexWrap: 'nowrap', overflowX: 'auto' }}>
-          <strong style={{ fontSize: 11, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={fileName}>{fileName}</strong>
           <button type="button" onClick={() => goToPage(Math.max(1, page - 1))} style={compactControlBase}>Prev</button>
           <input type="number" min={1} max={Math.max(1, numPages)} value={page} onChange={(e) => goToPage(clamp(toPositiveInt(e.target.value, page), 1, Math.max(1, numPages || 1)))} style={{ ...compactControlBase, width: 46 }} />
           <span style={{ fontSize: 10, color: '#6b7280' }}>of {numPages || '--'}</span>
@@ -763,18 +827,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           <button type="button" onClick={() => void exportComments('xlsx')} style={compactControlBase}>Excel</button>
         </div>
         ) : null}
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', background: '#fff', flexWrap: 'nowrap', overflowX: 'auto', borderTop: showMarkupTools ? '1px solid #e5e7eb' : undefined }}>
-          <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void runSearch(); } }} placeholder="Search this PDF" style={{ ...compactControlBase, width: 170 }} />
-          <button type="button" onClick={() => void runSearch()} style={compactControlBase}>{searchBusy ? '...' : 'Find'}</button>
-          <button type="button" onClick={() => moveHit(-1)} style={compactControlBase}>Prev Hit</button>
-          <button type="button" onClick={() => moveHit(1)} style={compactControlBase}>Next Hit</button>
-          <span style={{ fontSize: 10, color: '#6b7280' }}>{hits.length > 0 ? `${hitIndex + 1}/${hits.length}` : '0'}</span>
-        </div>
       </div>
-
-      {searchMsg ? <div style={{ padding: '6px 10px', borderBottom: '1px solid #e5e7eb', background: '#fffbeb', color: '#92400e', fontSize: 12 }}>{searchMsg}</div> : null}
-      {currentHit ? <div style={{ padding: '6px 10px', borderBottom: '1px solid #e5e7eb', background: '#f8fafc', color: '#334155', fontSize: 12 }}>p.{currentHit.pageNumber}: {currentHit.snippet}</div> : null}
 
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <div style={{ width: sidebarCollapsed ? 40 : 250, borderRight: '1px solid #e5e7eb', background: '#fff', display: 'flex', flexDirection: 'column' }}>
@@ -911,21 +964,25 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                 </div>
               </div>
             ) : (
-              <div ref={continuousScrollRef} style={{ position: 'absolute', inset: 0, overflow: 'auto', padding: '12px 0', background: '#f3f4f6', display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+              <div ref={continuousScrollRef} className="pdf-continuous-scroll" style={{ position: 'absolute', inset: 0, overflow: 'auto', padding: '12px 0', background: '#f3f4f6', display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
                 {Array.from({ length: numPages }, (_, i) => i + 1).map((p) => (
                   <div
                     key={`cont-${p}`}
                     data-page={p}
-                    ref={(el) => { if (el) pageRefs.current.set(p, el as HTMLDivElement); else pageRefs.current.delete(p); }}
-                    style={{ position: 'relative', boxShadow: p === page ? '0 0 0 2px #2563eb, 0 1px 4px rgba(0,0,0,.15)' : '0 1px 4px rgba(0,0,0,.15)' }}
+                    ref={registerContinuousPageRef(p)}
+                    className={`pdf-continuous-page${p === page ? ' pdf-continuous-page--active' : ''}`}
+                    style={{
+                      position: 'relative',
+                      minWidth: continuousPageSlotSize.width,
+                      minHeight: continuousPageSlotSize.height,
+                    }}
                   >
-                    <Page
+                    <StablePdfPage
                       pageNumber={p}
                       scale={scale}
-                      rotate={rotation}
-                      renderAnnotationLayer={false}
-                      renderTextLayer={false}
-                      loading={<div style={{ width: Math.round(612 * scale), height: Math.round(792 * scale), background: '#e5e7eb' }} />}
+                      rotation={rotation}
+                      slotWidth={continuousPageSlotSize.width}
+                      slotHeight={continuousPageSlotSize.height}
                     />
                     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
                       {markups.filter((m) => m.pageNumber === p).map((m) => renderMarkup(m, p))}

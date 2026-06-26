@@ -13,6 +13,7 @@
   "dependencies": {
     "@contractor/shared": "workspace:*",
     "framer-motion": "^12.38.0",
+    "lucide-react": "^1.21.0",
     "next": "^14.2.0",
     "pdfjs-dist": "4.4.168",
     "react": "^18.3.0",

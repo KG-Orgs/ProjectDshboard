@@ -59,7 +59,7 @@ describe("Workspace chat interactions", () => {
     window.localStorage.clear();
   });
 
-  it("opens cited PDFs and keeps side panels collapsed by default", async () => {
+  it("opens cited PDFs with chat expanded by default", async () => {
     const user = userEvent.setup();
 
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -147,23 +147,19 @@ describe("Workspace chat interactions", () => {
     expect(screen.queryByPlaceholderText("Search in document")).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Files" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Chat" }).length).toBeGreaterThan(0);
+    expect(screen.getByPlaceholderText("Ask about drawings, specs, RFIs...")).toBeInTheDocument();
 
-    const expandChat =
-      screen.getAllByRole("button", { name: "Chat" }).find((btn) => btn.classList.contains("ws-panel-expand-btn"))
-      ?? screen.getAllByRole("button", { name: "Chat" })[0];
-    await user.click(expandChat);
-
-    const promptBox = await screen.findByPlaceholderText("Ask about drawings, specs, RFIs...");
+    const promptBox = screen.getByPlaceholderText("Ask about drawings, specs, RFIs...");
     await user.type(promptBox, "Show me expansion joint requirements");
-    await user.click(screen.getByRole("button", { name: "Send" }));
+    await user.click(screen.getByRole("button", { name: "Send message" }));
 
     const citationChip = await screen.findByRole("button", {
-      name: /\[DOC\]\s*spec\.pdf/i,
+      name: /spec\.pdf · p\. 27/i,
     });
     await user.click(citationChip);
 
     await waitFor(() => {
-      expect(screen.getByText("spec.pdf")).toBeInTheDocument();
+      expect(screen.getAllByText("spec.pdf").length).toBeGreaterThan(0);
     });
   });
 
