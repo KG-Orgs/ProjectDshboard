@@ -1190,7 +1190,9 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
       type,
       coordinates:
         overrides.coordinates ??
-        (type === 'arrow' || type === 'line'
+        (type === 'callout'
+          ? { anchorX: 0.15, anchorY: 0.2, x: 0.5, y: 0.1, width: 0.2, height: 0.1 }
+          : type === 'arrow' || type === 'line'
           ? { x1: 0.1, y1: 0.1, x2: 0.5, y2: 0.5 }
           : { x: 0.1, y: 0.1, width: 0.3, height: 0.2 }),
       measurement: overrides.measurement,
@@ -1521,6 +1523,129 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('spinbutton')).toHaveValue(2);
+    });
+  });
+
+  it('drawing a callout creates markup with anchor and text box coordinates', async () => {
+    let capturedPost: Record<string, unknown> = {};
+
+    vi.stubGlobal(
+      'fetch',
+      makeDrawFetch([], (body) => {
+        capturedPost = body;
+        return makeDrawingMarkup('callout', {
+          id: 'new-callout',
+          pageNumber: 1,
+          coordinates: body.coordinates as Record<string, unknown>,
+          comment: '',
+        });
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-draw"
+        fileId="file-draw"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'callout' }));
+
+    const pageHost = await getPageHost();
+    mockPageHostRect(pageHost);
+
+    fireEvent.mouseDown(pageHost, { clientX: 200, clientY: 200 });
+    fireEvent.mouseMove(pageHost, { clientX: 500, clientY: 350 });
+    await act(async () => {
+      fireEvent.mouseUp(pageHost);
+    });
+
+    expandMarkupPanel();
+
+    await waitFor(() => {
+      expect(capturedPost.type).toBe('callout');
+      const coords = capturedPost.coordinates as Record<string, number>;
+      expect(coords.anchorX).toBeCloseTo(0.2, 2);
+      expect(coords.anchorY).toBeCloseTo(0.25, 2);
+      expect(coords.x).toBeCloseTo(0.2, 2);
+      expect(coords.y).toBeCloseTo(0.25, 2);
+      expect(coords.width).toBeCloseTo(0.3, 2);
+      expect(coords.height).toBeCloseTo(0.1875, 2);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('cell', { name: 'callout' })).toBeInTheDocument();
+    });
+  });
+
+  it('selected callout shows anchor and resize handles', async () => {
+    const markup = makeDrawingMarkup('callout', {
+      id: 'callout-1',
+      coordinates: { anchorX: 0.2, anchorY: 0.3, x: 0.5, y: 0.1, width: 0.2, height: 0.12 },
+      comment: 'Verify footing',
+    });
+
+    await renderViewer([markup]);
+    enableSinglePageMode();
+    await waitFor(() => screen.getByRole('cell', { name: 'callout' }));
+    fireEvent.click(screen.getByRole('cell', { name: 'callout' }).closest('tr')!);
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'select' }));
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-handle="anchor"]')).toBeInTheDocument();
+      expect(document.querySelector('[data-handle="move"]')).toBeInTheDocument();
+      expect(document.querySelector('[data-handle="se"]')).toBeInTheDocument();
+    });
+  });
+
+  it('editing callout text on canvas PATCHes comment on blur', async () => {
+    const markup = makeDrawingMarkup('callout', {
+      id: 'callout-edit',
+      coordinates: { anchorX: 0.1, anchorY: 0.2, x: 0.4, y: 0.1, width: 0.25, height: 0.1 },
+      comment: '',
+    });
+
+    let lastPatch: Record<string, unknown> = {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/markups') && (!init?.method || init.method === 'GET')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [markup] }) } as Response;
+        }
+        if (init?.method === 'PATCH') {
+          lastPatch = JSON.parse(String(init.body)) as Record<string, unknown>;
+          return { ok: true, status: 200, json: async () => ({ markup: { ...markup, ...lastPatch } }) } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-draw"
+        fileId="file-draw"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    expandMarkupPanel();
+    await waitFor(() => screen.getByRole('cell', { name: 'callout' }));
+    fireEvent.click(screen.getByRole('cell', { name: 'callout' }).closest('tr')!);
+    enableSinglePageMode();
+
+    const textarea = await screen.findByPlaceholderText('Callout text');
+    fireEvent.change(textarea, { target: { value: 'Check rebar spacing' } });
+    fireEvent.blur(textarea);
+
+    await waitFor(() => {
+      expect(lastPatch.comment).toBe('Check rebar spacing');
     });
   });
 });
@@ -1975,6 +2100,65 @@ describe('ConstructionPdfViewer – continuous scroll markup interaction', () =>
     });
 
     expect(document.querySelectorAll('[data-page]').length).toBe(5);
+  });
+
+  it('creates a callout on the correct page in continuous scroll mode', async () => {
+    let capturedPost: Record<string, unknown> = {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/markups') && (!init?.method || init.method === 'GET')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [] }) } as Response;
+        }
+        if (init?.method === 'POST') {
+          capturedPost = JSON.parse(String(init.body)) as Record<string, unknown>;
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              markup: makeMarkup({
+                id: 'created-callout',
+                type: 'callout',
+                pageNumber: Number(capturedPost.pageNumber),
+                coordinates: capturedPost.coordinates as Record<string, unknown>,
+              }),
+            }),
+          } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'callout' }));
+
+    const page3Layer = getContinuousPageLayer(3);
+    mockLayerRect(page3Layer);
+
+    fireEvent.mouseDown(page3Layer, { clientX: 150, clientY: 150 });
+    fireEvent.mouseMove(page3Layer, { clientX: 450, clientY: 300 });
+    await act(async () => {
+      fireEvent.mouseUp(page3Layer);
+    });
+
+    await waitFor(() => {
+      expect(capturedPost.type).toBe('callout');
+      expect(capturedPost.pageNumber).toBe(3);
+      const coords = capturedPost.coordinates as Record<string, number>;
+      expect(coords.anchorX).toBeCloseTo(0.15, 2);
+      expect(coords.width).toBeGreaterThan(0.02);
+    });
   });
 });
 

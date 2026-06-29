@@ -25,7 +25,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 
 type SidebarTab = 'thumbnails' | 'bookmarks' | 'markups';
 type FitMode = 'manual' | 'width' | 'page';
-type Tool = 'select' | 'pan' | 'cloud' | 'arrow' | 'text' | 'highlight' | 'line' | 'rectangle' | 'calibrate' | 'length' | 'area' | 'count';
+type Tool = 'select' | 'pan' | 'cloud' | 'arrow' | 'callout' | 'text' | 'highlight' | 'line' | 'rectangle' | 'calibrate' | 'length' | 'area' | 'count';
 type MarkupType = Exclude<Tool, 'select' | 'pan'>;
 
 const CATEGORIES = ['RFI', 'Design Conflict', 'QC Issue', 'Field Verify', 'Change Order Potential', 'Submittal Comment', 'Safety Issue', 'General Comment'] as const;
@@ -127,6 +127,18 @@ function clampBoundingBox(box?: { x: number; y: number; width: number; height: n
 function rectFrom(a: Point, b: Point): { x: number; y: number; width: number; height: number } { return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y) }; }
 function pointDistance(a: Point, b: Point): number { const dx = a.x - b.x; const dy = a.y - b.y; return Math.sqrt(dx * dx + dy * dy); }
 function polygonArea(points: Point[]): number { if (points.length < 3) return 0; let acc = 0; for (let i = 0; i < points.length; i += 1) { const j = (i + 1) % points.length; acc += points[i].x * points[j].y - points[j].x * points[i].y; } return Math.abs(acc / 2); }
+function isCalloutCoords(c: Record<string, unknown>): boolean {
+  return typeof c.anchorX === 'number' || typeof c.anchorY === 'number';
+}
+function calloutLeaderStart(box: { x: number; y: number; width: number; height: number }, anchor: Point): Point {
+  const cx = clamp(anchor.x, box.x, box.x + box.width);
+  const cy = clamp(anchor.y, box.y, box.y + box.height);
+  const inside = anchor.x >= box.x && anchor.x <= box.x + box.width && anchor.y >= box.y && anchor.y <= box.y + box.height;
+  if (inside) {
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  }
+  return { x: cx, y: cy };
+}
 
 function pageDimensions(rotation: number): { width: number; height: number } {
   return pageDimensionsFromRotation(rotation);
@@ -628,6 +640,18 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           if (m.id !== drag.markupId) return m;
           const c = drag.startCoords;
           if (drag.handle === 'move') {
+            if (isCalloutCoords(c)) {
+              return {
+                ...m,
+                coordinates: {
+                  ...c,
+                  anchorX: clamp(toNum(c.anchorX) + dx, 0, 1),
+                  anchorY: clamp(toNum(c.anchorY) + dy, 0, 1),
+                  x: clamp(toNum(c.x) + dx, 0, 1 - toNum(c.width)),
+                  y: clamp(toNum(c.y) + dy, 0, 1 - toNum(c.height)),
+                },
+              };
+            }
             if ('width' in c && 'height' in c) {
               return { ...m, coordinates: { ...c, x: clamp(toNum(c.x) + dx, 0, 1 - toNum(c.width)), y: clamp(toNum(c.y) + dy, 0, 1 - toNum(c.height)) } };
             }
@@ -635,6 +659,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
               return { ...m, coordinates: { x1: clamp(toNum(c.x1) + dx, 0, 1), y1: clamp(toNum(c.y1) + dy, 0, 1), x2: clamp(toNum(c.x2) + dx, 0, 1), y2: clamp(toNum(c.y2) + dy, 0, 1) } };
             }
             return { ...m, coordinates: { ...c, x: clamp(toNum(c.x) + dx, 0, 1), y: clamp(toNum(c.y) + dy, 0, 1) } };
+          }
+          if (drag.handle === 'anchor') {
+            return { ...m, coordinates: { ...c, anchorX: clamp(toNum(c.anchorX) + dx, 0, 1), anchorY: clamp(toNum(c.anchorY) + dy, 0, 1) } };
           }
           if (drag.handle === 'nw') {
             const nx = clamp(toNum(c.x) + dx, 0, toNum(c.x) + toNum(c.width) - 0.005);
@@ -749,6 +776,18 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       }
     }
 
+    if (tool === 'callout') {
+      const rect = rectFrom(startPos, endPos);
+      if (rect.width > 0.02 && rect.height > 0.02) {
+        await createMarkup({
+          pageNumber: targetPage,
+          type: 'callout',
+          coordinates: { anchorX: startPos.x, anchorY: startPos.y, ...rect },
+          comment: '',
+        });
+      }
+    }
+
     if (tool === 'arrow' || tool === 'line') {
       const coords = { x1: startPos.x, y1: startPos.y, x2: endPos.x, y2: endPos.y };
       await createMarkup({ pageNumber: targetPage, type: tool, coordinates: coords });
@@ -849,6 +888,20 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           return <div style={{ position: 'absolute', left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.width * 100}%`, height: `${r.height * 100}%`, border: '2px dashed #2563eb', background: tool === 'highlight' ? 'rgba(250,204,21,.35)' : 'transparent' }} />;
         })() : null}
 
+        {draftStart && draftCurrent && draftPage === pageNum && tool === 'callout' ? (() => {
+          const r = rectFrom(draftStart, draftCurrent);
+          const leaderStart = calloutLeaderStart(r, draftStart);
+          return (
+            <>
+              <svg style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }}>
+                <line x1={`${leaderStart.x * 100}%`} y1={`${leaderStart.y * 100}%`} x2={`${draftStart.x * 100}%`} y2={`${draftStart.y * 100}%`} stroke="#f97316" strokeWidth={2} />
+                <circle cx={`${draftStart.x * 100}%`} cy={`${draftStart.y * 100}%`} r={4} fill="#f97316" />
+              </svg>
+              <div style={{ position: 'absolute', left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.width * 100}%`, height: `${r.height * 100}%`, border: '2px dashed #f97316', background: 'rgba(255,255,255,.85)' }} />
+            </>
+          );
+        })() : null}
+
         {draftStart && draftCurrent && draftPage === pageNum && (tool === 'arrow' || tool === 'line' || tool === 'length' || tool === 'calibrate') ? (
           <svg style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
             {tool === 'arrow' ? (
@@ -920,6 +973,68 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       return (
         <div key={markup.id} style={{ position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%`, border: markup.type === 'cloud' ? `2px dashed ${selected ? '#dc2626' : '#fb923c'}` : `2px solid ${selected ? '#2563eb' : '#06b6d4'}`, borderRadius: markup.type === 'cloud' ? 16 : 4, background: markup.type === 'highlight' ? 'rgba(250,204,21,.35)' : 'transparent', pointerEvents: 'auto' }} onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}>
           {markup.type === 'text' ? <div style={{ fontSize: 11, color: '#111827', background: 'rgba(255,255,255,.8)', padding: '2px 4px' }}>{markup.comment || 'Text'}</div> : null}
+        </div>
+      );
+    }
+
+    if (markup.type === 'callout') {
+      const anchorX = toNum(markup.coordinates.anchorX);
+      const anchorY = toNum(markup.coordinates.anchorY);
+      const x = toNum(markup.coordinates.x);
+      const y = toNum(markup.coordinates.y);
+      const w = Math.max(0.02, toNum(markup.coordinates.width, 0.15));
+      const h = Math.max(0.02, toNum(markup.coordinates.height, 0.08));
+      const box = { x, y, width: w, height: h };
+      const leaderStart = calloutLeaderStart(box, { x: anchorX, y: anchorY });
+      const strokeColor = selected ? '#ea580c' : '#f97316';
+      return (
+        <div key={markup.id} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <svg style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'auto' }} onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}>
+            <line x1={`${leaderStart.x * 100}%`} y1={`${leaderStart.y * 100}%`} x2={`${anchorX * 100}%`} y2={`${anchorY * 100}%`} stroke={strokeColor} strokeWidth={selected ? 3 : 2} />
+            <circle cx={`${anchorX * 100}%`} cy={`${anchorY * 100}%`} r={selected ? 5 : 4} fill={strokeColor} />
+          </svg>
+          <div
+            style={{
+              position: 'absolute',
+              left: `${x * 100}%`,
+              top: `${y * 100}%`,
+              width: `${w * 100}%`,
+              minHeight: `${h * 100}%`,
+              border: `2px solid ${strokeColor}`,
+              borderRadius: 4,
+              background: 'rgba(255,255,255,.92)',
+              pointerEvents: 'auto',
+              boxSizing: 'border-box',
+            }}
+            onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+          >
+            {selected ? (
+              <textarea
+                value={markup.comment ?? ''}
+                placeholder="Callout text"
+                onChange={(e) => setMarkups((curr) => curr.map((item) => (item.id === markup.id ? { ...item, comment: e.target.value } : item)))}
+                onBlur={(e) => void saveMarkup(markup.id, { comment: e.target.value })}
+                onMouseDown={(e) => e.stopPropagation()}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  minHeight: 48,
+                  border: 'none',
+                  background: 'transparent',
+                  resize: 'none',
+                  fontSize: 11,
+                  color: '#111827',
+                  padding: '4px 6px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            ) : (
+              <div style={{ fontSize: 11, color: '#111827', padding: '4px 6px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                {markup.comment?.trim() ? markup.comment : 'Callout'}
+              </div>
+            )}
+          </div>
         </div>
       );
     }
@@ -1009,6 +1124,38 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       );
     }
 
+    if (markup.type === 'callout') {
+      const anchorX = toNum(markup.coordinates.anchorX);
+      const anchorY = toNum(markup.coordinates.anchorY);
+      const x = toNum(markup.coordinates.x);
+      const y = toNum(markup.coordinates.y);
+      const w = Math.max(0.02, toNum(markup.coordinates.width, 0.15));
+      const h = Math.max(0.02, toNum(markup.coordinates.height, 0.08));
+      const corners: Array<[string, number, number]> = [['nw', x, y], ['ne', x + w, y], ['sw', x, y + h], ['se', x + w, y + h]];
+      return (
+        <>
+          <div
+            data-handle="move"
+            style={{ position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%`, cursor: 'move', pointerEvents: 'auto', zIndex: 10 }}
+            onMouseDown={startDrag('move')}
+          />
+          <div
+            data-handle="anchor"
+            style={{ position: 'absolute', left: `calc(${anchorX * 100}% - 6px)`, top: `calc(${anchorY * 100}% - 6px)`, width: 12, height: 12, borderRadius: '50%', background: '#f97316', border: '2px solid #fff', cursor: 'crosshair', pointerEvents: 'auto', zIndex: 11 }}
+            onMouseDown={startDrag('anchor')}
+          />
+          {corners.map(([corner, cx, cy]) => (
+            <div
+              key={corner}
+              data-handle={corner}
+              style={{ position: 'absolute', left: `calc(${cx * 100}% - ${HS}px)`, top: `calc(${cy * 100}% - ${HS}px)`, width: HANDLE, height: HANDLE, background: '#2563eb', border: '2px solid #fff', borderRadius: 2, cursor: `${corner}-resize`, pointerEvents: 'auto', zIndex: 11 }}
+              onMouseDown={startDrag(corner)}
+            />
+          ))}
+        </>
+      );
+    }
+
     if (markup.type === 'arrow' || markup.type === 'line' || markup.type === 'length' || markup.type === 'calibrate') {
       const x1 = toNum(markup.coordinates.x1);
       const y1 = toNum(markup.coordinates.y1);
@@ -1084,7 +1231,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
         {showMarkupTools ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', background: '#fff', flexWrap: 'nowrap', overflowX: 'auto' }}>
-          {(['select', 'cloud', 'arrow', 'text', 'highlight', 'line', 'rectangle', 'calibrate', 'length', 'area', 'count'] as Tool[]).map((t) => (
+          {(['select', 'cloud', 'arrow', 'callout', 'text', 'highlight', 'line', 'rectangle', 'calibrate', 'length', 'area', 'count'] as Tool[]).map((t) => (
             <button key={t} type="button" onClick={() => setTool(t)} style={{ ...compactControlBase, background: tool === t ? '#dbeafe' : '#fff', textTransform: 'capitalize' }}>{t}</button>
           ))}
           <select value={unit} onChange={(e) => setUnit(e.target.value as (typeof UNITS)[number])} style={compactControlBase}>{UNITS.map((u) => <option key={u} value={u}>{u}</option>)}</select>
