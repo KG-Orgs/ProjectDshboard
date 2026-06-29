@@ -25,10 +25,23 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 
 type SidebarTab = 'thumbnails' | 'bookmarks' | 'markups';
 type FitMode = 'manual' | 'width' | 'page';
-type Tool = 'select' | 'pan' | 'cloud' | 'arrow' | 'callout' | 'text' | 'highlight' | 'line' | 'rectangle' | 'calibrate' | 'length' | 'area' | 'count';
+type Tool = 'select' | 'pan' | 'cloud' | 'arrow' | 'callout' | 'stamp' | 'text' | 'highlight' | 'line' | 'rectangle' | 'calibrate' | 'length' | 'area' | 'count';
 type MarkupType = Exclude<Tool, 'select' | 'pan'>;
 
 const CATEGORIES = ['RFI', 'Design Conflict', 'QC Issue', 'Field Verify', 'Change Order Potential', 'Submittal Comment', 'Safety Issue', 'General Comment'] as const;
+const CONSTRUCTION_STAMPS = [
+  'APPROVED',
+  'REVISE & RESUBMIT',
+  'REJECTED',
+  'RFI',
+  'FOR CONSTRUCTION',
+  'VOID',
+  'REVIEWED',
+  'NOT APPROVED',
+  'APPROVED AS NOTED',
+  'RECORD COPY',
+] as const;
+type ConstructionStampLabel = (typeof CONSTRUCTION_STAMPS)[number];
 const STATUSES = ['Open', 'In Review', 'Answered', 'Closed', 'Void'] as const;
 const UNITS = ['ft', 'in', 'yd', 'sf', 'cy', 'm', 'mm'] as const;
 
@@ -130,6 +143,23 @@ function polygonArea(points: Point[]): number { if (points.length < 3) return 0;
 function isCalloutCoords(c: Record<string, unknown>): boolean {
   return typeof c.anchorX === 'number' || typeof c.anchorY === 'number';
 }
+const DEFAULT_STAMP_SIZE = { width: 0.22, height: 0.08 } as const;
+
+function stampLabelFromMarkup(markup: Pick<Markup, 'coordinates' | 'comment'>): string {
+  const fromCoords = markup.coordinates.stampLabel;
+  if (typeof fromCoords === 'string' && fromCoords.trim()) return fromCoords;
+  if (typeof markup.comment === 'string' && markup.comment.trim()) return markup.comment;
+  return 'STAMP';
+}
+
+function stampVariantClass(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 function calloutLeaderStart(box: { x: number; y: number; width: number; height: number }, anchor: Point): Point {
   const cx = clamp(anchor.x, box.x, box.x + box.width);
   const cy = clamp(anchor.y, box.y, box.y + box.height);
@@ -207,6 +237,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [showMarkupTools, setShowMarkupTools] = useState(false);
   const [tool, setTool] = useState<Tool>('pan');
+  const [selectedStampLabel, setSelectedStampLabel] = useState<ConstructionStampLabel>(CONSTRUCTION_STAMPS[0]);
   const [unit, setUnit] = useState<(typeof UNITS)[number]>('ft');
   const [isPanning, setIsPanning] = useState(false);
 
@@ -465,7 +496,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     setMarkups((curr) => curr.map((m) => m.id === markupId ? payload.markup! : m));
   }, [projectId, fileId]);
 
-  const createMarkup = useCallback(async (input: { pageNumber: number; type: MarkupType; coordinates: Record<string, unknown>; measurement?: Markup['measurement'] }) => {
+  const createMarkup = useCallback(async (input: { pageNumber: number; type: MarkupType; coordinates: Record<string, unknown>; measurement?: Markup['measurement']; comment?: string }) => {
     const appendLocalMarkup = () => {
       const now = new Date().toISOString();
       const localMarkup: Markup = {
@@ -478,6 +509,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
         measurement: input.measurement,
         category: 'General Comment',
         status: 'Open',
+        comment: input.comment,
         createdBy: 'You',
         createdAt: now,
         updatedAt: now,
@@ -788,6 +820,27 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       }
     }
 
+    if (tool === 'stamp') {
+      let rect = rectFrom(startPos, endPos);
+      if (rect.width < 0.005 && rect.height < 0.005) {
+        const { width: defaultW, height: defaultH } = DEFAULT_STAMP_SIZE;
+        rect = {
+          x: clamp(startPos.x - defaultW / 2, 0, 1 - defaultW),
+          y: clamp(startPos.y - defaultH / 2, 0, 1 - defaultH),
+          width: defaultW,
+          height: defaultH,
+        };
+      }
+      if (rect.width >= 0.02 && rect.height >= 0.02) {
+        await createMarkup({
+          pageNumber: targetPage,
+          type: 'stamp',
+          coordinates: { ...rect, stampLabel: selectedStampLabel },
+          comment: selectedStampLabel,
+        });
+      }
+    }
+
     if (tool === 'arrow' || tool === 'line') {
       const coords = { x1: startPos.x, y1: startPos.y, x2: endPos.x, y2: endPos.y };
       await createMarkup({ pageNumber: targetPage, type: tool, coordinates: coords });
@@ -899,6 +952,26 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
               </svg>
               <div style={{ position: 'absolute', left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.width * 100}%`, height: `${r.height * 100}%`, border: '2px dashed #f97316', background: 'rgba(255,255,255,.85)' }} />
             </>
+          );
+        })() : null}
+
+        {draftStart && draftCurrent && draftPage === pageNum && tool === 'stamp' ? (() => {
+          const r = rectFrom(draftStart, draftCurrent);
+          const preview = r.width < 0.005 && r.height < 0.005
+            ? {
+                x: clamp(draftStart.x - DEFAULT_STAMP_SIZE.width / 2, 0, 1 - DEFAULT_STAMP_SIZE.width),
+                y: clamp(draftStart.y - DEFAULT_STAMP_SIZE.height / 2, 0, 1 - DEFAULT_STAMP_SIZE.height),
+                width: DEFAULT_STAMP_SIZE.width,
+                height: DEFAULT_STAMP_SIZE.height,
+              }
+            : r;
+          return (
+            <div
+              className={`pdf-markup-stamp pdf-markup-stamp--draft pdf-markup-stamp--${stampVariantClass(selectedStampLabel)}`}
+              style={{ position: 'absolute', left: `${preview.x * 100}%`, top: `${preview.y * 100}%`, width: `${preview.width * 100}%`, height: `${preview.height * 100}%` }}
+            >
+              <span className="pdf-markup-stamp__label">{selectedStampLabel}</span>
+            </div>
           );
         })() : null}
 
@@ -1039,6 +1112,24 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       );
     }
 
+    if (markup.type === 'stamp') {
+      const x = toNum(markup.coordinates.x);
+      const y = toNum(markup.coordinates.y);
+      const w = Math.max(0.02, toNum(markup.coordinates.width, DEFAULT_STAMP_SIZE.width));
+      const h = Math.max(0.02, toNum(markup.coordinates.height, DEFAULT_STAMP_SIZE.height));
+      const label = stampLabelFromMarkup(markup);
+      return (
+        <div
+          key={markup.id}
+          className={`pdf-markup-stamp pdf-markup-stamp--${stampVariantClass(label)}${selected ? ' pdf-markup-stamp--selected' : ''}`}
+          style={{ position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%` }}
+          onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+        >
+          <span className="pdf-markup-stamp__label">{label}</span>
+        </div>
+      );
+    }
+
     if (markup.type === 'arrow' || markup.type === 'line' || markup.type === 'length' || markup.type === 'calibrate') {
       const x1 = toNum(markup.coordinates.x1);
       const y1 = toNum(markup.coordinates.y1);
@@ -1099,7 +1190,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       markupDragRef.current = { markupId: markup.id, handle, startPoint: p, startCoords: { ...markup.coordinates } };
     };
 
-    if (markup.type === 'rectangle' || markup.type === 'highlight' || markup.type === 'cloud' || markup.type === 'text') {
+    if (markup.type === 'rectangle' || markup.type === 'highlight' || markup.type === 'cloud' || markup.type === 'text' || markup.type === 'stamp') {
       const x = toNum(markup.coordinates.x);
       const y = toNum(markup.coordinates.y);
       const w = Math.max(0.002, toNum(markup.coordinates.width, 0.1));
@@ -1231,9 +1322,21 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
         {showMarkupTools ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', background: '#fff', flexWrap: 'nowrap', overflowX: 'auto' }}>
-          {(['select', 'cloud', 'arrow', 'callout', 'text', 'highlight', 'line', 'rectangle', 'calibrate', 'length', 'area', 'count'] as Tool[]).map((t) => (
+          {(['select', 'cloud', 'arrow', 'callout', 'stamp', 'text', 'highlight', 'line', 'rectangle', 'calibrate', 'length', 'area', 'count'] as Tool[]).map((t) => (
             <button key={t} type="button" onClick={() => setTool(t)} style={{ ...compactControlBase, background: tool === t ? '#dbeafe' : '#fff', textTransform: 'capitalize' }}>{t}</button>
           ))}
+          {tool === 'stamp' ? (
+            <select
+              aria-label="Stamp preset"
+              value={selectedStampLabel}
+              onChange={(e) => setSelectedStampLabel(e.target.value as ConstructionStampLabel)}
+              style={{ ...compactControlBase, maxWidth: 180 }}
+            >
+              {CONSTRUCTION_STAMPS.map((label) => (
+                <option key={label} value={label}>{label}</option>
+              ))}
+            </select>
+          ) : null}
           <select value={unit} onChange={(e) => setUnit(e.target.value as (typeof UNITS)[number])} style={compactControlBase}>{UNITS.map((u) => <option key={u} value={u}>{u}</option>)}</select>
           {documentScale ? (
             <span className="pdf-scale-indicator" title="Drawing scale from calibration">{formatScaleIndicator(documentScale)}</span>

@@ -1582,6 +1582,147 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
     });
   });
 
+  it('click-placing a stamp creates markup with default size and stampLabel', async () => {
+    let capturedPost: Record<string, unknown> = {};
+
+    vi.stubGlobal(
+      'fetch',
+      makeDrawFetch([], (body) => {
+        capturedPost = body;
+        return makeDrawingMarkup('stamp', {
+          id: 'new-stamp',
+          pageNumber: 1,
+          coordinates: body.coordinates as Record<string, unknown>,
+          comment: String(body.comment ?? ''),
+        });
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-draw"
+        fileId="file-draw"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'stamp' }));
+
+    const pageHost = await getPageHost();
+    mockPageHostRect(pageHost);
+
+    fireEvent.mouseDown(pageHost, { clientX: 500, clientY: 400 });
+    await act(async () => {
+      fireEvent.mouseUp(pageHost);
+    });
+
+    expandMarkupPanel();
+
+    await waitFor(() => {
+      expect(capturedPost.type).toBe('stamp');
+      expect(capturedPost.comment).toBe('APPROVED');
+      const coords = capturedPost.coordinates as Record<string, unknown>;
+      expect(coords.stampLabel).toBe('APPROVED');
+      expect(coords.width).toBeCloseTo(0.22, 2);
+      expect(coords.height).toBeCloseTo(0.08, 2);
+      expect(coords.x).toBeCloseTo(0.39, 2);
+      expect(coords.y).toBeCloseTo(0.46, 2);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('cell', { name: 'stamp' })).toBeInTheDocument();
+    });
+  });
+
+  it('drag-sizing a stamp uses selected preset label', async () => {
+    let capturedPost: Record<string, unknown> = {};
+
+    vi.stubGlobal(
+      'fetch',
+      makeDrawFetch([], (body) => {
+        capturedPost = body;
+        return makeDrawingMarkup('stamp', {
+          id: 'drag-stamp',
+          coordinates: body.coordinates as Record<string, unknown>,
+          comment: String(body.comment ?? ''),
+        });
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-draw"
+        fileId="file-draw"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'stamp' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Stamp preset' }), {
+      target: { value: 'FOR CONSTRUCTION' },
+    });
+
+    const pageHost = await getPageHost();
+    mockPageHostRect(pageHost);
+
+    fireEvent.mouseDown(pageHost, { clientX: 200, clientY: 200 });
+    fireEvent.mouseMove(pageHost, { clientX: 600, clientY: 360 });
+    await act(async () => {
+      fireEvent.mouseUp(pageHost);
+    });
+
+    await waitFor(() => {
+      expect(capturedPost.type).toBe('stamp');
+      expect(capturedPost.comment).toBe('FOR CONSTRUCTION');
+      const coords = capturedPost.coordinates as Record<string, unknown>;
+      expect(coords.stampLabel).toBe('FOR CONSTRUCTION');
+      expect(coords.width).toBeCloseTo(0.4, 2);
+      expect(coords.height).toBeCloseTo(0.2, 2);
+    });
+  });
+
+  it('selected stamp shows move and resize handles', async () => {
+    const markup = makeDrawingMarkup('stamp', {
+      id: 'stamp-1',
+      coordinates: { x: 0.3, y: 0.2, width: 0.25, height: 0.1, stampLabel: 'RFI' },
+      comment: 'RFI',
+    });
+
+    await renderViewer([markup]);
+    enableSinglePageMode();
+    await waitFor(() => screen.getByRole('cell', { name: 'stamp' }));
+    fireEvent.click(screen.getByRole('cell', { name: 'stamp' }).closest('tr')!);
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'select' }));
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-handle="move"]')).toBeInTheDocument();
+      expect(document.querySelector('[data-handle="se"]')).toBeInTheDocument();
+    });
+  });
+
+  it('renders stamp label on canvas', async () => {
+    const markup = makeDrawingMarkup('stamp', {
+      id: 'stamp-render',
+      coordinates: { x: 0.1, y: 0.1, width: 0.2, height: 0.08, stampLabel: 'VOID' },
+      comment: 'VOID',
+    });
+
+    await renderViewer([markup]);
+    enableSinglePageMode();
+
+    await waitFor(() => {
+      expect(screen.getByText('VOID')).toBeInTheDocument();
+      expect(document.querySelector('.pdf-markup-stamp--void')).toBeInTheDocument();
+    });
+  });
+
   it('selected callout shows anchor and resize handles', async () => {
     const markup = makeDrawingMarkup('callout', {
       id: 'callout-1',
@@ -2158,6 +2299,68 @@ describe('ConstructionPdfViewer – continuous scroll markup interaction', () =>
       const coords = capturedPost.coordinates as Record<string, number>;
       expect(coords.anchorX).toBeCloseTo(0.15, 2);
       expect(coords.width).toBeGreaterThan(0.02);
+    });
+  });
+
+  it('creates a stamp on the correct page in continuous scroll mode', async () => {
+    let capturedPost: Record<string, unknown> = {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/markups') && (!init?.method || init.method === 'GET')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [] }) } as Response;
+        }
+        if (init?.method === 'POST') {
+          capturedPost = JSON.parse(String(init.body)) as Record<string, unknown>;
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              markup: makeMarkup({
+                id: 'created-stamp',
+                type: 'stamp',
+                pageNumber: Number(capturedPost.pageNumber),
+                coordinates: capturedPost.coordinates as Record<string, unknown>,
+                comment: String(capturedPost.comment ?? ''),
+              }),
+            }),
+          } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'stamp' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Stamp preset' }), {
+      target: { value: 'REJECTED' },
+    });
+
+    const page3Layer = getContinuousPageLayer(3);
+    mockLayerRect(page3Layer);
+
+    fireEvent.mouseDown(page3Layer, { clientX: 300, clientY: 300 });
+    await act(async () => {
+      fireEvent.mouseUp(page3Layer);
+    });
+
+    await waitFor(() => {
+      expect(capturedPost.type).toBe('stamp');
+      expect(capturedPost.pageNumber).toBe(3);
+      expect(capturedPost.comment).toBe('REJECTED');
+      const coords = capturedPost.coordinates as Record<string, unknown>;
+      expect(coords.stampLabel).toBe('REJECTED');
     });
   });
 });

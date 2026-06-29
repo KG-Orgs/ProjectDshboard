@@ -46,6 +46,7 @@ import {
   startIndexingWorker,
   syncService,
 } from "./services";
+import { toMarkupExportRows } from "./services/markup-export.utils";
 import { toUuid } from "./services/service-types";
 
 // Load environment variables from both package and workspace root locations.
@@ -217,56 +218,6 @@ function parseSendChatMessageRequest(body: unknown): Omit<SendChatMessageRequest
         : undefined,
     feedback: parsedFeedback,
   };
-}
-
-interface MarkupExportRow {
-  projectName: string;
-  fileName: string;
-  pageNumber: number;
-  markupType: string;
-  category: string;
-  comment: string;
-  status: string;
-  assignedTo: string;
-  createdBy: string;
-  createdDate: string;
-  updatedDate: string;
-  measurementValue: string;
-  measurementUnit: string;
-}
-
-function toMarkupExportRows(
-  projectName: string,
-  fileName: string,
-  markups: Array<{
-    pageNumber: number;
-    type: string;
-    category: string;
-    comment?: string;
-    status: string;
-    assignedTo?: string;
-    createdBy: string;
-    createdAt: Date;
-    updatedAt: Date;
-    measurement?: { value?: number; unit?: string };
-  }>
-): MarkupExportRow[] {
-  return markups.map((markup) => ({
-    projectName,
-    fileName,
-    pageNumber: markup.pageNumber,
-    markupType: markup.type,
-    category: markup.category,
-    comment: markup.comment ?? "",
-    status: markup.status,
-    assignedTo: markup.assignedTo ?? "",
-    createdBy: markup.createdBy,
-    createdDate: markup.createdAt.toISOString(),
-    updatedDate: markup.updatedAt.toISOString(),
-    measurementValue:
-      typeof markup.measurement?.value === "number" ? String(markup.measurement.value) : "",
-    measurementUnit: markup.measurement?.unit ?? "",
-  }));
 }
 
 // ================================
