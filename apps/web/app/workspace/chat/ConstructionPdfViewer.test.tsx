@@ -455,11 +455,12 @@ describe('ConstructionPdfViewer – continuous scroll mode', () => {
     for (let p = 1; p <= 4; p++) {
       const container = document.querySelector(`[data-page="${p}"]`) as HTMLElement;
       expect(container).toBeInTheDocument();
-      expect(container.style.minHeight).not.toBe('0px');
-      expect(container.style.minHeight).not.toBe('');
+      expect(container.style.getPropertyValue('--pdf-page-slot-height')).not.toBe('');
+      expect(container.style.getPropertyValue('--pdf-page-slot-width')).not.toBe('');
     }
 
     const page2Container = document.querySelector('[data-page="2"]') as HTMLElement;
+    const page1Node = screen.getByTestId('pdf-page-1');
     act(() => {
       _lastObserver!.trigger(page2Container, 0.8);
     });
@@ -470,6 +471,42 @@ describe('ConstructionPdfViewer – continuous scroll mode', () => {
 
     expect(document.querySelectorAll('[data-page]').length).toBe(4);
     expect(document.querySelectorAll('[data-testid^="pdf-page-"]').length).toBeGreaterThanOrEqual(4);
+    expect(screen.getByTestId('pdf-page-1')).toBe(page1Node);
+  });
+
+  it('IntersectionObserver page updates keep the same page DOM nodes mounted', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
+    enableContinuousScrollMode();
+
+    const nodesBefore = new Map<number, HTMLElement>();
+    for (let p = 1; p <= 5; p += 1) {
+      nodesBefore.set(p, screen.getByTestId(`pdf-page-${p}`));
+    }
+
+    const page4Container = document.querySelector('[data-page="4"]') as HTMLElement;
+    act(() => {
+      _lastObserver!.trigger(page4Container, 0.85);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('spinbutton')).toHaveValue(4);
+    });
+
+    for (let p = 1; p <= 5; p += 1) {
+      expect(screen.getByTestId(`pdf-page-${p}`)).toBe(nodesBefore.get(p)!);
+    }
+  });
+
+  it('changing file url does not reset numPages to zero before the replacement document loads', async () => {
+    const { rerender } = render(<ConstructionPdfViewer {...DEFAULT_PROPS} url="http://example.com/a.pdf" />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 4 }));
+
+    expect(screen.getByText('of 4')).toBeInTheDocument();
+
+    rerender(<ConstructionPdfViewer {...DEFAULT_PROPS} url="http://example.com/b.pdf" />);
+
+    expect(screen.getByText('of 4')).toBeInTheDocument();
   });
 
   it('changing initialPage does not reset loaded page count', async () => {

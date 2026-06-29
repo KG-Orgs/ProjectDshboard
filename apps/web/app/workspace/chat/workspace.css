@@ -1440,6 +1440,25 @@
 .pdf-viewer-scroll,
 .pdf-continuous-scroll {
   touch-action: pan-x pan-y;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pdf-continuous-page {
+  position: relative;
+  min-width: var(--pdf-page-slot-width, 612px);
+  min-height: var(--pdf-page-slot-height, 792px);
+  contain: layout style paint;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.pdf-continuous-page .react-pdf__Page canvas {
+  backface-visibility: hidden;
+}
+
+.pdf-page-loading-slot {
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* PDF text layer — selectable copy in continuous and single-page modes */

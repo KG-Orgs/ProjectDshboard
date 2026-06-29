@@ -1,7 +1,7 @@
 'use client';
 
 import { Bookmark, ChevronDown, ChevronRight, ChevronUp, LayoutGrid, PanelLeft, PanelLeftClose, Search, StickyNote } from 'lucide-react';
-import { MouseEvent as ReactMouseEvent, ReactNode, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { MouseEvent as ReactMouseEvent, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -269,7 +269,29 @@ function highlightSearchInText(str: string, term: string): string {
   return str.replace(regex, '<mark class="pdf-search-highlight">$1</mark>');
 }
 
-/** Memoized react-pdf Page — keeps canvases mounted when only the active-page highlight changes. */
+type StablePdfPageProps = {
+  pageNumber: number;
+  scale: number;
+  rotation: number;
+  slotWidth: number;
+  slotHeight: number;
+  highlightSearchTerm?: string;
+  textSelectionEnabled?: boolean;
+};
+
+function stablePdfPagePropsEqual(prev: StablePdfPageProps, next: StablePdfPageProps): boolean {
+  return (
+    prev.pageNumber === next.pageNumber
+    && prev.scale === next.scale
+    && prev.rotation === next.rotation
+    && prev.slotWidth === next.slotWidth
+    && prev.slotHeight === next.slotHeight
+    && prev.highlightSearchTerm === next.highlightSearchTerm
+    && prev.textSelectionEnabled === next.textSelectionEnabled
+  );
+}
+
+/** Memoized react-pdf Page — keeps canvases mounted when toolbar page / scroll state changes. */
 const StablePdfPage = memo(function StablePdfPage({
   pageNumber,
   scale,
@@ -278,15 +300,11 @@ const StablePdfPage = memo(function StablePdfPage({
   slotHeight,
   highlightSearchTerm,
   textSelectionEnabled = true,
-}: {
-  pageNumber: number;
-  scale: number;
-  rotation: number;
-  slotWidth: number;
-  slotHeight: number;
-  highlightSearchTerm?: string;
-  textSelectionEnabled?: boolean;
-}) {
+}: StablePdfPageProps) {
+  const loadingSlot = useMemo(
+    () => <div className="pdf-page-loading-slot" style={{ width: slotWidth, height: slotHeight }} aria-hidden />,
+    [slotWidth, slotHeight],
+  );
   return (
     <Page
       pageNumber={pageNumber}
@@ -295,11 +313,16 @@ const StablePdfPage = memo(function StablePdfPage({
       renderAnnotationLayer={false}
       renderTextLayer
       customTextRenderer={highlightSearchTerm ? ({ str }) => highlightSearchInText(str, highlightSearchTerm) : undefined}
-      loading={<div style={{ width: slotWidth, height: slotHeight, background: '#e5e7eb' }} />}
+      loading={loadingSlot}
       className={textSelectionEnabled ? 'pdf-page--text-selectable' : 'pdf-page--text-blocked'}
     />
   );
-});
+}, stablePdfPagePropsEqual);
+
+/** Canvas-only row — markup overlays re-render independently without touching react-pdf Page. */
+const ContinuousPdfCanvas = memo(function ContinuousPdfCanvas(props: StablePdfPageProps) {
+  return <StablePdfPage {...props} />;
+}, stablePdfPagePropsEqual);
 
 function triggerDownloadFromResponse(blob: Blob, filename: string): void {
   const objectUrl = URL.createObjectURL(blob);
@@ -333,6 +356,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const draftPageNumberRef = useRef<number | null>(null);
   const findInputRef = useRef<HTMLInputElement | null>(null);
   const pendingZoomScrollRef = useRef<{ el: HTMLElement; scrollLeft: number; scrollTop: number } | null>(null);
+  const pendingZoomCommitRef = useRef<{ zoom: number; focalX: number; focalY: number; scrollEl: HTMLElement } | null>(null);
+  const zoomCommitRafRef = useRef<number | null>(null);
+  const visiblePageRef = useRef(initialPage ?? 1);
+  const visiblePageRafRef = useRef<number | null>(null);
+  const pageCountRef = useRef(0);
   const pinchStateRef = useRef<{ distance: number; zoom: number } | null>(null);
   const scrollModeRef = useRef<'single' | 'continuous'>('continuous');
   const zoomRef = useRef(120);
@@ -402,6 +430,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     return Math.max(0.3, Math.min(w / baseW, h / baseH));
   }, [zoom, fitMode, rotation]);
 
+  useEffect(() => () => {
+    if (zoomCommitRafRef.current != null) cancelAnimationFrame(zoomCommitRafRef.current);
+    if (visiblePageRafRef.current != null) cancelAnimationFrame(visiblePageRafRef.current);
+  }, []);
+
   useEffect(() => {
     scrollModeRef.current = scrollMode;
     zoomRef.current = zoom;
@@ -416,30 +449,43 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     const rect = scrollEl.getBoundingClientRect();
     const focalX = clientX - rect.left;
     const focalY = clientY - rect.top;
-
-    const currentZoom = fitModeRef.current === 'manual'
-      ? zoomRef.current
-      : Math.round(scaleRef.current * 100);
     const clampedZoom = clamp(Math.round(newZoomPercent), ZOOM_MIN, ZOOM_MAX);
-    if (clampedZoom === currentZoom && fitModeRef.current === 'manual') return;
 
-    const ratio = clampedZoom / currentZoom;
-    pendingZoomScrollRef.current = {
-      el: scrollEl,
-      scrollLeft: (scrollEl.scrollLeft + focalX) * ratio - focalX,
-      scrollTop: (scrollEl.scrollTop + focalY) * ratio - focalY,
-    };
+    pendingZoomCommitRef.current = { zoom: clampedZoom, focalX, focalY, scrollEl };
+    if (zoomCommitRafRef.current != null) return;
 
-    setFitMode('manual');
-    setZoom(clampedZoom);
+    zoomCommitRafRef.current = requestAnimationFrame(() => {
+      zoomCommitRafRef.current = null;
+      const pending = pendingZoomCommitRef.current;
+      if (!pending) return;
+      pendingZoomCommitRef.current = null;
+
+      const currentZoom = fitModeRef.current === 'manual'
+        ? zoomRef.current
+        : Math.round(scaleRef.current * 100);
+      if (pending.zoom === currentZoom && fitModeRef.current === 'manual') return;
+
+      const ratio = pending.zoom / currentZoom;
+      pendingZoomScrollRef.current = {
+        el: pending.scrollEl,
+        scrollLeft: (pending.scrollEl.scrollLeft + pending.focalX) * ratio - pending.focalX,
+        scrollTop: (pending.scrollEl.scrollTop + pending.focalY) * ratio - pending.focalY,
+      };
+
+      setFitMode('manual');
+      setZoom(pending.zoom);
+    });
   }, []);
 
   useLayoutEffect(() => {
     const pending = pendingZoomScrollRef.current;
     if (!pending) return;
     pendingZoomScrollRef.current = null;
-    pending.el.scrollLeft = pending.scrollLeft;
-    pending.el.scrollTop = pending.scrollTop;
+    const { el, scrollLeft, scrollTop } = pending;
+    requestAnimationFrame(() => {
+      el.scrollLeft = scrollLeft;
+      el.scrollTop = scrollTop;
+    });
   }, [zoom, fitMode]);
 
   useEffect(() => {
@@ -541,6 +587,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
   const retryDocumentLoad = useCallback(() => {
     setLoadProgress(null);
+    pageCountRef.current = 0;
     setNumPages(0);
     setOutline(null);
     pdfRef.current = null;
@@ -548,7 +595,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     setDocumentRetryKey((key) => key + 1);
   }, []);
 
-  const documentLoading = (
+  const documentLoading = useMemo(() => (
     <div className="pdf-viewer-stage-state" role="status" aria-live="polite" aria-busy="true">
       <div className="pdf-viewer-stage-state__spinner" aria-hidden />
       <p className="pdf-viewer-stage-state__label">Loading PDF…</p>
@@ -568,7 +615,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
         </>
       ) : null}
     </div>
-  );
+  ), [loadProgress]);
 
   const renderDocumentError = useCallback(({ error }: { error: Error }) => (
     <div className="pdf-viewer-stage-state pdf-viewer-stage-state--error" role="alert">
@@ -701,7 +748,13 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           }
         }
         if (mostVisible > 0) {
-          setPage((curr) => (curr === mostVisible ? curr : mostVisible));
+          visiblePageRef.current = mostVisible;
+          if (visiblePageRafRef.current != null) return;
+          visiblePageRafRef.current = requestAnimationFrame(() => {
+            visiblePageRafRef.current = null;
+            const next = visiblePageRef.current;
+            setPage((curr) => (next > 0 && curr !== next ? next : curr));
+          });
         }
       },
       { root, threshold: [0, 0.25, 0.5, 0.75, 1] },
@@ -709,7 +762,13 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
     root.querySelectorAll<HTMLElement>('[data-page]').forEach((el) => observer.observe(el));
 
-    return () => observer.disconnect();
+    return () => {
+      if (visiblePageRafRef.current != null) {
+        cancelAnimationFrame(visiblePageRafRef.current);
+        visiblePageRafRef.current = null;
+      }
+      observer.disconnect();
+    };
   }, [scrollMode, numPages]);
 
   useEffect(() => {
@@ -728,8 +787,8 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
   useEffect(() => {
     navScrollPageRef.current = initialPage ?? 1;
+    visiblePageRef.current = initialPage ?? 1;
     setPage(initialPage ?? 1);
-    setNumPages(0);
     setSearchApplied('');
     setHits([]);
     setHitIndex(-1);
@@ -2091,7 +2150,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
             onLoadSuccess={async (doc) => {
               setLoadProgress(null);
               pdfRef.current = doc;
+              pageCountRef.current = doc.numPages;
               setNumPages(doc.numPages);
+              visiblePageRef.current = clamp(page, 1, doc.numPages);
               setPage((curr) => clamp(curr, 1, doc.numPages));
               try {
                 const outlineData = await doc.getOutline();
@@ -2112,7 +2173,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                     renderTextLayer
                     customTextRenderer={searchApplied ? ({ str }) => highlightSearchInText(str, searchApplied) : undefined}
                     className={markupOverlayInteractive ? 'pdf-page--text-blocked' : 'pdf-page--text-selectable'}
-                    loading={<div style={{ width: Math.round(612 * scale), height: Math.round(792 * scale), background: '#e5e7eb' }} />}
+                    loading={<div className="pdf-page-loading-slot" style={{ width: Math.round(612 * scale), height: Math.round(792 * scale) }} aria-hidden />}
                   />
 
                   {renderMarkupLayer(page, markupOverlayInteractive, true)}
@@ -2127,14 +2188,13 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                     className="pdf-continuous-page"
                     data-text-selectable={isMarkupDrawingActive ? 'false' : 'true'}
                     style={{
-                      position: 'relative',
-                      minWidth: continuousPageSlotSize.width,
-                      minHeight: continuousPageSlotSize.height,
                       cursor: isMarkupDrawingActive ? 'crosshair' : undefined,
+                      ['--pdf-page-slot-width' as string]: `${continuousPageSlotSize.width}px`,
+                      ['--pdf-page-slot-height' as string]: `${continuousPageSlotSize.height}px`,
                     }}
                     {...markupLayerPointerHandlers(p, isMarkupDrawingActive)}
                   >
-                    <StablePdfPage
+                    <ContinuousPdfCanvas
                       pageNumber={p}
                       scale={scale}
                       rotation={rotation}
