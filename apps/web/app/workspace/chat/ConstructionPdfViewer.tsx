@@ -4,6 +4,22 @@ import { MouseEvent as ReactMouseEvent, memo, useCallback, useEffect, useMemo, u
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import './workspace.css';
+import {
+  areaDisplayUnit,
+  calibratedAreaFromPoints,
+  calibratedLengthFromLineCoords,
+  formatMeasurementValue,
+  formatScaleIndicator,
+  LENGTH_UNITS,
+  loadDocumentScale,
+  pageDimensionsFromRotation,
+  pageSpaceDistance,
+  saveDocumentScale,
+  scaleFromCalibrateMarkup,
+  type DocumentScale,
+  type LengthUnit,
+} from './pdf-scale';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -113,8 +129,7 @@ function pointDistance(a: Point, b: Point): number { const dx = a.x - b.x; const
 function polygonArea(points: Point[]): number { if (points.length < 3) return 0; let acc = 0; for (let i = 0; i < points.length; i += 1) { const j = (i + 1) % points.length; acc += points[i].x * points[j].y - points[j].x * points[i].y; } return Math.abs(acc / 2); }
 
 function pageDimensions(rotation: number): { width: number; height: number } {
-  if (rotation % 180 === 0) return { width: 612, height: 792 };
-  return { width: 792, height: 612 };
+  return pageDimensionsFromRotation(rotation);
 }
 
 /** Memoized react-pdf Page — keeps canvases mounted when only the active-page highlight changes. */
@@ -209,6 +224,16 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const [markupPanelHeight, setMarkupPanelHeight] = useState(200);
   const [markupPanelCollapsed, setMarkupPanelCollapsed] = useState(true);
 
+  const [documentScale, setDocumentScale] = useState<DocumentScale | null>(null);
+  const [pendingCalibration, setPendingCalibration] = useState<{
+    pageNumber: number;
+    coords: { x1: number; y1: number; x2: number; y2: number };
+    pageSpaceCalibrationDistance: number;
+    normalizedDistance: number;
+  } | null>(null);
+  const [calibrationInputValue, setCalibrationInputValue] = useState('');
+  const [calibrationInputUnit, setCalibrationInputUnit] = useState<LengthUnit>('ft');
+
   const scale = useMemo(() => {
     const host = viewerRef.current ?? continuousScrollRef.current;
     if (!host) return zoom / 100;
@@ -219,6 +244,35 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (fitMode === 'width') return Math.max(0.3, w / baseW);
     return Math.max(0.3, Math.min(w / baseW, h / baseH));
   }, [zoom, fitMode, rotation]);
+
+  const pageSpaceDims = useMemo(() => pageDimensions(rotation), [rotation]);
+
+  const buildLengthMeasurement = useCallback((
+    coords: { x1: number; y1: number; x2: number; y2: number },
+    scale: DocumentScale | null,
+  ): Markup['measurement'] | undefined => {
+    if (!scale) return { kind: 'length', unit };
+    const value = formatMeasurementValue(
+      calibratedLengthFromLineCoords(coords, scale, pageSpaceDims.width, pageSpaceDims.height),
+    );
+    return { kind: 'length', value, unit: scale.unit };
+  }, [pageSpaceDims.height, pageSpaceDims.width, unit]);
+
+  const buildAreaMeasurement = useCallback((
+    points: Point[],
+    scale: DocumentScale | null,
+  ): Markup['measurement'] | undefined => {
+    if (!scale) return { kind: 'area', unit: areaDisplayUnit(unit) };
+    const value = formatMeasurementValue(
+      calibratedAreaFromPoints(points, scale, pageSpaceDims.width, pageSpaceDims.height),
+    );
+    return { kind: 'area', value, unit: areaDisplayUnit(scale.unit) };
+  }, [pageSpaceDims.height, pageSpaceDims.width, unit]);
+
+  const applyDocumentScale = useCallback((scale: DocumentScale | null) => {
+    setDocumentScale(scale);
+    if (fileId && scale) saveDocumentScale(fileId, scale);
+  }, [fileId]);
 
   const continuousPageSlotSize = useMemo(() => {
     const { width: baseW, height: baseH } = pageDimensions(rotation);
@@ -253,11 +307,34 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(fileId)}/markups`, { method: 'GET', cache: 'no-store' });
       if (!response.ok) return;
       const payload = (await response.json()) as { markups?: Markup[] };
-      setMarkups(payload.markups ?? []);
+      const loaded = payload.markups ?? [];
+      setMarkups(loaded);
+
+      const storedScale = loadDocumentScale(fileId);
+      if (storedScale) {
+        setDocumentScale(storedScale);
+        return;
+      }
+
+      const calibrateMarkups = loaded
+        .filter((m) => m.type === 'calibrate')
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      const latestCalibrate = calibrateMarkups[0];
+      if (latestCalibrate) {
+        const derived = scaleFromCalibrateMarkup(
+          latestCalibrate.coordinates,
+          latestCalibrate.measurement,
+          pageSpaceDims.width,
+          pageSpaceDims.height,
+        );
+        if (derived) {
+          applyDocumentScale(derived);
+        }
+      }
     } catch {
       setMarkups([]);
     }
-  }, [projectId, fileId]);
+  }, [projectId, fileId, pageSpaceDims.height, pageSpaceDims.width, applyDocumentScale]);
 
   const goToPage = useCallback((nextPage: number) => {
     navScrollPageRef.current = nextPage;
@@ -335,8 +412,10 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     setHits([]);
     setHitIndex(-1);
     setCitationFlash(null);
+    setPendingCalibration(null);
     textCacheRef.current.clear();
     pdfRef.current = null;
+    setDocumentScale(fileId ? loadDocumentScale(fileId) : null);
     void loadMarkups();
   }, [url, fileId, loadMarkups]);
 
@@ -621,7 +700,42 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (drag) {
       markupDragRef.current = null;
       const updated = latestMarkupsRef.current.find((m) => m.id === drag.markupId);
-      if (updated) await saveMarkup(updated.id, { coordinates: updated.coordinates });
+      if (updated) {
+        const patch: Partial<Markup> = { coordinates: updated.coordinates };
+        if (updated.type === 'length') {
+          patch.measurement = buildLengthMeasurement(
+            updated.coordinates as { x1: number; y1: number; x2: number; y2: number },
+            documentScale,
+          );
+        }
+        if (updated.type === 'calibrate' && updated.measurement?.calibration?.realValue) {
+          const coords = updated.coordinates as { x1: number; y1: number; x2: number; y2: number };
+          const pageSpaceCalibrationDistance = pageSpaceDistance(
+            { x: coords.x1, y: coords.y1 },
+            { x: coords.x2, y: coords.y2 },
+            pageSpaceDims.width,
+            pageSpaceDims.height,
+          );
+          const realValue = updated.measurement.calibration.realValue;
+          const calUnit = updated.measurement.calibration.unit ?? updated.measurement.unit ?? 'ft';
+          const nextScale: DocumentScale = { realValue, unit: calUnit, pageSpaceCalibrationDistance };
+          applyDocumentScale(nextScale);
+          patch.measurement = {
+            kind: 'calibration',
+            value: realValue,
+            unit: calUnit,
+            calibration: {
+              pixels: pointDistance({ x: coords.x1, y: coords.y1 }, { x: coords.x2, y: coords.y2 }),
+              realValue,
+              unit: calUnit,
+            },
+          };
+        }
+        await saveMarkup(updated.id, patch);
+        if (patch.measurement) {
+          setMarkups((curr) => curr.map((m) => (m.id === updated.id ? { ...m, ...patch } : m)));
+        }
+      }
       return;
     }
     if (!(draftStartRef.current ?? draftStart) || !(draftCurrentRef.current ?? draftCurrent)) return;
@@ -635,15 +749,32 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       }
     }
 
-    if (tool === 'arrow' || tool === 'line' || tool === 'length' || tool === 'calibrate') {
+    if (tool === 'arrow' || tool === 'line') {
       const coords = { x1: startPos.x, y1: startPos.y, x2: endPos.x, y2: endPos.y };
-      const len = pointDistance(startPos, endPos);
-      await createMarkup({
-        pageNumber: targetPage,
-        type: tool,
-        coordinates: coords,
-        measurement: tool === 'length' ? { kind: 'length', value: Number((len * 100).toFixed(2)), unit } : tool === 'calibrate' ? { kind: 'calibration', value: 10, unit, calibration: { pixels: len, realValue: 10, unit } } : undefined,
-      });
+      await createMarkup({ pageNumber: targetPage, type: tool, coordinates: coords });
+    }
+
+    if (tool === 'length') {
+      const coords = { x1: startPos.x, y1: startPos.y, x2: endPos.x, y2: endPos.y };
+      if (pointDistance(startPos, endPos) > 0.002) {
+        await createMarkup({
+          pageNumber: targetPage,
+          type: 'length',
+          coordinates: coords,
+          measurement: buildLengthMeasurement(coords, documentScale),
+        });
+      }
+    }
+
+    if (tool === 'calibrate') {
+      const coords = { x1: startPos.x, y1: startPos.y, x2: endPos.x, y2: endPos.y };
+      const normalizedDistance = pointDistance(startPos, endPos);
+      const pageSpaceCalibrationDistance = pageSpaceDistance(startPos, endPos, pageSpaceDims.width, pageSpaceDims.height);
+      if (normalizedDistance > 0.002 && pageSpaceCalibrationDistance > 0) {
+        setPendingCalibration({ pageNumber: targetPage, coords, pageSpaceCalibrationDistance, normalizedDistance });
+        setCalibrationInputValue('');
+        setCalibrationInputUnit(unit === 'sf' || unit === 'cy' ? 'ft' : (LENGTH_UNITS.includes(unit as LengthUnit) ? unit as LengthUnit : 'ft'));
+      }
     }
 
     setDraftStart(null);
@@ -654,11 +785,53 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     draftPageNumberRef.current = null;
   };
 
+  const confirmCalibration = async () => {
+    if (!pendingCalibration) return;
+    const realValue = Number(calibrationInputValue);
+    if (!Number.isFinite(realValue) || realValue <= 0) return;
+
+    const { pageNumber, coords, pageSpaceCalibrationDistance, normalizedDistance } = pendingCalibration;
+    const nextScale: DocumentScale = {
+      realValue,
+      unit: calibrationInputUnit,
+      pageSpaceCalibrationDistance,
+    };
+    applyDocumentScale(nextScale);
+
+    await createMarkup({
+      pageNumber,
+      type: 'calibrate',
+      coordinates: coords,
+      measurement: {
+        kind: 'calibration',
+        value: realValue,
+        unit: calibrationInputUnit,
+        calibration: {
+          pixels: normalizedDistance,
+          realValue,
+          unit: calibrationInputUnit,
+        },
+      },
+    });
+
+    setPendingCalibration(null);
+    setCalibrationInputValue('');
+  };
+
+  const cancelCalibration = () => {
+    setPendingCalibration(null);
+    setCalibrationInputValue('');
+  };
+
   const finishArea = async () => {
     if (draftAreaPoints.length < 3) return;
-    const area = polygonArea(draftAreaPoints);
     const targetPage = draftPageNumberRef.current ?? draftPageNumber ?? activeMarkupPage();
-    await createMarkup({ pageNumber: targetPage, type: 'area', coordinates: { points: draftAreaPoints }, measurement: { kind: 'area', value: Number((area * 10000).toFixed(2)), unit } });
+    await createMarkup({
+      pageNumber: targetPage,
+      type: 'area',
+      coordinates: { points: draftAreaPoints },
+      measurement: buildAreaMeasurement(draftAreaPoints, documentScale),
+    });
     setDraftAreaPoints([]);
     setDraftPageNumber(null);
     draftPageNumberRef.current = null;
@@ -686,6 +859,16 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
               </defs>
             ) : null}
             <line x1={`${draftStart.x * 100}%`} y1={`${draftStart.y * 100}%`} x2={`${draftCurrent.x * 100}%`} y2={`${draftCurrent.y * 100}%`} stroke={tool === 'calibrate' ? '#8b5cf6' : tool === 'line' ? '#0ea5e9' : '#ef4444'} strokeWidth={3} strokeDasharray={tool === 'calibrate' ? '5 4' : undefined} markerEnd={tool === 'arrow' ? 'url(#draft-arrow)' : undefined} />
+            {tool === 'length' && documentScale ? (
+              <text x={`${((draftStart.x + draftCurrent.x) / 2) * 100}%`} y={`${((draftStart.y + draftCurrent.y) / 2) * 100}%`} fontSize="11" fill="#111827" textAnchor="middle">
+                {formatMeasurementValue(calibratedLengthFromLineCoords(
+                  { x1: draftStart.x, y1: draftStart.y, x2: draftCurrent.x, y2: draftCurrent.y },
+                  documentScale,
+                  pageSpaceDims.width,
+                  pageSpaceDims.height,
+                ))} {documentScale.unit}
+              </text>
+            ) : null}
           </svg>
         ) : null}
 
@@ -767,7 +950,17 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (markup.type === 'area') {
       const points = (Array.isArray(markup.coordinates.points) ? markup.coordinates.points : []) as Point[];
       if (points.length < 3) return null;
-      return <svg key={markup.id} style={{ position: 'absolute', inset: 0, pointerEvents: 'auto' }} onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}><polygon points={points.map((p) => `${p.x * 100},${p.y * 100}`).join(' ')} fill="rgba(16,185,129,.25)" stroke={selected ? '#059669' : '#34d399'} strokeWidth={selected ? 3 : 2} /></svg>;
+      const centroid = points.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+      const cx = centroid.x / points.length;
+      const cy = centroid.y / points.length;
+      return (
+        <svg key={markup.id} style={{ position: 'absolute', inset: 0, pointerEvents: 'auto', overflow: 'visible' }} onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}>
+          <polygon points={points.map((p) => `${p.x * 100},${p.y * 100}`).join(' ')} fill="rgba(16,185,129,.25)" stroke={selected ? '#059669' : '#34d399'} strokeWidth={selected ? 3 : 2} />
+          {markup.measurement?.value != null ? (
+            <text x={`${cx * 100}%`} y={`${cy * 100}%`} fontSize="11" fill="#111827" textAnchor="middle">{markup.measurement.value} {markup.measurement.unit ?? ''}</text>
+          ) : null}
+        </svg>
+      );
     }
 
     if (markup.type === 'count') {
@@ -895,6 +1088,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
             <button key={t} type="button" onClick={() => setTool(t)} style={{ ...compactControlBase, background: tool === t ? '#dbeafe' : '#fff', textTransform: 'capitalize' }}>{t}</button>
           ))}
           <select value={unit} onChange={(e) => setUnit(e.target.value as (typeof UNITS)[number])} style={compactControlBase}>{UNITS.map((u) => <option key={u} value={u}>{u}</option>)}</select>
+          {documentScale ? (
+            <span className="pdf-scale-indicator" title="Drawing scale from calibration">{formatScaleIndicator(documentScale)}</span>
+          ) : (
+            <span className="pdf-scale-indicator pdf-scale-indicator--unset" title="Draw a calibrate line to set scale">No scale set</span>
+          )}
           {tool === 'area' && draftAreaPoints.length >= 3 ? <button type="button" onClick={() => void finishArea()} style={{ ...compactControlBase, border: '1px solid #10b981', background: '#dcfce7' }}>Finish Area</button> : null}
           {selectedMarkup ? <button type="button" onClick={() => void removeMarkup(selectedMarkup.id)} style={{ ...compactControlBase, border: '1px solid #fecaca', background: '#fff1f2', color: '#b91c1c' }}>Delete</button> : null}
           <div style={{ flex: 1 }} />
@@ -1109,6 +1307,50 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
         </div>
         </> : null}
       </div>
+
+      {pendingCalibration ? (
+        <div className="pdf-calibration-dialog-backdrop" role="presentation" onClick={cancelCalibration}>
+          <div
+            className="pdf-calibration-dialog"
+            role="dialog"
+            aria-labelledby="calibration-dialog-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="calibration-dialog-title" className="pdf-calibration-dialog-title">Set drawing scale</h3>
+            <p className="pdf-calibration-dialog-hint">This reference line represents:</p>
+            <div className="pdf-calibration-dialog-row">
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={calibrationInputValue}
+                onChange={(e) => setCalibrationInputValue(e.target.value)}
+                placeholder="Length"
+                className="pdf-calibration-dialog-input"
+                autoFocus
+              />
+              <select
+                value={calibrationInputUnit}
+                onChange={(e) => setCalibrationInputUnit(e.target.value as LengthUnit)}
+                className="pdf-calibration-dialog-select"
+              >
+                {LENGTH_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+            <div className="pdf-calibration-dialog-actions">
+              <button type="button" className="pdf-calibration-dialog-btn" onClick={cancelCalibration}>Cancel</button>
+              <button
+                type="button"
+                className="pdf-calibration-dialog-btn pdf-calibration-dialog-btn--primary"
+                disabled={!calibrationInputValue || Number(calibrationInputValue) <= 0}
+                onClick={() => void confirmCalibration()}
+              >
+                Apply scale
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

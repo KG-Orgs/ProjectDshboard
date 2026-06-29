@@ -8,6 +8,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ConstructionPdfViewer from './ConstructionPdfViewer';
+import { scaleStorageKey } from './pdf-scale';
 
 // ─── react-pdf mock ──────────────────────────────────────────────────────────
 // Capture the onLoadSuccess handler so tests can trigger it manually.
@@ -1520,6 +1521,199 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('spinbutton')).toHaveValue(2);
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Test suite 4a: Scale calibration
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ConstructionPdfViewer – scale calibration', () => {
+  const SCALE_FILE_ID = 'file-scale-test';
+
+  beforeEach(() => {
+    _capturedOnLoadSuccess = undefined;
+    _lastObserver = undefined;
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+    localStorage.clear();
+    vi.stubGlobal('URL', {
+      ...globalThis.URL,
+      createObjectURL: vi.fn().mockReturnValue('blob:mock-object-url'),
+      revokeObjectURL: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  function makeScaleFetch(onPost?: (body: Record<string, unknown>) => object) {
+    return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url.includes('/markups') && method === 'GET') {
+        return { ok: true, status: 200, json: async () => ({ markups: [] }) } as Response;
+      }
+
+      if (method === 'POST' && url.includes('/markups')) {
+        const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        const created = onPost?.(body) ?? { id: 'created-scale', ...body };
+        return { ok: true, status: 200, json: async () => ({ markup: created }) } as Response;
+      }
+
+      return { ok: true, status: 200, json: async () => ({}) } as Response;
+    });
+  }
+
+  async function renderScaleViewer() {
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-scale"
+        fileId={SCALE_FILE_ID}
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    expandMarkupTools();
+    enableSinglePageMode();
+    await waitFor(() => {
+      expect(document.querySelector('[data-markup-layer]')).toBeInTheDocument();
+    });
+  }
+
+  async function drawLineOnPage(from: { x: number; y: number }, to: { x: number; y: number }) {
+    const pageHost = document.querySelector('[data-markup-layer]') as HTMLElement;
+    vi.spyOn(pageHost, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 1000,
+      height: 800,
+      right: 1000,
+      bottom: 800,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    fireEvent.mouseDown(pageHost, { clientX: from.x, clientY: from.y });
+    fireEvent.mouseMove(pageHost, { clientX: to.x, clientY: to.y });
+    await act(async () => {
+      fireEvent.mouseUp(pageHost);
+    });
+    return pageHost;
+  }
+
+  it('shows calibration dialog after drawing a calibrate line', async () => {
+    vi.stubGlobal('fetch', makeScaleFetch());
+    await renderScaleViewer();
+
+    fireEvent.click(screen.getByRole('button', { name: 'calibrate' }));
+    await drawLineOnPage({ x: 100, y: 400 }, { x: 500, y: 400 });
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Set drawing scale')).toBeInTheDocument();
+  });
+
+  it('persists scale to localStorage and shows indicator when calibration is applied', async () => {
+    vi.stubGlobal('fetch', makeScaleFetch());
+    await renderScaleViewer();
+
+    fireEvent.click(screen.getByRole('button', { name: 'calibrate' }));
+    await drawLineOnPage({ x: 100, y: 400 }, { x: 500, y: 400 });
+
+    fireEvent.change(screen.getByPlaceholderText('Length'), { target: { value: '10' } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Apply scale' }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Scale: 10 ft/)).toBeInTheDocument();
+    });
+
+    const stored = JSON.parse(localStorage.getItem(scaleStorageKey(SCALE_FILE_ID)) ?? 'null') as {
+      realValue: number;
+      unit: string;
+      pageSpaceCalibrationDistance: number;
+    };
+    expect(stored.realValue).toBe(10);
+    expect(stored.unit).toBe('ft');
+    expect(stored.pageSpaceCalibrationDistance).toBeCloseTo(244.8, 1);
+  });
+
+  it('length tool uses stored scale for real-world measurements', async () => {
+    let capturedPost: Record<string, unknown> = {};
+    vi.stubGlobal(
+      'fetch',
+      makeScaleFetch((body) => {
+        capturedPost = body;
+        return { id: 'len-created', ...body };
+      }),
+    );
+
+    localStorage.setItem(
+      scaleStorageKey(SCALE_FILE_ID),
+      JSON.stringify({ realValue: 10, unit: 'ft', pageSpaceCalibrationDistance: 244.8 }),
+    );
+
+    await renderScaleViewer();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Scale: 10 ft/)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'length' }));
+    await drawLineOnPage({ x: 100, y: 400 }, { x: 500, y: 400 });
+
+    await waitFor(() => {
+      expect(capturedPost.type).toBe('length');
+      const measurement = capturedPost.measurement as { value: number; unit: string };
+      expect(measurement.unit).toBe('ft');
+      expect(measurement.value).toBeCloseTo(10, 1);
+    });
+  });
+
+  it('count tool is unaffected by scale calibration', async () => {
+    let capturedPost: Record<string, unknown> = {};
+    vi.stubGlobal(
+      'fetch',
+      makeScaleFetch((body) => {
+        capturedPost = body;
+        return { id: 'count-created', ...body };
+      }),
+    );
+
+    localStorage.setItem(
+      scaleStorageKey(SCALE_FILE_ID),
+      JSON.stringify({ realValue: 10, unit: 'ft', pageSpaceCalibrationDistance: 244.8 }),
+    );
+
+    await renderScaleViewer();
+    fireEvent.click(screen.getByRole('button', { name: 'count' }));
+
+    const pageHost = document.querySelector('[data-markup-layer]') as HTMLElement;
+    vi.spyOn(pageHost, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 1000,
+      height: 800,
+      right: 1000,
+      bottom: 800,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    fireEvent.mouseDown(pageHost, { clientX: 500, clientY: 400 });
+
+    await waitFor(() => {
+      expect(capturedPost.type).toBe('count');
+      const measurement = capturedPost.measurement as { kind: string; value: number; unit: string };
+      expect(measurement.kind).toBe('count');
+      expect(measurement.value).toBe(1);
+      expect(measurement.unit).toBe('count');
     });
   });
 });

@@ -944,3 +944,96 @@
     min-height: 100vh;
   }
 }
+
+/* ─── PDF markup scale indicator ──────────── */
+.pdf-scale-indicator {
+  font-size: 10px;
+  color: #475569;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pdf-scale-indicator--unset {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.pdf-calibration-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pdf-calibration-dialog {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px 20px;
+  min-width: 280px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+}
+
+.pdf-calibration-dialog-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.pdf-calibration-dialog-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pdf-calibration-dialog-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.pdf-calibration-dialog-input,
+.pdf-calibration-dialog-select {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.pdf-calibration-dialog-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.pdf-calibration-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.pdf-calibration-dialog-btn {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pdf-calibration-dialog-btn--primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.pdf-calibration-dialog-btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
