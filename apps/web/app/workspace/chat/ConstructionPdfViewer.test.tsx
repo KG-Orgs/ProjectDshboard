@@ -129,7 +129,8 @@ function expandMarkupTools() {
 
 /** Markup table starts collapsed — expand before asserting on table rows/headers. */
 function expandMarkupPanel() {
-  fireEvent.click(screen.getByTitle('Expand markup panel'));
+  const expandBtn = screen.queryByTitle('Expand markup panel');
+  if (expandBtn) fireEvent.click(expandBtn);
 }
 
 function isContinuousScrollMode() {
@@ -2735,5 +2736,182 @@ describe('ConstructionPdfViewer – save, reopen, export, and download', () => {
       expect.stringContaining('/export'),
       expect.anything(),
     );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Test suite: Markup mode defaults (P0-6)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ConstructionPdfViewer – markup mode defaults', () => {
+  const now = new Date().toISOString();
+
+  function makeLoadedMarkup(id = 'loaded-markup-1') {
+    return {
+      id,
+      projectId: 'proj-defaults',
+      fileId: 'file-defaults',
+      pageNumber: 1,
+      type: 'rectangle',
+      coordinates: { x: 0.1, y: 0.1, width: 0.2, height: 0.15 },
+      category: 'General Comment',
+      status: 'Open',
+      createdBy: 'Tester',
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
+  function makeDefaultsFetch(markups: object[] = []) {
+    return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+
+      if (url.includes('/markups') && method === 'GET') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ markups }),
+        } as Response;
+      }
+
+      if (method === 'POST' && url.includes('/markups')) {
+        const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            markup: {
+              ...makeLoadedMarkup(`created-${Date.now()}`),
+              type: String(body.type ?? 'rectangle'),
+              pageNumber: Number(body.pageNumber ?? 1),
+              coordinates: body.coordinates,
+            },
+          }),
+        } as Response;
+      }
+
+      return { ok: true, status: 200, json: async () => ({}) } as Response;
+    });
+  }
+
+  async function renderWithProject(markups: object[] = []) {
+    vi.stubGlobal('fetch', makeDefaultsFetch(markups));
+    render(
+      <ConstructionPdfViewer
+        projectId="proj-defaults"
+        fileId="file-defaults"
+        fileName="defaults.pdf"
+        url="/api/projects/proj-defaults/files/file-defaults/content"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Markups' })).toBeInTheDocument();
+    });
+  }
+
+  beforeEach(() => {
+    _capturedOnLoadSuccess = undefined;
+    _lastObserver = undefined;
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('auto-expands markup table on load when markups exist but keeps tools collapsed', async () => {
+    await renderWithProject([makeLoadedMarkup()]);
+
+    await waitFor(() => {
+      expect(screen.getByText('rectangle')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTitle('Expand markup panel')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('rectangle')).not.toBeInTheDocument();
+  });
+
+  it('shows badge hint on collapsed markup table when markups exist', async () => {
+    await renderWithProject([makeLoadedMarkup(), { ...makeLoadedMarkup('loaded-markup-2'), pageNumber: 2 }]);
+
+    await waitFor(() => {
+      expect(screen.getByTitle('Collapse markup panel')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTitle('Collapse markup panel'));
+
+    expect(screen.getByLabelText('2 markups')).toHaveTextContent('2');
+    expect(screen.getByTitle('Expand markup panel')).toBeInTheDocument();
+    expect(document.querySelector('.pdf-markup-panel-header--hint')).not.toBeNull();
+  });
+
+  it('expands markup tools when user selects a drawing tool', async () => {
+    await renderWithProject();
+
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'Markups' }));
+    expect(screen.queryByLabelText('rectangle')).not.toBeInTheDocument();
+
+    expandMarkupTools();
+    fireEvent.click(screen.getByLabelText('rectangle'));
+
+    expect(screen.getByLabelText('rectangle')).toBeInTheDocument();
+  });
+
+  it('expands tools and table when user creates first markup', async () => {
+    await renderWithProject();
+
+    expandMarkupTools();
+    enableSinglePageMode();
+    fireEvent.click(screen.getByLabelText('rectangle'));
+
+    const layer = document.querySelector('[data-markup-layer]') as HTMLElement;
+    layer.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 600, right: 400, bottom: 600 } as DOMRect);
+
+    fireEvent.mouseDown(layer, { clientX: 40, clientY: 60 });
+    fireEvent.mouseMove(layer, { clientX: 160, clientY: 180 });
+    fireEvent.mouseUp(layer);
+
+    await waitFor(() => {
+      expect(screen.getByTitle('Collapse markup panel')).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText('rectangle')).toBeInTheDocument();
+  });
+
+  it('resets markup panel defaults when switching documents', async () => {
+    const fetchMock = makeDefaultsFetch([makeLoadedMarkup()]);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { rerender } = render(
+      <ConstructionPdfViewer
+        projectId="proj-defaults"
+        fileId="file-defaults"
+        fileName="defaults.pdf"
+        url="/api/projects/proj-defaults/files/file-defaults/content"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+
+    await waitFor(() => {
+      expect(screen.getByText('rectangle')).toBeInTheDocument();
+    });
+
+    rerender(
+      <ConstructionPdfViewer
+        projectId="proj-defaults"
+        fileId="file-other"
+        fileName="other.pdf"
+        url="/api/projects/proj-defaults/files/file-other/content"
+        initialPage={1}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTitle('Expand markup panel')).toBeInTheDocument();
+    });
+    expect(screen.queryByLabelText('rectangle')).not.toBeInTheDocument();
   });
 });

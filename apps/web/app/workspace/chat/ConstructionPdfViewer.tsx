@@ -227,6 +227,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const draftCurrentRef = useRef<Point | null>(null);
   const markupPageRef = useRef<number>(1);
   const draftPageNumberRef = useRef<number | null>(null);
+  const markupsLoadExpandedRef = useRef(false);
 
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(initialPage ?? 1);
@@ -353,6 +354,20 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     ? true
     : Boolean(selectedMarkupId);
 
+  const isDrawingTool = (t: Tool): t is MarkupType => t !== 'select' && t !== 'pan';
+
+  const handleToolChange = useCallback((nextTool: Tool) => {
+    if (isDrawingTool(nextTool)) {
+      setShowMarkupTools(true);
+    }
+    setTool(nextTool);
+  }, []);
+
+  const revealMarkupPanels = useCallback((opts?: { tools?: boolean; table?: boolean }) => {
+    if (opts?.tools !== false) setShowMarkupTools(true);
+    if (opts?.table !== false) setMarkupPanelCollapsed(false);
+  }, []);
+
   const loadMarkups = useCallback(async () => {
     if (!projectId || !fileId) { setMarkups([]); return; }
     try {
@@ -361,6 +376,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const payload = (await response.json()) as { markups?: Markup[] };
       const loaded = payload.markups ?? [];
       setMarkups(loaded);
+
+      if (loaded.length > 0 && !markupsLoadExpandedRef.current) {
+        markupsLoadExpandedRef.current = true;
+        setMarkupPanelCollapsed(false);
+      }
 
       const storedScale = loadDocumentScale(fileId);
       if (storedScale) {
@@ -468,6 +488,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     textCacheRef.current.clear();
     pdfRef.current = null;
     setDocumentScale(fileId ? loadDocumentScale(fileId) : null);
+    setShowMarkupTools(false);
+    setMarkupPanelCollapsed(true);
+    markupsLoadExpandedRef.current = false;
   }, [url, fileId]);
 
   useEffect(() => {
@@ -528,6 +551,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       };
       setMarkups((curr) => [...curr, localMarkup]);
       setSelectedMarkupId(localMarkup.id);
+      revealMarkupPanels();
     };
 
     if (!projectId || !fileId) {
@@ -553,10 +577,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
       setMarkups((curr) => [...curr, payload.markup!]);
       setSelectedMarkupId(payload.markup.id);
+      revealMarkupPanels();
     } catch {
       appendLocalMarkup();
     }
-  }, [projectId, fileId]);
+  }, [projectId, fileId, revealMarkupPanels]);
 
   const removeMarkup = useCallback(async (markupId: string) => {
     if (!projectId || !fileId) return;
@@ -1370,7 +1395,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
         {showMarkupTools ? (
           <PdfMarkupToolbar
             tool={tool}
-            onToolChange={setTool}
+            onToolChange={handleToolChange}
             stampLabels={CONSTRUCTION_STAMPS}
             selectedStampLabel={selectedStampLabel}
             onStampLabelChange={(label) => setSelectedStampLabel(label as ConstructionStampLabel)}
@@ -1526,7 +1551,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
       <div style={{ flex: '0 0 auto', height: markupPanelCollapsed ? 24 : markupPanelHeight, display: 'flex', flexDirection: 'column', borderTop: '1px solid #e5e7eb', background: '#fff' }}>
         {/* Drag-resize handle + collapse toggle */}
-        <div style={{ flex: '0 0 24px', background: '#f1f5f9', display: 'flex', alignItems: 'center', userSelect: 'none', borderBottom: markupPanelCollapsed ? 'none' : '1px solid #e2e8f0' }}>
+        <div className={markupPanelCollapsed && markups.length > 0 ? 'pdf-markup-panel-header pdf-markup-panel-header--hint' : 'pdf-markup-panel-header'} style={{ flex: '0 0 24px', background: '#f1f5f9', display: 'flex', alignItems: 'center', userSelect: 'none', borderBottom: markupPanelCollapsed ? 'none' : '1px solid #e2e8f0' }}>
           <div
             style={{ flex: 1, height: 24, cursor: markupPanelCollapsed ? 'default' : 'row-resize', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onMouseDown={markupPanelCollapsed ? undefined : (e) => {
@@ -1546,7 +1571,14 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
             }}
           >
             {markupPanelCollapsed
-              ? <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 500 }}>Markup Table</span>
+              ? (
+                <span className="pdf-markup-panel-header-label">
+                  Markup Table
+                  {markups.length > 0 ? (
+                    <span className="pdf-markup-panel-badge" aria-label={`${markups.length} markups`}>{markups.length}</span>
+                  ) : null}
+                </span>
+              )
               : <div style={{ width: 32, height: 3, background: '#9ca3af', borderRadius: 2 }} />}
           </div>
           <button

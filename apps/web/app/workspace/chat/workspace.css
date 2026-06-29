@@ -1133,6 +1133,35 @@
   line-height: 1;
 }
 
+/* ─── Markup table panel header ───────────── */
+.pdf-markup-panel-header-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.pdf-markup-panel-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.pdf-markup-panel-header--hint {
+  background: #eff6ff;
+}
+
 /* ─── PDF markup scale indicator ──────────── */
 .pdf-scale-indicator {
   font-size: 10px;
