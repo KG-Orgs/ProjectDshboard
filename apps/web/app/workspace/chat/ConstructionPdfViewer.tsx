@@ -175,6 +175,23 @@ function wheelZoomPercent(currentZoom: number, deltaY: number): number {
   const factor = Math.exp(-deltaY * WHEEL_ZOOM_SENSITIVITY);
   return clamp(Math.round(currentZoom * factor), ZOOM_MIN, ZOOM_MAX);
 }
+
+function effectiveZoomPercent(
+  fitMode: FitMode,
+  committedZoom: number,
+  scale: number,
+  isPreviewing: boolean,
+  pendingPreviewZoom: number | null,
+): number {
+  if (isPreviewing && pendingPreviewZoom != null) return pendingPreviewZoom;
+  if (fitMode === 'manual') return committedZoom;
+  return Math.round(scale * 100);
+}
+
+function committedZoomPercent(fitMode: FitMode, committedZoom: number, scale: number): number {
+  if (fitMode === 'manual') return committedZoom;
+  return Math.round(scale * 100);
+}
 function toNum(v: unknown, fallback = 0): number { return typeof v === 'number' && Number.isFinite(v) ? v : fallback; }
 function toPositiveInt(value: unknown, fallback = 1): number {
   const n = typeof value === 'number' ? value : Number(value);
@@ -379,6 +396,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const singleZoomPreviewLayerRef = useRef<HTMLDivElement | null>(null);
   const previewRatioRef = useRef(1);
   const isPreviewZoomRef = useRef(false);
+  const clearPreviewOnLayoutRef = useRef(false);
   const visiblePageRef = useRef(initialPage ?? 1);
   const visiblePageRafRef = useRef<number | null>(null);
   const pageCountRef = useRef(0);
@@ -485,14 +503,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     newZoomPercent: number,
     scrollEl: HTMLElement,
   ) => {
-    const currentZoom = fitModeRef.current === 'manual'
-      ? zoomRef.current
-      : Math.round(scaleRef.current * 100);
+    const currentZoom = committedZoomPercent(fitModeRef.current, zoomRef.current, scaleRef.current);
     const clampedZoom = clamp(Math.round(newZoomPercent), ZOOM_MIN, ZOOM_MAX);
 
-    clearPreviewZoom();
-
     if (clampedZoom === currentZoom && fitModeRef.current === 'manual') {
+      clearPreviewZoom();
       setDisplayZoomPercent(clampedZoom);
       return;
     }
@@ -504,6 +519,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       scrollTop: (scrollEl.scrollTop + focalY) * ratio - focalY,
     };
 
+    clearPreviewOnLayoutRef.current = true;
     setFitMode('manual');
     setZoom(clampedZoom);
     setDisplayZoomPercent(clampedZoom);
@@ -545,9 +561,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     const focalY = clientY - rect.top;
     const clampedZoom = clamp(Math.round(newZoomPercent), ZOOM_MIN, ZOOM_MAX);
 
-    const currentZoom = fitModeRef.current === 'manual'
-      ? zoomRef.current
-      : Math.round(scaleRef.current * 100);
+    const currentZoom = committedZoomPercent(fitModeRef.current, zoomRef.current, scaleRef.current);
     const previewRatio = clampedZoom / currentZoom;
     const { originX, originY } = layerOriginFromFocal(scrollEl, layer, focalX, focalY);
 
@@ -577,15 +591,18 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   }, [clearPreviewZoom]);
 
   useLayoutEffect(() => {
+    if (clearPreviewOnLayoutRef.current) {
+      clearPreviewOnLayoutRef.current = false;
+      clearPreviewZoom();
+    }
+
     const pending = pendingZoomScrollRef.current;
     if (!pending) return;
     pendingZoomScrollRef.current = null;
     const { el, scrollLeft, scrollTop } = pending;
-    requestAnimationFrame(() => {
-      el.scrollLeft = scrollLeft;
-      el.scrollTop = scrollTop;
-    });
-  }, [zoom, fitMode]);
+    el.scrollLeft = scrollLeft;
+    el.scrollTop = scrollTop;
+  }, [zoom, fitMode, clearPreviewZoom]);
 
   useEffect(() => {
     const host = documentHostRef.current;
@@ -601,9 +618,13 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const scrollEl = resolveScrollEl();
       if (!scrollEl) return;
       event.preventDefault();
-      const currentZoom = fitModeRef.current === 'manual'
-        ? zoomRef.current
-        : Math.round(scaleRef.current * 100);
+      const currentZoom = effectiveZoomPercent(
+        fitModeRef.current,
+        zoomRef.current,
+        scaleRef.current,
+        isPreviewZoomRef.current,
+        pendingPreviewCommitRef.current?.zoom ?? null,
+      );
       applyZoomAtFocalPoint(event.clientX, event.clientY, wheelZoomPercent(currentZoom, event.deltaY));
     };
 

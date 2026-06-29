@@ -46,6 +46,8 @@ ContractorAI’s chat workspace PDF viewer now supports **continuous scroll (def
 
 **Implemented this sprint:** Pinch-to-zoom on viewer stage (`ConstructionPdfViewer.tsx`), zoom anchored to cursor/finger midpoint, switches from fit-width/page to manual zoom, scroll position preserved via `useLayoutEffect`.
 
+**Zoom architecture (2026-06-29):** CSS transform preview on a compositor wrapper (`pdf-zoom-preview-layer`) while `react-pdf` `Page` scale stays fixed until a 120ms idle debounce commits. Wheel/pinch gestures accumulate from the *preview* zoom (not the last committed scale), transform clears in `useLayoutEffect` after commit to avoid a scale flash, and text layers hide during preview. No third-party zoom library — `react-zoom-pan-pinch` and `@react-pdf-viewer/zoom` were evaluated but rejected: markups SVG overlay + continuous multi-page scroll need tight control over scroll/focal math that wrapper libraries don't provide without a larger viewer rewrite. `loading={null}` on pages suppresses placeholder flicker on commit.
+
 ---
 
 ## 3. Pan
