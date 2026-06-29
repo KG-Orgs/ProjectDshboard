@@ -1444,6 +1444,23 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.pdf-zoom-preview-layer {
+  transform-origin: 0 0;
+}
+
+.pdf-zoom-preview-layer--continuous {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.pdf-zoom-preview-active .react-pdf__Page__textContent {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .pdf-continuous-page {
   position: relative;
   min-width: var(--pdf-page-slot-width, 612px);

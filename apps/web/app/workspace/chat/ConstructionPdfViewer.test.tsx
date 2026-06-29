@@ -1206,6 +1206,92 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
     });
   });
 
+  it('ctrl+wheel preview zoom applies CSS transform without remounting page nodes', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 4 }));
+
+    const nodesBefore = new Map<number, HTMLElement>();
+    for (let p = 1; p <= 4; p += 1) {
+      nodesBefore.set(p, screen.getByTestId(`pdf-page-${p}`));
+    }
+
+    const host = document.querySelector('.pdf-viewer-document-host') as HTMLElement;
+    const scrollEl = document.querySelector('.pdf-continuous-scroll') as HTMLElement;
+    Object.defineProperty(scrollEl, 'clientWidth', { value: 800, configurable: true });
+    Object.defineProperty(scrollEl, 'clientHeight', { value: 600, configurable: true });
+
+    host.dispatchEvent(new WheelEvent('wheel', {
+      deltaY: -80,
+      ctrlKey: true,
+      clientX: 400,
+      clientY: 300,
+      bubbles: true,
+      cancelable: true,
+    }));
+
+    const previewLayer = document.querySelector('.pdf-zoom-preview-layer') as HTMLElement;
+    expect(previewLayer).toBeTruthy();
+    expect(previewLayer.style.transform).toMatch(/scale\(/);
+
+    await waitFor(() => {
+      expect(host.classList.contains('pdf-zoom-preview-active')).toBe(true);
+    });
+
+    for (let p = 1; p <= 4; p += 1) {
+      expect(screen.getByTestId(`pdf-page-${p}`)).toBe(nodesBefore.get(p)!);
+    }
+
+    await waitFor(() => {
+      expect(screen.queryByText('120%')).not.toBeInTheDocument();
+    });
+
+    for (let p = 1; p <= 4; p += 1) {
+      expect(screen.getByTestId(`pdf-page-${p}`)).toBe(nodesBefore.get(p)!);
+    }
+  });
+
+  it('pinch end commits preview zoom and clears transform', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+
+    const scrollEl = document.querySelector('.pdf-continuous-scroll') as HTMLElement;
+    const host = document.querySelector('.pdf-viewer-document-host') as HTMLElement;
+    Object.defineProperty(scrollEl, 'clientWidth', { value: 800, configurable: true });
+    Object.defineProperty(scrollEl, 'clientHeight', { value: 600, configurable: true });
+
+    host.dispatchEvent(new TouchEvent('touchstart', {
+      bubbles: true,
+      cancelable: true,
+      touches: [
+        { clientX: 300, clientY: 300, identifier: 0, target: scrollEl } as Touch,
+        { clientX: 400, clientY: 400, identifier: 1, target: scrollEl } as Touch,
+      ],
+    }));
+
+    host.dispatchEvent(new TouchEvent('touchmove', {
+      bubbles: true,
+      cancelable: true,
+      touches: [
+        { clientX: 250, clientY: 250, identifier: 0, target: scrollEl } as Touch,
+        { clientX: 450, clientY: 450, identifier: 1, target: scrollEl } as Touch,
+      ],
+    }));
+
+    const previewLayer = document.querySelector('.pdf-zoom-preview-layer') as HTMLElement;
+    expect(previewLayer.style.transform).toMatch(/scale\(/);
+
+    host.dispatchEvent(new TouchEvent('touchend', {
+      bubbles: true,
+      cancelable: true,
+      touches: [],
+    }));
+
+    await waitFor(() => {
+      expect(previewLayer.style.transform).toBe('');
+      expect(host.classList.contains('pdf-zoom-preview-active')).toBe(false);
+    });
+  });
+
   it('Fit Width button activates fit-width mode (highlighted)', async () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
