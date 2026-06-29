@@ -1437,6 +1437,11 @@
   position: relative;
 }
 
+.pdf-viewer-scroll,
+.pdf-continuous-scroll {
+  touch-action: pan-x pan-y;
+}
+
 .pdf-viewer-stage-state {
   position: absolute;
   inset: 0;

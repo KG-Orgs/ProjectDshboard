@@ -1066,6 +1066,101 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
     expect(screen.getByText('110%')).toBeInTheDocument();
   });
 
+  it('Ctrl+wheel on the viewer stage zooms in toward the cursor', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+
+    const scrollEl = document.querySelector('.pdf-continuous-scroll') as HTMLElement;
+    expect(scrollEl).toBeTruthy();
+    Object.defineProperty(scrollEl, 'clientWidth', { value: 800, configurable: true });
+    Object.defineProperty(scrollEl, 'clientHeight', { value: 600, configurable: true });
+    scrollEl.scrollLeft = 50;
+    scrollEl.scrollTop = 100;
+
+    const host = document.querySelector('.pdf-viewer-document-host') as HTMLElement;
+    host.dispatchEvent(new WheelEvent('wheel', {
+      deltaY: -80,
+      ctrlKey: true,
+      clientX: 400,
+      clientY: 300,
+      bubbles: true,
+      cancelable: true,
+    }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('120%')).not.toBeInTheDocument();
+    });
+    const zoomLabel = screen.getByText(/\d+%/);
+    expect(parseInt(zoomLabel.textContent ?? '0', 10)).toBeGreaterThan(120);
+  });
+
+  it('Ctrl+wheel zoom preserves focal point scroll offset', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+
+    const scrollEl = document.querySelector('.pdf-continuous-scroll') as HTMLElement;
+    Object.defineProperty(scrollEl, 'clientWidth', { value: 800, configurable: true });
+    Object.defineProperty(scrollEl, 'clientHeight', { value: 600, configurable: true });
+    scrollEl.scrollLeft = 100;
+    scrollEl.scrollTop = 200;
+
+    const host = document.querySelector('.pdf-viewer-document-host') as HTMLElement;
+    const rect = scrollEl.getBoundingClientRect();
+    const focalX = 200;
+    const focalY = 150;
+    const clientX = rect.left + focalX;
+    const clientY = rect.top + focalY;
+
+    host.dispatchEvent(new WheelEvent('wheel', {
+      deltaY: -60,
+      ctrlKey: true,
+      clientX,
+      clientY,
+      bubbles: true,
+      cancelable: true,
+    }));
+
+    await waitFor(() => {
+      expect(scrollEl.scrollLeft).toBeGreaterThan(100);
+      expect(scrollEl.scrollTop).toBeGreaterThan(200);
+    });
+  });
+
+  it('two-finger touch pinch increases zoom on the viewer stage', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+
+    const scrollEl = document.querySelector('.pdf-continuous-scroll') as HTMLElement;
+    const host = document.querySelector('.pdf-viewer-document-host') as HTMLElement;
+    Object.defineProperty(scrollEl, 'clientWidth', { value: 800, configurable: true });
+    Object.defineProperty(scrollEl, 'clientHeight', { value: 600, configurable: true });
+
+    const touchStart = new TouchEvent('touchstart', {
+      bubbles: true,
+      cancelable: true,
+      touches: [
+        { clientX: 300, clientY: 300, identifier: 0, target: scrollEl } as Touch,
+        { clientX: 400, clientY: 400, identifier: 1, target: scrollEl } as Touch,
+      ],
+    });
+    host.dispatchEvent(touchStart);
+
+    const touchMove = new TouchEvent('touchmove', {
+      bubbles: true,
+      cancelable: true,
+      touches: [
+        { clientX: 250, clientY: 250, identifier: 0, target: scrollEl } as Touch,
+        { clientX: 450, clientY: 450, identifier: 1, target: scrollEl } as Touch,
+      ],
+    });
+    host.dispatchEvent(touchMove);
+
+    await waitFor(() => {
+      const zoomLabel = screen.getByText(/\d+%/);
+      expect(parseInt(zoomLabel.textContent ?? '0', 10)).toBeGreaterThan(120);
+    });
+  });
+
   it('Fit Width button activates fit-width mode (highlighted)', async () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));

@@ -1,7 +1,7 @@
 'use client';
 
 import { Bookmark, ChevronDown, ChevronRight, ChevronUp, LayoutGrid, PanelLeft, PanelLeftClose, Search, StickyNote } from 'lucide-react';
-import { MouseEvent as ReactMouseEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MouseEvent as ReactMouseEvent, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -133,6 +133,27 @@ function BookmarkItem({ item, depth, onJump }: { item: OutlineItem; depth: numbe
 }
 
 function clamp(value: number, min: number, max: number): number { return Math.min(max, Math.max(min, value)); }
+const ZOOM_MIN = 40;
+const ZOOM_MAX = 300;
+const WHEEL_ZOOM_SENSITIVITY = 0.01;
+
+function touchSpan(touches: TouchList): number {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+}
+
+function touchCenter(touches: TouchList): { x: number; y: number } {
+  return {
+    x: (touches[0].clientX + touches[1].clientX) / 2,
+    y: (touches[0].clientY + touches[1].clientY) / 2,
+  };
+}
+
+function wheelZoomPercent(currentZoom: number, deltaY: number): number {
+  const factor = Math.exp(-deltaY * WHEEL_ZOOM_SENSITIVITY);
+  return clamp(Math.round(currentZoom * factor), ZOOM_MIN, ZOOM_MAX);
+}
 function toNum(v: unknown, fallback = 0): number { return typeof v === 'number' && Number.isFinite(v) ? v : fallback; }
 function toPositiveInt(value: unknown, fallback = 1): number {
   const n = typeof value === 'number' ? value : Number(value);
@@ -309,6 +330,12 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const markupPageRef = useRef<number>(1);
   const draftPageNumberRef = useRef<number | null>(null);
   const findInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingZoomScrollRef = useRef<{ el: HTMLElement; scrollLeft: number; scrollTop: number } | null>(null);
+  const pinchStateRef = useRef<{ distance: number; zoom: number } | null>(null);
+  const scrollModeRef = useRef<'single' | 'continuous'>('continuous');
+  const zoomRef = useRef(120);
+  const fitModeRef = useRef<FitMode>('manual');
+  const scaleRef = useRef(1.2);
 
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(initialPage ?? 1);
@@ -372,6 +399,114 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (fitMode === 'width') return Math.max(0.3, w / baseW);
     return Math.max(0.3, Math.min(w / baseW, h / baseH));
   }, [zoom, fitMode, rotation]);
+
+  useEffect(() => {
+    scrollModeRef.current = scrollMode;
+    zoomRef.current = zoom;
+    fitModeRef.current = fitMode;
+    scaleRef.current = scale;
+  }, [scrollMode, zoom, fitMode, scale]);
+
+  const applyZoomAtFocalPoint = useCallback((clientX: number, clientY: number, newZoomPercent: number) => {
+    const scrollEl = scrollModeRef.current === 'single' ? viewerRef.current : continuousScrollRef.current;
+    if (!scrollEl) return;
+
+    const rect = scrollEl.getBoundingClientRect();
+    const focalX = clientX - rect.left;
+    const focalY = clientY - rect.top;
+
+    const currentZoom = fitModeRef.current === 'manual'
+      ? zoomRef.current
+      : Math.round(scaleRef.current * 100);
+    const clampedZoom = clamp(Math.round(newZoomPercent), ZOOM_MIN, ZOOM_MAX);
+    if (clampedZoom === currentZoom && fitModeRef.current === 'manual') return;
+
+    const ratio = clampedZoom / currentZoom;
+    pendingZoomScrollRef.current = {
+      el: scrollEl,
+      scrollLeft: (scrollEl.scrollLeft + focalX) * ratio - focalX,
+      scrollTop: (scrollEl.scrollTop + focalY) * ratio - focalY,
+    };
+
+    setFitMode('manual');
+    setZoom(clampedZoom);
+  }, []);
+
+  useLayoutEffect(() => {
+    const pending = pendingZoomScrollRef.current;
+    if (!pending) return;
+    pendingZoomScrollRef.current = null;
+    pending.el.scrollLeft = pending.scrollLeft;
+    pending.el.scrollTop = pending.scrollTop;
+  }, [zoom, fitMode]);
+
+  useEffect(() => {
+    const host = documentHostRef.current;
+    if (!host) return;
+
+    const resolveScrollEl = () => (
+      scrollModeRef.current === 'single' ? viewerRef.current : continuousScrollRef.current
+    );
+
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      if (isEditableKeyboardTarget(event.target)) return;
+      const scrollEl = resolveScrollEl();
+      if (!scrollEl) return;
+      event.preventDefault();
+      const currentZoom = fitModeRef.current === 'manual'
+        ? zoomRef.current
+        : Math.round(scaleRef.current * 100);
+      applyZoomAtFocalPoint(event.clientX, event.clientY, wheelZoomPercent(currentZoom, event.deltaY));
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 2) return;
+      if (isEditableKeyboardTarget(event.target)) return;
+      const scrollEl = resolveScrollEl();
+      if (!scrollEl) return;
+      pinchStateRef.current = {
+        distance: touchSpan(event.touches),
+        zoom: fitModeRef.current === 'manual'
+          ? zoomRef.current
+          : Math.round(scaleRef.current * 100),
+      };
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length !== 2 || !pinchStateRef.current) return;
+      const scrollEl = resolveScrollEl();
+      if (!scrollEl) return;
+      event.preventDefault();
+      const distance = touchSpan(event.touches);
+      const center = touchCenter(event.touches);
+      const ratio = distance / pinchStateRef.current.distance;
+      const newZoom = clamp(
+        Math.round(pinchStateRef.current.zoom * ratio),
+        ZOOM_MIN,
+        ZOOM_MAX,
+      );
+      applyZoomAtFocalPoint(center.x, center.y, newZoom);
+    };
+
+    const clearPinch = (event: TouchEvent) => {
+      if (event.touches.length < 2) pinchStateRef.current = null;
+    };
+
+    host.addEventListener('wheel', onWheel, { passive: false });
+    host.addEventListener('touchstart', onTouchStart, { passive: true });
+    host.addEventListener('touchmove', onTouchMove, { passive: false });
+    host.addEventListener('touchend', clearPinch);
+    host.addEventListener('touchcancel', clearPinch);
+
+    return () => {
+      host.removeEventListener('wheel', onWheel);
+      host.removeEventListener('touchstart', onTouchStart);
+      host.removeEventListener('touchmove', onTouchMove);
+      host.removeEventListener('touchend', clearPinch);
+      host.removeEventListener('touchcancel', clearPinch);
+    };
+  }, [applyZoomAtFocalPoint]);
 
   const pageSpaceDims = useMemo(() => pageDimensions(rotation), [rotation]);
 
@@ -1962,7 +2097,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
             }}
           >
             {scrollMode === 'single' ? (
-              <div ref={viewerRef} style={{ position: 'absolute', inset: 0, overflow: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 12, background: '#f3f4f6', cursor: tool === 'pan' ? (isPanning ? 'grabbing' : 'grab') : tool === 'select' ? 'default' : 'crosshair' }} onMouseDown={onViewerMouseDown} onMouseMove={onViewerMouseMove} onMouseUp={onViewerMouseUp} onMouseLeave={onViewerMouseUp}>
+              <div ref={viewerRef} className="pdf-viewer-scroll" style={{ position: 'absolute', inset: 0, overflow: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 12, background: '#f3f4f6', cursor: tool === 'pan' ? (isPanning ? 'grabbing' : 'grab') : tool === 'select' ? 'default' : 'crosshair' }} onMouseDown={onViewerMouseDown} onMouseMove={onViewerMouseMove} onMouseUp={onViewerMouseUp} onMouseLeave={onViewerMouseUp}>
                 <div ref={pageHostRef} style={{ position: 'relative', boxShadow: '0 1px 4px rgba(0,0,0,.15)' }}>
                   <Page
                     pageNumber={page}
