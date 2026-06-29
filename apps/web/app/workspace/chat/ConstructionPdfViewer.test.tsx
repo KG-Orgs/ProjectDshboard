@@ -13,11 +13,45 @@ import { scaleStorageKey } from './pdf-scale';
 // ─── react-pdf mock ──────────────────────────────────────────────────────────
 // Capture the onLoadSuccess handler so tests can trigger it manually.
 let _capturedOnLoadSuccess: ((doc: MockDoc) => Promise<void>) | undefined;
+let _capturedOnLoadError: ((error: Error) => void) | undefined;
+let _capturedOnLoadProgress: ((progress: { loaded: number; total: number }) => void) | undefined;
+let _setMockDocState: ((state: 'loading' | 'loaded' | 'error') => void) | undefined;
+let _lastMockLoadError = new Error('Failed to fetch PDF');
 
-vi.mock('react-pdf', () => {
+vi.mock('react-pdf', async () => {
+  const React = await import('react');
+  const { useState } = React;
   return {
-    Document: ({ children, onLoadSuccess }: { children: React.ReactNode; onLoadSuccess?: (doc: any) => Promise<void> }) => {
+    Document: ({
+      children,
+      loading,
+      error,
+      onLoadSuccess,
+      onLoadError,
+      onLoadProgress,
+    }: {
+      children: React.ReactNode;
+      loading?: React.ReactNode;
+      error?: React.ReactNode | ((props: { error: Error }) => React.ReactNode);
+      onLoadSuccess?: (doc: any) => Promise<void>;
+      onLoadError?: (error: Error) => void;
+      onLoadProgress?: (progress: { loaded: number; total: number }) => void;
+    }) => {
+      const [state, setState] = useState<'loading' | 'loaded' | 'error'>('loading');
+      _setMockDocState = setState;
       _capturedOnLoadSuccess = onLoadSuccess;
+      _capturedOnLoadError = onLoadError;
+      _capturedOnLoadProgress = onLoadProgress;
+
+      if (state === 'error') {
+        const errorNode = typeof error === 'function'
+          ? error({ error: _lastMockLoadError })
+          : error;
+        return <div data-testid="pdf-document">{errorNode}</div>;
+      }
+      if (state === 'loading') {
+        return <div data-testid="pdf-document">{loading}</div>;
+      }
       return <div data-testid="pdf-document">{children}</div>;
     },
     // NOTE: No data-page on the Page mock — the continuous-scroll wrapper divs use data-page,
@@ -109,6 +143,16 @@ const DEFAULT_PROPS = {
 async function simulatePdfLoad(doc: MockDoc) {
   await act(async () => {
     await _capturedOnLoadSuccess!(doc);
+    _setMockDocState?.('loaded');
+  });
+}
+
+async function simulatePdfLoadError(message = 'Failed to fetch PDF') {
+  const err = new Error(message);
+  _lastMockLoadError = err;
+  await act(async () => {
+    _capturedOnLoadError?.(err);
+    _setMockDocState?.('error');
   });
 }
 
@@ -2998,5 +3042,70 @@ describe('ConstructionPdfViewer – markup mode defaults', () => {
       expect(screen.getByTitle('Expand markup panel')).toBeInTheDocument();
     });
     expect(screen.queryByLabelText('rectangle')).not.toBeInTheDocument();
+  });
+});
+
+describe('ConstructionPdfViewer – document loading and error states', () => {
+  beforeEach(() => {
+    _capturedOnLoadSuccess = undefined;
+    _capturedOnLoadError = undefined;
+    _capturedOnLoadProgress = undefined;
+    _setMockDocState = undefined;
+    _lastMockLoadError = new Error('Failed to fetch PDF');
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+    mockFetch();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('shows a loading state before the PDF document loads', () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading PDF…');
+    expect(document.querySelector('.pdf-viewer-stage-state__spinner')).toBeInTheDocument();
+    expect(screen.queryByTestId('pdf-page-1')).not.toBeInTheDocument();
+  });
+
+  it('shows load progress when onLoadProgress reports partial bytes', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading PDF…');
+
+    act(() => {
+      _capturedOnLoadProgress?.({ loaded: 50, total: 100 });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('progressbar', { name: 'PDF load progress' })).toHaveAttribute('aria-valuenow', '50');
+      expect(screen.getByText('50%')).toBeInTheDocument();
+    });
+  });
+
+  it('shows an error message and retry button when document load fails', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoadError('Network error while loading PDF');
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Network error while loading PDF');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+    expect(screen.queryByTestId('pdf-page-1')).not.toBeInTheDocument();
+  });
+
+  it('returns to loading state when retry is clicked after a load error', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoadError('Network error while loading PDF');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading PDF…');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-page="1"]')).toBeInTheDocument();
+    });
   });
 });

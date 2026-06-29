@@ -1392,3 +1392,93 @@
   border-color: #0f766e;
   color: #0f766e;
 }
+
+/* ─── PDF document load / error states ─── */
+.pdf-viewer-document-host {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.pdf-viewer-stage-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #525659;
+  color: #e5e7eb;
+  z-index: 20;
+  padding: 24px;
+  text-align: center;
+}
+
+.pdf-viewer-stage-state__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #e5e7eb;
+  border-radius: 50%;
+  animation: pdf-viewer-spin 0.8s linear infinite;
+}
+
+@keyframes pdf-viewer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pdf-viewer-stage-state__label {
+  margin: 0;
+  font-size: 13px;
+  color: #d1d5db;
+}
+
+.pdf-viewer-stage-state__progress {
+  width: min(220px, 80%);
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.pdf-viewer-stage-state__progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: #60a5fa;
+  transition: width 0.15s ease;
+}
+
+.pdf-viewer-stage-state__progress-label {
+  margin: 0;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.pdf-viewer-stage-state--error .pdf-viewer-stage-state__label {
+  color: #fecaca;
+  max-width: 320px;
+  word-break: break-word;
+}
+
+.pdf-viewer-stage-state__retry {
+  margin-top: 4px;
+  min-width: 88px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f9fafb;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.pdf-viewer-stage-state__retry:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+}

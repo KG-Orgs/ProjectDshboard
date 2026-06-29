@@ -280,6 +280,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const [markupPanelHeight, setMarkupPanelHeight] = useState(200);
   const [markupPanelCollapsed, setMarkupPanelCollapsed] = useState(true);
 
+  const [loadProgress, setLoadProgress] = useState<number | null>(null);
+  const [documentRetryKey, setDocumentRetryKey] = useState(0);
+
   const [documentScale, setDocumentScale] = useState<DocumentScale | null>(null);
   const [pendingCalibration, setPendingCalibration] = useState<{
     pageNumber: number;
@@ -329,6 +332,46 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     setDocumentScale(scale);
     if (fileId && scale) saveDocumentScale(fileId, scale);
   }, [fileId]);
+
+  const retryDocumentLoad = useCallback(() => {
+    setLoadProgress(null);
+    setNumPages(0);
+    setOutline(null);
+    pdfRef.current = null;
+    textCacheRef.current.clear();
+    setDocumentRetryKey((key) => key + 1);
+  }, []);
+
+  const documentLoading = (
+    <div className="pdf-viewer-stage-state" role="status" aria-live="polite" aria-busy="true">
+      <div className="pdf-viewer-stage-state__spinner" aria-hidden />
+      <p className="pdf-viewer-stage-state__label">Loading PDF…</p>
+      {loadProgress != null && loadProgress > 0 && loadProgress < 100 ? (
+        <>
+          <div
+            className="pdf-viewer-stage-state__progress"
+            role="progressbar"
+            aria-valuenow={loadProgress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="PDF load progress"
+          >
+            <div className="pdf-viewer-stage-state__progress-bar" style={{ width: `${loadProgress}%` }} />
+          </div>
+          <p className="pdf-viewer-stage-state__progress-label">{loadProgress}%</p>
+        </>
+      ) : null}
+    </div>
+  );
+
+  const renderDocumentError = useCallback(({ error }: { error: Error }) => (
+    <div className="pdf-viewer-stage-state pdf-viewer-stage-state--error" role="alert">
+      <p className="pdf-viewer-stage-state__label">{error.message || 'Failed to load PDF.'}</p>
+      <button type="button" className="pdf-viewer-stage-state__retry" onClick={retryDocumentLoad}>
+        Retry
+      </button>
+    </div>
+  ), [retryDocumentLoad]);
 
   const continuousPageSlotSize = useMemo(() => {
     const { width: baseW, height: baseH } = pageDimensions(rotation);
@@ -497,6 +540,8 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     setHitIndex(-1);
     setCitationFlash(null);
     setPendingCalibration(null);
+    setLoadProgress(null);
+    setDocumentRetryKey(0);
     textCacheRef.current.clear();
     pdfRef.current = null;
     setDocumentScale(fileId ? loadDocumentScale(fileId) : null);
@@ -1568,12 +1613,19 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           ) : null}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+        <div className="pdf-viewer-document-host">
           <Document
-            key={url}
+            key={`${url}-${documentRetryKey}`}
             file={url}
-            loading={null}
+            loading={documentLoading}
+            error={renderDocumentError}
+            onLoadProgress={({ loaded, total }) => {
+              if (total > 0) {
+                setLoadProgress(Math.min(100, Math.round((loaded / total) * 100)));
+              }
+            }}
             onLoadSuccess={async (doc) => {
+              setLoadProgress(null);
               pdfRef.current = doc;
               setNumPages(doc.numPages);
               setPage((curr) => clamp(curr, 1, doc.numPages));
