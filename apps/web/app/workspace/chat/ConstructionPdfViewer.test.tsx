@@ -630,7 +630,8 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     });
 
     const moveHandle = document.querySelector('[data-handle="move"]') as HTMLElement;
-    const pageHost = moveHandle.closest('[style*="position: relative"]') as HTMLElement;
+    const pageHost = moveHandle.closest('[data-markup-layer]') as HTMLElement
+      ?? moveHandle.closest('[style*="position: relative"]') as HTMLElement;
 
     // Mock getBoundingClientRect so pagePointFromEvent can compute normalized coords
     vi.spyOn(pageHost, 'getBoundingClientRect').mockReturnValue({
@@ -697,7 +698,8 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     await waitFor(() => expect(document.querySelector('[data-handle="se"]')).toBeInTheDocument());
 
     const seHandle = document.querySelector('[data-handle="se"]') as HTMLElement;
-    const pageHost = seHandle.closest('[style*="position: relative"]') as HTMLElement;
+    const pageHost = seHandle.closest('[data-markup-layer]') as HTMLElement
+      ?? seHandle.closest('[style*="position: relative"]') as HTMLElement;
 
     vi.spyOn(pageHost, 'getBoundingClientRect').mockReturnValue({
       left: 0, top: 0, width: 1000, height: 800,
@@ -757,7 +759,8 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     await waitFor(() => expect(document.querySelector('[data-handle="move"]')).toBeInTheDocument());
 
     const moveHandle = document.querySelector('[data-handle="move"]') as HTMLElement;
-    const pageHost = moveHandle.closest('[style*="position: relative"]') as HTMLElement;
+    const pageHost = moveHandle.closest('[data-markup-layer]') as HTMLElement
+      ?? moveHandle.closest('[style*="position: relative"]') as HTMLElement;
 
     vi.spyOn(pageHost, 'getBoundingClientRect').mockReturnValue({
       left: 0, top: 0, width: 1000, height: 800,
@@ -816,7 +819,8 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     await waitFor(() => expect(document.querySelector('[data-handle="p1"]')).toBeInTheDocument());
 
     const p1Handle = document.querySelector('[data-handle="p1"]') as HTMLElement;
-    const pageHost = p1Handle.closest('[style*="position: relative"]') as HTMLElement;
+    const pageHost = p1Handle.closest('[data-markup-layer]') as HTMLElement
+      ?? p1Handle.closest('[style*="position: relative"]') as HTMLElement;
 
     vi.spyOn(pageHost, 'getBoundingClientRect').mockReturnValue({
       left: 0, top: 0, width: 1000, height: 800,
@@ -877,7 +881,8 @@ describe('ConstructionPdfViewer – markup move/resize handles', () => {
     await waitFor(() => expect(document.querySelector('[data-handle="move"]')).toBeInTheDocument());
 
     const moveHandle = document.querySelector('[data-handle="move"]') as HTMLElement;
-    const pageHost = moveHandle.closest('[style*="position: relative"]') as HTMLElement;
+    const pageHost = moveHandle.closest('[data-markup-layer]') as HTMLElement
+      ?? moveHandle.closest('[style*="position: relative"]') as HTMLElement;
 
     vi.spyOn(pageHost, 'getBoundingClientRect').mockReturnValue({
       left: 0, top: 0, width: 1000, height: 800,
@@ -1281,16 +1286,14 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
     expandMarkupPanel();
   }
 
-  function getPageHost(): HTMLElement {
+  async function getPageHost(): Promise<HTMLElement> {
     enableSinglePageMode();
-    // The pageHostRef div has a distinctive box-shadow style. The thumbnails
-    // sidebar also renders pdf-page-N elements but without this shadow,
-    // so querying by style is the most reliable way to find the main host.
-    const el = document.querySelector('[style*="box-shadow: 0 1px 4px"]') as HTMLElement;
-    if (el) return el;
-    // Fallback: first pdf-page-1 parent (single-page mode only)
-    const pages = screen.getAllByTestId('pdf-page-1');
-    return pages[0]!.parentElement as HTMLElement;
+    let layer: HTMLElement | null = null;
+    await waitFor(() => {
+      layer = document.querySelector('[data-markup-layer]') as HTMLElement;
+      expect(layer).toBeInTheDocument();
+    });
+    return layer!;
   }
 
   function mockPageHostRect(el: HTMLElement) {
@@ -1335,7 +1338,7 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
     expandMarkupTools();
     fireEvent.click(screen.getByRole('button', { name: 'rectangle' }));
 
-    const pageHost = getPageHost();
+    const pageHost = await getPageHost();
     mockPageHostRect(pageHost);
 
     fireEvent.mouseDown(pageHost, { clientX: 100, clientY: 100 });
@@ -1397,7 +1400,7 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
     expandMarkupTools();
     fireEvent.click(screen.getByRole('button', { name: 'arrow' }));
 
-    const pageHost = getPageHost();
+    const pageHost = await getPageHost();
     mockPageHostRect(pageHost);
 
     fireEvent.mouseDown(pageHost, { clientX: 100, clientY: 100 });
@@ -1518,6 +1521,266 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
     await waitFor(() => {
       expect(screen.getByRole('spinbutton')).toHaveValue(2);
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Test suite 4b: Continuous scroll markup interaction
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getContinuousPageLayer(pageNum: number): HTMLElement {
+  const layer = document.querySelector(`[data-markup-layer][data-markup-page="${pageNum}"]`) as HTMLElement;
+  if (!layer) throw new Error(`No continuous markup layer for page ${pageNum}`);
+  return layer;
+}
+
+function mockLayerRect(el: HTMLElement) {
+  vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({
+    left: 0,
+    top: 0,
+    width: 1000,
+    height: 800,
+    right: 1000,
+    bottom: 800,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  } as DOMRect);
+}
+
+describe('ConstructionPdfViewer – continuous scroll markup interaction', () => {
+  const now = new Date().toISOString();
+
+  function makeMarkup(overrides: Partial<{
+    id: string;
+    type: string;
+    pageNumber: number;
+    coordinates: Record<string, unknown>;
+  }> = {}) {
+    return {
+      id: overrides.id ?? 'markup-cont-1',
+      projectId: 'proj-cont',
+      fileId: 'file-cont',
+      pageNumber: overrides.pageNumber ?? 2,
+      type: overrides.type ?? 'rectangle',
+      coordinates: overrides.coordinates ?? { x: 0.1, y: 0.1, width: 0.3, height: 0.2 },
+      category: 'General Comment',
+      status: 'Open',
+      createdBy: 'Tester',
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
+  beforeEach(() => {
+    _capturedOnLoadSuccess = undefined;
+    _lastObserver = undefined;
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('renders interactive markup layers on each page when markup tools are open', async () => {
+    mockFetch({ '/markups': { markups: [] } });
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+
+    const layers = document.querySelectorAll('[data-markup-layer]');
+    expect(layers.length).toBe(3);
+    layers.forEach((layer) => {
+      expect(layer).toHaveAttribute('data-markup-page');
+    });
+  });
+
+  it('creates a rectangle on the correct page in continuous scroll mode', async () => {
+    let capturedPost: Record<string, unknown> = {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/markups') && (!init?.method || init.method === 'GET')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [] }) } as Response;
+        }
+        if (init?.method === 'POST') {
+          capturedPost = JSON.parse(String(init.body)) as Record<string, unknown>;
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              markup: makeMarkup({
+                id: 'created-rect',
+                pageNumber: Number(capturedPost.pageNumber),
+                coordinates: capturedPost.coordinates as Record<string, unknown>,
+              }),
+            }),
+          } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'rectangle' }));
+
+    const page2Layer = getContinuousPageLayer(2);
+    mockLayerRect(page2Layer);
+
+    fireEvent.mouseDown(page2Layer, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(page2Layer, { clientX: 400, clientY: 300 });
+    await act(async () => {
+      fireEvent.mouseUp(page2Layer);
+    });
+
+    await waitFor(() => {
+      expect(capturedPost.type).toBe('rectangle');
+      expect(capturedPost.pageNumber).toBe(2);
+    });
+  });
+
+  it('shows move/resize handles for a selected markup on its page in continuous mode', async () => {
+    const markup = makeMarkup({ pageNumber: 2 });
+    mockFetch({ '/markups': { markups: [markup] } });
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+    expandMarkupPanel();
+    expandMarkupTools();
+
+    await waitFor(() => screen.getByRole('cell', { name: 'rectangle' }));
+    fireEvent.click(screen.getByRole('cell', { name: 'rectangle' }).closest('tr')!);
+    fireEvent.click(screen.getByRole('button', { name: 'select' }));
+
+    await waitFor(() => {
+      const page2Layer = getContinuousPageLayer(2);
+      expect(page2Layer.querySelector('[data-handle="move"]')).toBeInTheDocument();
+      expect(page2Layer.querySelector('[data-handle="se"]')).toBeInTheDocument();
+    });
+
+    const page1Layer = getContinuousPageLayer(1);
+    expect(page1Layer.querySelector('[data-handle="move"]')).toBeNull();
+  });
+
+  it('dragging a move handle in continuous mode PATCHes coordinates for the correct page', async () => {
+    const markup = makeMarkup({ pageNumber: 2, coordinates: { x: 0.1, y: 0.1, width: 0.3, height: 0.2 } });
+    let lastPatch: Record<string, unknown> = {};
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/markups') && (!init?.method || init.method === 'GET')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [markup] }) } as Response;
+        }
+        if (init?.method === 'PATCH') {
+          lastPatch = JSON.parse(String(init.body)) as Record<string, unknown>;
+          return { ok: true, status: 200, json: async () => ({ markup: { ...markup, ...lastPatch } }) } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+    expandMarkupPanel();
+    expandMarkupTools();
+
+    await waitFor(() => screen.getByRole('cell', { name: 'rectangle' }));
+    fireEvent.click(screen.getByRole('cell', { name: 'rectangle' }).closest('tr')!);
+    fireEvent.click(screen.getByRole('button', { name: 'select' }));
+
+    const page2Layer = getContinuousPageLayer(2);
+    mockLayerRect(page2Layer);
+
+    await waitFor(() => expect(page2Layer.querySelector('[data-handle="move"]')).toBeInTheDocument());
+
+    const moveHandle = page2Layer.querySelector('[data-handle="move"]') as HTMLElement;
+    fireEvent.mouseDown(moveHandle, { clientX: 100, clientY: 80 });
+    fireEvent.mouseMove(page2Layer, { clientX: 150, clientY: 120 });
+    fireEvent.mouseUp(page2Layer);
+
+    await waitFor(() => {
+      const coords = lastPatch.coordinates as Record<string, number>;
+      expect(coords.x).toBeCloseTo(0.15, 2);
+      expect(coords.y).toBeCloseTo(0.15, 2);
+    });
+  });
+
+  it('scroll-driven page updates do not break continuous markup layers', async () => {
+    const onVisiblePageChange = vi.fn();
+    mockFetch({ '/markups': { markups: [] } });
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+        onVisiblePageChange={onVisiblePageChange}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'rectangle' }));
+
+    const page3Container = document.querySelector('[data-page="3"]') as HTMLElement;
+    act(() => {
+      _lastObserver!.trigger(page3Container, 0.75);
+    });
+
+    await waitFor(() => {
+      expect(onVisiblePageChange).toHaveBeenCalledWith(3);
+    });
+
+    expect(document.querySelectorAll('[data-markup-layer]').length).toBe(5);
+
+    const page3Layer = getContinuousPageLayer(3);
+    mockLayerRect(page3Layer);
+    fireEvent.mouseDown(page3Layer, { clientX: 50, clientY: 50 });
+    fireEvent.mouseMove(page3Layer, { clientX: 250, clientY: 200 });
+    await act(async () => {
+      fireEvent.mouseUp(page3Layer);
+    });
+
+    expect(document.querySelectorAll('[data-page]').length).toBe(5);
   });
 });
 

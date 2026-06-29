@@ -168,6 +168,8 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const markupResizeDragRef = useRef<{ startY: number; startH: number } | null>(null);
   const draftStartRef = useRef<Point | null>(null);
   const draftCurrentRef = useRef<Point | null>(null);
+  const markupPageRef = useRef<number>(1);
+  const draftPageNumberRef = useRef<number | null>(null);
 
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(initialPage ?? 1);
@@ -192,6 +194,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const [selectedMarkupId, setSelectedMarkupId] = useState<string | null>(null);
   const [draftStart, setDraftStart] = useState<Point | null>(null);
   const [draftCurrent, setDraftCurrent] = useState<Point | null>(null);
+  const [draftPageNumber, setDraftPageNumber] = useState<number | null>(null);
   const [draftAreaPoints, setDraftAreaPoints] = useState<Point[]>([]);
 
   const [filterStatus, setFilterStatus] = useState('');
@@ -241,6 +244,8 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   }, [markups, filterStatus, filterCategory, filterPage, filterAssigned, sortBy]);
 
   const selectedMarkup = useMemo(() => markups.find((m) => m.id === selectedMarkupId) ?? null, [markups, selectedMarkupId]);
+
+  const markupOverlayInteractive = Boolean(selectedMarkupId) || (showMarkupTools && tool !== 'pan');
 
   const loadMarkups = useCallback(async () => {
     if (!projectId || !fileId) { setMarkups([]); return; }
@@ -483,29 +488,48 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     void runSearch(snippet);
   }, [citationRequest, fileId, runSearch]);
 
-  const pagePointFromEvent = (event: ReactMouseEvent<HTMLDivElement>): Point | null => {
-    const host = pageHostRef.current;
-    if (!host) return null;
-    const rect = host.getBoundingClientRect();
+  const pagePointFromEvent = (event: ReactMouseEvent<HTMLDivElement>, host?: HTMLElement | null): Point | null => {
+    const el = host ?? pageHostRef.current ?? (event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
     return { x: clamp((event.clientX - rect.left) / rect.width, 0, 1), y: clamp((event.clientY - rect.top) / rect.height, 0, 1) };
   };
 
-  const onPointerDown = (event: ReactMouseEvent<HTMLDivElement>) => {
-    const p = pagePointFromEvent(event);
+  const pageHostFromEvent = (event: ReactMouseEvent<HTMLDivElement>): HTMLElement | null => {
+    const layer = (event.target as HTMLElement).closest('[data-markup-layer]');
+    if (layer instanceof HTMLElement) return layer;
+    return pageHostRef.current;
+  };
+
+  const activeMarkupPage = () => markupPageRef.current || page;
+
+  const onPointerDown = (event: ReactMouseEvent<HTMLDivElement>, pageNumber?: number) => {
+    const host = event.currentTarget as HTMLElement;
+    const p = pagePointFromEvent(event, host);
     if (!p) return;
 
+    const targetPage = pageNumber ?? page;
+    markupPageRef.current = targetPage;
+
     if (tool === 'count') {
-      void createMarkup({ pageNumber: page, type: 'count', coordinates: { x: p.x, y: p.y }, measurement: { kind: 'count', value: 1, unit: 'count' } });
+      void createMarkup({ pageNumber: targetPage, type: 'count', coordinates: { x: p.x, y: p.y }, measurement: { kind: 'count', value: 1, unit: 'count' } });
       return;
     }
 
     if (tool === 'area') {
+      if (draftAreaPoints.length === 0) {
+        draftPageNumberRef.current = targetPage;
+        setDraftPageNumber(targetPage);
+      }
       setDraftAreaPoints((curr) => [...curr, p]);
       return;
     }
 
     if (tool === 'select' || tool === 'pan') return;
 
+    draftPageNumberRef.current = targetPage;
+    setDraftPageNumber(targetPage);
     setDraftStart(p);
     setDraftCurrent(p);
     draftStartRef.current = p;
@@ -513,9 +537,10 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   };
 
   const onPointerMove = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const host = event.currentTarget as HTMLElement;
     const drag = markupDragRef.current;
     if (drag) {
-      const p = pagePointFromEvent(event);
+      const p = pagePointFromEvent(event, pageHostFromEvent(event) ?? host);
       if (!p) return;
       const dx = p.x - drag.startPoint.x;
       const dy = p.y - drag.startPoint.y;
@@ -560,7 +585,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       return;
     }
     if (!draftStartRef.current) return;
-    const p = pagePointFromEvent(event);
+    const p = pagePointFromEvent(event, host);
     if (!p) return;
     draftCurrentRef.current = p;
     setDraftCurrent(p);
@@ -602,10 +627,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (!(draftStartRef.current ?? draftStart) || !(draftCurrentRef.current ?? draftCurrent)) return;
     const startPos = draftStartRef.current ?? draftStart!;
     const endPos = draftCurrentRef.current ?? draftCurrent!;
+    const targetPage = activeMarkupPage();
     if (tool === 'rectangle' || tool === 'highlight' || tool === 'cloud' || tool === 'text') {
       const rect = rectFrom(startPos, endPos);
       if (rect.width > 0.002 && rect.height > 0.002) {
-        await createMarkup({ pageNumber: page, type: tool, coordinates: rect });
+        await createMarkup({ pageNumber: targetPage, type: tool, coordinates: rect });
       }
     }
 
@@ -613,7 +639,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const coords = { x1: startPos.x, y1: startPos.y, x2: endPos.x, y2: endPos.y };
       const len = pointDistance(startPos, endPos);
       await createMarkup({
-        pageNumber: page,
+        pageNumber: targetPage,
         type: tool,
         coordinates: coords,
         measurement: tool === 'length' ? { kind: 'length', value: Number((len * 100).toFixed(2)), unit } : tool === 'calibrate' ? { kind: 'calibration', value: 10, unit, calibration: { pixels: len, realValue: 10, unit } } : undefined,
@@ -622,16 +648,82 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
     setDraftStart(null);
     setDraftCurrent(null);
+    setDraftPageNumber(null);
     draftStartRef.current = null;
     draftCurrentRef.current = null;
+    draftPageNumberRef.current = null;
   };
 
   const finishArea = async () => {
     if (draftAreaPoints.length < 3) return;
     const area = polygonArea(draftAreaPoints);
-    await createMarkup({ pageNumber: page, type: 'area', coordinates: { points: draftAreaPoints }, measurement: { kind: 'area', value: Number((area * 10000).toFixed(2)), unit } });
+    const targetPage = draftPageNumberRef.current ?? draftPageNumber ?? activeMarkupPage();
+    await createMarkup({ pageNumber: targetPage, type: 'area', coordinates: { points: draftAreaPoints }, measurement: { kind: 'area', value: Number((area * 10000).toFixed(2)), unit } });
     setDraftAreaPoints([]);
+    setDraftPageNumber(null);
+    draftPageNumberRef.current = null;
   };
+
+  const renderPageOverlayContent = (pageNum: number) => {
+    const draftPage = draftPageNumber ?? page;
+    return (
+      <>
+        {markups.filter((m) => m.pageNumber === pageNum).map((m) => renderMarkup(m, pageNum))}
+        {selectedMarkup && selectedMarkup.pageNumber === pageNum ? renderHandles(selectedMarkup) : null}
+
+        {draftStart && draftCurrent && draftPage === pageNum && (tool === 'rectangle' || tool === 'highlight' || tool === 'cloud' || tool === 'text') ? (() => {
+          const r = rectFrom(draftStart, draftCurrent);
+          return <div style={{ position: 'absolute', left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.width * 100}%`, height: `${r.height * 100}%`, border: '2px dashed #2563eb', background: tool === 'highlight' ? 'rgba(250,204,21,.35)' : 'transparent' }} />;
+        })() : null}
+
+        {draftStart && draftCurrent && draftPage === pageNum && (tool === 'arrow' || tool === 'line' || tool === 'length' || tool === 'calibrate') ? (
+          <svg style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
+            {tool === 'arrow' ? (
+              <defs>
+                <marker id="draft-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
+                </marker>
+              </defs>
+            ) : null}
+            <line x1={`${draftStart.x * 100}%`} y1={`${draftStart.y * 100}%`} x2={`${draftCurrent.x * 100}%`} y2={`${draftCurrent.y * 100}%`} stroke={tool === 'calibrate' ? '#8b5cf6' : tool === 'line' ? '#0ea5e9' : '#ef4444'} strokeWidth={3} strokeDasharray={tool === 'calibrate' ? '5 4' : undefined} markerEnd={tool === 'arrow' ? 'url(#draft-arrow)' : undefined} />
+          </svg>
+        ) : null}
+
+        {tool === 'area' && draftPage === pageNum && draftAreaPoints.length > 0 ? (
+          <svg style={{ position: 'absolute', inset: 0 }}>
+            <polyline points={draftAreaPoints.map((pt) => `${pt.x * 100},${pt.y * 100}`).join(' ')} fill="rgba(16,185,129,.2)" stroke="#10b981" strokeWidth={2} />
+          </svg>
+        ) : null}
+
+        {citationFlash?.pageNumber === pageNum && citationFlash.boundingBox ? (
+          <div style={{ position: 'absolute', left: `${citationFlash.boundingBox.x * 100}%`, top: `${citationFlash.boundingBox.y * 100}%`, width: `${citationFlash.boundingBox.width * 100}%`, height: `${citationFlash.boundingBox.height * 100}%`, border: '2px solid #f97316', background: 'rgba(249,115,22,.2)', boxShadow: '0 0 0 1px rgba(255,255,255,.8) inset' }} />
+        ) : null}
+      </>
+    );
+  };
+
+  const renderMarkupLayer = (pageNum: number, interactive: boolean) => (
+    <div
+      data-markup-layer
+      data-markup-page={pageNum}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: interactive ? 'auto' : 'none',
+        cursor: interactive ? (tool === 'select' ? 'default' : 'crosshair') : undefined,
+      }}
+      {...(interactive ? {
+        onMouseDown: (e: ReactMouseEvent<HTMLDivElement>) => onPointerDown(e, pageNum),
+        onMouseMove: onPointerMove,
+        onMouseUp: () => { void finishDraw(); },
+        onMouseLeave: () => { void finishDraw(); },
+        onDoubleClick: () => { if (tool === 'area' && draftAreaPoints.length >= 3) { void finishArea(); } },
+        onClick: () => { if (tool === 'select') setSelectedMarkupId(null); },
+      } : {})}
+    >
+      {renderPageOverlayContent(pageNum)}
+    </div>
+  );
 
   const renderMarkup = (markup: Markup, forPage = page) => {
     if (markup.pageNumber !== forPage) return null;
@@ -693,7 +785,8 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     const HS = HANDLE / 2;
     const startDrag = (handle: string) => (e: ReactMouseEvent<HTMLDivElement>) => {
       e.stopPropagation();
-      const p = pagePointFromEvent(e);
+      markupPageRef.current = markup.pageNumber;
+      const p = pagePointFromEvent(e, pageHostFromEvent(e));
       if (!p) return;
       markupDragRef.current = { markupId: markup.id, handle, startPoint: p, startCoords: { ...markup.coordinates } };
     };
@@ -895,7 +988,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           >
             {scrollMode === 'single' ? (
               <div ref={viewerRef} style={{ position: 'absolute', inset: 0, overflow: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 12, background: '#f3f4f6', cursor: tool === 'pan' ? (isPanning ? 'grabbing' : 'grab') : tool === 'select' ? 'default' : 'crosshair' }} onMouseDown={onViewerMouseDown} onMouseMove={onViewerMouseMove} onMouseUp={onViewerMouseUp} onMouseLeave={onViewerMouseUp}>
-                <div ref={pageHostRef} style={{ position: 'relative', boxShadow: '0 1px 4px rgba(0,0,0,.15)' }} onMouseDown={onPointerDown} onMouseMove={onPointerMove} onMouseUp={() => { void finishDraw(); }} onMouseLeave={() => { void finishDraw(); }} onDoubleClick={() => { if (tool === 'area' && draftAreaPoints.length >= 3) { void finishArea(); } }} onClick={() => { if (tool === 'select') setSelectedMarkupId(null); }}>
+                <div ref={pageHostRef} style={{ position: 'relative', boxShadow: '0 1px 4px rgba(0,0,0,.15)' }}>
                   <Page
                     pageNumber={page}
                     scale={scale}
@@ -911,38 +1004,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                     loading={<div style={{ width: Math.round(612 * scale), height: Math.round(792 * scale), background: '#e5e7eb' }} />}
                   />
 
-                  <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-                    {markups.map((m) => renderMarkup(m))}
-                    {selectedMarkup && selectedMarkup.pageNumber === page ? renderHandles(selectedMarkup) : null}
-
-                    {draftStart && draftCurrent && (tool === 'rectangle' || tool === 'highlight' || tool === 'cloud' || tool === 'text') ? (() => {
-                      const r = rectFrom(draftStart, draftCurrent);
-                      return <div style={{ position: 'absolute', left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.width * 100}%`, height: `${r.height * 100}%`, border: '2px dashed #2563eb', background: tool === 'highlight' ? 'rgba(250,204,21,.35)' : 'transparent' }} />;
-                    })() : null}
-
-                    {draftStart && draftCurrent && (tool === 'arrow' || tool === 'line' || tool === 'length' || tool === 'calibrate') ? (
-                      <svg style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
-                        {tool === 'arrow' ? (
-                          <defs>
-                            <marker id="draft-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                              <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
-                            </marker>
-                          </defs>
-                        ) : null}
-                        <line x1={`${draftStart.x * 100}%`} y1={`${draftStart.y * 100}%`} x2={`${draftCurrent.x * 100}%`} y2={`${draftCurrent.y * 100}%`} stroke={tool === 'calibrate' ? '#8b5cf6' : tool === 'line' ? '#0ea5e9' : '#ef4444'} strokeWidth={3} strokeDasharray={tool === 'calibrate' ? '5 4' : undefined} markerEnd={tool === 'arrow' ? 'url(#draft-arrow)' : undefined} />
-                      </svg>
-                    ) : null}
-
-                    {tool === 'area' && draftAreaPoints.length > 0 ? (
-                      <svg style={{ position: 'absolute', inset: 0 }}>
-                        <polyline points={draftAreaPoints.map((p) => `${p.x * 100},${p.y * 100}`).join(' ')} fill="rgba(16,185,129,.2)" stroke="#10b981" strokeWidth={2} />
-                      </svg>
-                    ) : null}
-
-                    {citationFlash?.pageNumber === page && citationFlash.boundingBox ? (
-                      <div style={{ position: 'absolute', left: `${citationFlash.boundingBox.x * 100}%`, top: `${citationFlash.boundingBox.y * 100}%`, width: `${citationFlash.boundingBox.width * 100}%`, height: `${citationFlash.boundingBox.height * 100}%`, border: '2px solid #f97316', background: 'rgba(249,115,22,.2)', boxShadow: '0 0 0 1px rgba(255,255,255,.8) inset' }} />
-                    ) : null}
-                  </div>
+                  {renderMarkupLayer(page, markupOverlayInteractive)}
                 </div>
               </div>
             ) : (
@@ -965,9 +1027,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                       slotWidth={continuousPageSlotSize.width}
                       slotHeight={continuousPageSlotSize.height}
                     />
-                    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-                      {markups.filter((m) => m.pageNumber === p).map((m) => renderMarkup(m, p))}
-                    </div>
+                    {renderMarkupLayer(p, markupOverlayInteractive)}
                   </div>
                 ))}
               </div>
