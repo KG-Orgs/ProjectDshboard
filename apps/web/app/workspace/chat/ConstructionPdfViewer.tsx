@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { Bookmark, ChevronDown, ChevronRight, ChevronUp, LayoutGrid, PanelLeft, PanelLeftClose, Search, StickyNote } from 'lucide-react';
 import { MouseEvent as ReactMouseEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -87,26 +87,28 @@ type OutlineItem = {
 };
 
 function BookmarkItem({ item, depth, onJump }: { item: OutlineItem; depth: number; onJump: (dest: string | unknown[] | null) => void }) {
-  const [isExpanded, setIsExpanded] = useState(depth < 1);
+  const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = Boolean(item.items && item.items.length > 0);
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', paddingLeft: depth * 12 }}>
+      <div className="pdf-bookmark-row" style={{ paddingLeft: depth * 12 }}>
         {hasChildren ? (
           <button
             type="button"
+            className="pdf-bookmark-chevron-btn"
             onClick={() => setIsExpanded((e) => !e)}
-            style={{ border: 'none', background: 'none', padding: '1px 4px', cursor: 'pointer', color: '#6b7280', fontSize: 10, lineHeight: 1, flexShrink: 0 }}
+            aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
           >
-            {isExpanded ? '\u25be' : '\u25b8'}
+            {isExpanded ? <ChevronDown size={12} aria-hidden /> : <ChevronRight size={12} aria-hidden />}
           </button>
         ) : (
-          <span style={{ display: 'inline-block', width: 20, flexShrink: 0 }} />
+          <span className="pdf-bookmark-chevron-spacer" aria-hidden />
         )}
         <button
           type="button"
+          className="pdf-bookmark-link"
           onClick={() => onJump(item.dest ?? null)}
-          style={{ border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', padding: '3px 4px', flex: 1, fontSize: 12, color: '#1e40af', fontWeight: item.bold ? 700 : 400, fontStyle: item.italic ? 'italic' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          style={{ fontWeight: item.bold ? 700 : 400, fontStyle: item.italic ? 'italic' : undefined }}
         >
           {item.title}
         </button>
@@ -238,7 +240,6 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const draftCurrentRef = useRef<Point | null>(null);
   const markupPageRef = useRef<number>(1);
   const draftPageNumberRef = useRef<number | null>(null);
-  const markupsLoadExpandedRef = useRef(false);
   const findInputRef = useRef<HTMLInputElement | null>(null);
 
   const [numPages, setNumPages] = useState(0);
@@ -432,11 +433,6 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const loaded = payload.markups ?? [];
       setMarkups(loaded);
 
-      if (loaded.length > 0 && !markupsLoadExpandedRef.current) {
-        markupsLoadExpandedRef.current = true;
-        setMarkupPanelCollapsed(false);
-      }
-
       const storedScale = loadDocumentScale(fileId);
       if (storedScale) {
         setDocumentScale(storedScale);
@@ -547,7 +543,6 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     setDocumentScale(fileId ? loadDocumentScale(fileId) : null);
     setShowMarkupTools(false);
     setMarkupPanelCollapsed(true);
-    markupsLoadExpandedRef.current = false;
   }, [url, fileId]);
 
   useEffect(() => {
@@ -1548,27 +1543,70 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
         ) : null}
       </div>
 
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <div style={{ width: sidebarCollapsed ? 40 : 250, borderRight: '1px solid #e5e7eb', background: '#fff', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb' }}>
-            {!sidebarCollapsed ? (
-              <>
-                <button type="button" onClick={() => setTab('thumbnails')} style={{ flex: 1, border: 'none', background: tab === 'thumbnails' ? '#eff6ff' : '#fff', padding: 8, fontSize: 12 }}>Thumbnails</button>
-                <button type="button" onClick={() => setTab('bookmarks')} style={{ flex: 1, border: 'none', background: tab === 'bookmarks' ? '#eff6ff' : '#fff', padding: 8, fontSize: 12 }}>Bookmarks</button>
-                <button type="button" onClick={() => setTab('markups')} style={{ flex: 1, border: 'none', background: tab === 'markups' ? '#eff6ff' : '#fff', padding: 8, fontSize: 12 }}>Markups</button>
-              </>
-            ) : null}
-            <button type="button" onClick={() => setSidebarCollapsed((c) => !c)} style={{ width: 40, border: 'none', background: '#fff' }}>{sidebarCollapsed ? '>' : '<'}</button>
-          </div>
+      <div className="pdf-viewer-main">
+        <aside className={`pdf-viewer-sidebar ${sidebarCollapsed ? 'pdf-viewer-sidebar--collapsed' : ''}`}>
+          {sidebarCollapsed ? (
+            <button
+              type="button"
+              className="pdf-viewer-sidebar-expand"
+              onClick={() => setSidebarCollapsed(false)}
+              title="Show page sidebar"
+              aria-label="Show page sidebar"
+            >
+              <PanelLeft size={16} aria-hidden />
+              <span>Pages</span>
+            </button>
+          ) : (
+            <>
+              <div className="pdf-viewer-sidebar-tabs">
+                <button
+                  type="button"
+                  className={`pdf-viewer-sidebar-tab${tab === 'thumbnails' ? ' pdf-viewer-sidebar-tab--active' : ''}`}
+                  onClick={() => setTab('thumbnails')}
+                  title="Thumbnails"
+                  aria-label="Thumbnails"
+                >
+                  <LayoutGrid size={14} aria-hidden />
+                  <span>Thumbnails</span>
+                </button>
+                <button
+                  type="button"
+                  className={`pdf-viewer-sidebar-tab${tab === 'bookmarks' ? ' pdf-viewer-sidebar-tab--active' : ''}`}
+                  onClick={() => setTab('bookmarks')}
+                  title="Bookmarks"
+                  aria-label="Bookmarks"
+                >
+                  <Bookmark size={14} aria-hidden />
+                  <span>Bookmarks</span>
+                </button>
+                <button
+                  type="button"
+                  className={`pdf-viewer-sidebar-tab${tab === 'markups' ? ' pdf-viewer-sidebar-tab--active' : ''}`}
+                  onClick={() => setTab('markups')}
+                  title="Markups"
+                  aria-label="Markups"
+                >
+                  <StickyNote size={14} aria-hidden />
+                  <span>Markups</span>
+                </button>
+                <button
+                  type="button"
+                  className="pdf-viewer-sidebar-collapse"
+                  onClick={() => setSidebarCollapsed(true)}
+                  title="Hide page sidebar"
+                  aria-label="Hide page sidebar"
+                >
+                  <PanelLeftClose size={16} aria-hidden />
+                </button>
+              </div>
 
-          {!sidebarCollapsed ? (
-            <div style={{ flex: 1, overflow: 'auto', padding: 8 }}>
+              <div className="pdf-viewer-sidebar-body">
               {tab === 'thumbnails' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div className="pdf-thumbnail-list">
                   {Array.from({ length: numPages }, (_, i) => i + 1).map((p) => (
-                    <button key={`thumb-${p}`} type="button" onClick={() => goToPage(p)} style={{ border: p === page ? '2px solid #2563eb' : '1px solid #e5e7eb', borderRadius: 6, background: '#fff', padding: 6, textAlign: 'left' }}>
-                      <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>Page {p}</div>
-                      <div style={{ border: '1px solid #f1f5f9' }}>
+                    <button key={`thumb-${p}`} type="button" className={`pdf-thumbnail-btn${p === page ? ' pdf-thumbnail-btn--active' : ''}`} onClick={() => goToPage(p)}>
+                      <div className="pdf-thumbnail-label">Page {p}</div>
+                      <div className="pdf-thumbnail-frame">
                         {pdfRef.current ? (
                           <Page
                             pdf={pdfRef.current}
@@ -1576,10 +1614,10 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                             width={160}
                             renderTextLayer={false}
                             renderAnnotationLayer={false}
-                            loading={<div style={{ height: 210, background: '#f8fafc' }} />}
+                            loading={<div className="pdf-thumbnail-placeholder" />}
                           />
                         ) : (
-                          <div style={{ height: 210, background: '#f8fafc' }} />
+                          <div className="pdf-thumbnail-placeholder" />
                         )}
                       </div>
                     </button>
@@ -1589,29 +1627,33 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
               {tab === 'bookmarks' ? (
                 outline ? (
-                  <div style={{ fontSize: 12 }}>
+                  <div className="pdf-bookmark-tree">
                     {outline.map((item, idx) => (
                       <BookmarkItem key={`${item.title}-${idx}`} item={item} depth={0} onJump={(dest) => void jumpToOutlineItem(dest)} />
                     ))}
                   </div>
                 ) : (
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>No bookmarks found in this PDF.</div>
+                  <div className="pdf-sidebar-empty">No bookmarks found in this PDF.</div>
                 )
               ) : null}
 
               {tab === 'markups' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div className="pdf-markup-sidebar-list">
                   {markups.map((m) => (
-                    <button key={`m-${m.id}`} type="button" onClick={() => { setSelectedMarkupId(m.id); goToPage(m.pageNumber); }} style={{ border: m.id === selectedMarkupId ? '1px solid #93c5fd' : '1px solid #e5e7eb', background: m.id === selectedMarkupId ? '#eff6ff' : '#fff', borderRadius: 6, padding: 6, textAlign: 'left' }}>
-                      <div style={{ fontSize: 12, fontWeight: 600 }}>{m.type} · p.{m.pageNumber}</div>
-                      <div style={{ fontSize: 11, color: '#6b7280' }}>{m.comment || 'No comment'}</div>
+                    <button key={`m-${m.id}`} type="button" className={`pdf-markup-sidebar-item${m.id === selectedMarkupId ? ' pdf-markup-sidebar-item--active' : ''}`} onClick={() => { setSelectedMarkupId(m.id); goToPage(m.pageNumber); }}>
+                      <div className="pdf-markup-sidebar-item-title">{m.type} · p.{m.pageNumber}</div>
+                      <div className="pdf-markup-sidebar-item-comment">{m.comment || 'No comment'}</div>
                     </button>
                   ))}
+                  {markups.length === 0 ? (
+                    <div className="pdf-sidebar-empty">No markups on this document.</div>
+                  ) : null}
                 </div>
               ) : null}
-            </div>
-          ) : null}
-        </div>
+              </div>
+            </>
+          )}
+        </aside>
 
         <div className="pdf-viewer-document-host">
           <Document
@@ -1724,11 +1766,12 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           </div>
           <button
             type="button"
+            className="pdf-markup-panel-toggle"
             onClick={() => setMarkupPanelCollapsed((c) => !c)}
-            style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, color: '#6b7280', padding: '0 8px', height: 24, display: 'flex', alignItems: 'center' }}
             title={markupPanelCollapsed ? 'Expand markup panel' : 'Collapse markup panel'}
+            aria-label={markupPanelCollapsed ? 'Expand markup panel' : 'Collapse markup panel'}
           >
-            {markupPanelCollapsed ? '▲' : '▼'}
+            {markupPanelCollapsed ? <ChevronUp size={14} aria-hidden /> : <ChevronDown size={14} aria-hidden />}
           </button>
         </div>
         {!markupPanelCollapsed ? <>

@@ -59,7 +59,7 @@ describe("Workspace chat interactions", () => {
     window.localStorage.clear();
   });
 
-  it("opens cited PDFs with chat expanded by default", async () => {
+  it("opens cited PDFs with panels collapsed by default", async () => {
     const user = userEvent.setup();
 
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -147,9 +147,11 @@ describe("Workspace chat interactions", () => {
     expect(screen.queryByPlaceholderText("Search in document")).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Files" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Chat" }).length).toBeGreaterThan(0);
-    expect(screen.getByPlaceholderText("Ask about drawings, specs, RFIs...")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Ask about drawings, specs, RFIs...")).not.toBeInTheDocument();
 
-    const promptBox = screen.getByPlaceholderText("Ask about drawings, specs, RFIs...");
+    await user.click(screen.getAllByRole("button", { name: "Chat" })[0]);
+
+    const promptBox = await screen.findByPlaceholderText("Ask about drawings, specs, RFIs...");
     await user.type(promptBox, "Show me expansion joint requirements");
     await user.click(screen.getByRole("button", { name: "Send message" }));
 

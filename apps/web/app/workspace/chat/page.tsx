@@ -368,7 +368,7 @@ interface FolderSectionProps {
 function FolderSection({ folder, isExpanded, activeFileId, onToggle, onFileClick }: FolderSectionProps) {
   return (
     <div>
-      <button type="button" className="folder-header-btn" onClick={onToggle}>
+      <button type="button" className="folder-header-btn" onClick={onToggle} aria-expanded={isExpanded} aria-label={`${folder.name}, ${folder.files.length} files`}>
         <span className={`folder-chevron ${isExpanded ? 'open' : ''}`}>
           {isExpanded ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
         </span>
@@ -455,7 +455,7 @@ function ChatWorkspacePageContent() {
   const [leftPanelWidth, setLeftPanelWidth] = useState(220);
   const [rightPanelWidth, setRightPanelWidth] = useState(340);
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(true);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [isDraggingRight, setIsDraggingRight] = useState(false);
   const [projectDisplayName, setProjectDisplayName] = useState<string>('');
@@ -1446,22 +1446,8 @@ function ChatWorkspacePageContent() {
             </button>
           ) : (
             <>
-          <div className="ws-panel-header">
-            <span className="ws-panel-title">
-              <Folder size={14} aria-hidden />
-              Files
-            </span>
-            <button
-              type="button"
-              className="ws-panel-collapse-btn"
-              onClick={() => setLeftPanelCollapsed(true)}
-              title="Collapse panel"
-            >
-              <PanelLeft size={14} aria-hidden />
-            </button>
-          </div>
           <div className="ws-panel-body">
-          <div className="ws-file-search-wrap">
+          <div className="ws-file-search-wrap ws-file-search-wrap--with-collapse">
             <Search size={14} className="ws-file-search-icon" aria-hidden />
             <input
               type="text"
@@ -1470,6 +1456,15 @@ function ChatWorkspacePageContent() {
               placeholder="Filter files..."
               className="ws-file-search-input"
             />
+            <button
+              type="button"
+              className="ws-panel-collapse-btn ws-panel-collapse-btn--inline"
+              onClick={() => setLeftPanelCollapsed(true)}
+              title="Hide project files"
+              aria-label="Hide project files"
+            >
+              <PanelLeft size={14} aria-hidden />
+            </button>
           </div>
           <div className="file-explorer-body">
             {wsFilesLoading ? (
@@ -1572,21 +1567,22 @@ function ChatWorkspacePageContent() {
             </button>
           ) : (
             <>
-          <div className="ws-panel-header">
-            <span className="ws-panel-title">
-              <Sparkles size={14} aria-hidden />
+          <div className="ws-panel-body chat-panel-body">
+          <div className="chat-panel-toolbar">
+            <span className="chat-panel-toolbar-label">
+              <Sparkles size={13} aria-hidden />
               Assistant
             </span>
             <button
               type="button"
-              className="ws-panel-collapse-btn"
+              className="ws-panel-collapse-btn ws-panel-collapse-btn--inline"
               onClick={() => setRightPanelCollapsed(true)}
-              title="Collapse panel"
+              title="Hide AI assistant"
+              aria-label="Hide AI assistant"
             >
               <PanelRightClose size={14} aria-hidden />
             </button>
           </div>
-          <div className="ws-panel-body chat-panel-body">
 
           {/* Messages */}
           <div ref={chatScrollRef} className="chat-messages-scroll">

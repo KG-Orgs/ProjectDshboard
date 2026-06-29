@@ -4,7 +4,7 @@
  * Verifies that a PDF can be found, clicked, and opened from the left panel
  * file tree, resulting in a tab + viewer being shown in the center panel.
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -84,8 +84,13 @@ async function revealFileTree(user: ReturnType<typeof userEvent.setup>) {
     screen.getAllByRole('button', { name: 'Files' }).find((btn) => btn.classList.contains('ws-panel-expand-btn'))
     ?? screen.getAllByRole('button', { name: 'Files' })[0];
   await user.click(expandFiles);
-  const folderBtn = await screen.findByRole('button', { name: /Project Files/i });
-  await user.click(folderBtn);
+  const filterInput = await screen.findByPlaceholderText('Filter files...');
+  const explorer = within(filterInput.closest('.ws-panel-body') as HTMLElement);
+  const folderBtn = explorer.getByRole('button', { name: 'Project Files, 3 files' });
+  fireEvent.click(folderBtn);
+  await waitFor(() => {
+    expect(explorer.getByText('foundation-drawings.pdf')).toBeInTheDocument();
+  });
 }
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -128,7 +133,6 @@ function makeFetch(extraRoutes: Record<string, object> = {}) {
     // File list for the left panel
     if (
       url.includes(`/api/projects/${PROJECT_ID}/files`) &&
-      url.includes('pageSize=300') &&
       method === 'GET'
     ) {
       return {

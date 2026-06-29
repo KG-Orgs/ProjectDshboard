@@ -158,7 +158,7 @@ async function simulatePdfLoadError(message = 'Failed to fetch PDF') {
 
 /** Sidebar starts collapsed — expand before using Thumbnails / Bookmarks / Markups tabs. */
 function expandSidebar() {
-  fireEvent.click(screen.getByRole('button', { name: '>' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show page sidebar' }));
 }
 
 function openSidebarTab(tabName: 'Thumbnails' | 'Bookmarks' | 'Markups') {
@@ -273,20 +273,16 @@ describe('ConstructionPdfViewer – bookmark tree', () => {
 
     openSidebarTab('Bookmarks');
 
-    // Root bookmark visible; child initially hidden (depth-1 starts collapsed for depth >= 1)
-    // Root is at depth=0, expanded by default. Child should be visible.
     expect(screen.getByRole('button', { name: 'Section A' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sub-section A1' })).toBeInTheDocument();
-
-    // Collapse the parent by clicking the expand toggle (▾ button)
-    const toggleBtn = screen.getByRole('button', { name: '▾' });
-    fireEvent.click(toggleBtn);
-
     expect(screen.queryByRole('button', { name: 'Sub-section A1' })).not.toBeInTheDocument();
 
-    // Expand again
-    fireEvent.click(screen.getByRole('button', { name: '▸' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Expand section' }));
+
     expect(screen.getByRole('button', { name: 'Sub-section A1' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse section' }));
+
+    expect(screen.queryByRole('button', { name: 'Sub-section A1' })).not.toBeInTheDocument();
   });
 
   it('clicking a bookmark with an array destination directly resolves the page', async () => {
@@ -2726,6 +2722,7 @@ describe('ConstructionPdfViewer – save, reopen, export, and download', () => {
       />,
     );
 
+    expandMarkupPanel();
     await waitFor(() => {
       expect(screen.queryByRole('cell', { name: 'rectangle' })).not.toBeInTheDocument();
       expect(screen.getByRole('cell', { name: 'cloud' })).toBeInTheDocument();
@@ -2951,14 +2948,14 @@ describe('ConstructionPdfViewer – markup mode defaults', () => {
     vi.unstubAllGlobals();
   });
 
-  it('auto-expands markup table on load when markups exist but keeps tools collapsed', async () => {
+  it('keeps markup table collapsed on load when markups exist', async () => {
     await renderWithProject([makeLoadedMarkup()]);
 
     await waitFor(() => {
-      expect(screen.getByText('rectangle')).toBeInTheDocument();
+      expect(screen.getByTitle('Expand markup panel')).toBeInTheDocument();
     });
 
-    expect(screen.queryByTitle('Expand markup panel')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('1 markups')).toHaveTextContent('1');
     expect(screen.queryByLabelText('rectangle')).not.toBeInTheDocument();
   });
 
@@ -2966,14 +2963,17 @@ describe('ConstructionPdfViewer – markup mode defaults', () => {
     await renderWithProject([makeLoadedMarkup(), { ...makeLoadedMarkup('loaded-markup-2'), pageNumber: 2 }]);
 
     await waitFor(() => {
-      expect(screen.getByTitle('Collapse markup panel')).toBeInTheDocument();
+      expect(screen.getByTitle('Expand markup panel')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByTitle('Collapse markup panel'));
-
     expect(screen.getByLabelText('2 markups')).toHaveTextContent('2');
-    expect(screen.getByTitle('Expand markup panel')).toBeInTheDocument();
     expect(document.querySelector('.pdf-markup-panel-header--hint')).not.toBeNull();
+
+    expandMarkupPanel();
+    expect(screen.getByTitle('Collapse markup panel')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTitle('Collapse markup panel'));
+    expect(screen.getByTitle('Expand markup panel')).toBeInTheDocument();
   });
 
   it('expands markup tools when user selects a drawing tool', async () => {
@@ -3025,7 +3025,7 @@ describe('ConstructionPdfViewer – markup mode defaults', () => {
     await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
 
     await waitFor(() => {
-      expect(screen.getByText('rectangle')).toBeInTheDocument();
+      expect(screen.getByLabelText('1 markups')).toHaveTextContent('1');
     });
 
     rerender(
