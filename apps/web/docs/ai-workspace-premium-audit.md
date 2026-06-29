@@ -80,6 +80,10 @@ ContractorAI's workspace is a **credible three-panel AI + document shell** with 
 | Citation jump | `openPdfCitation` global + bounding-box flash |
 | Split / compare | None |
 | Workspace-level search | Removed; PDF has in-document find |
+| **Save button** | Downloads **original PDF only** (no markup burn-in); markups persist separately via API |
+| Markup persistence | `pdf_markups` table — overlay JSON, auto-saved on create/edit/delete |
+| PDF byte source | Streamed on demand from OneDrive Graph (`Files.Read`) or local corpus path (`local:*` + `LOCAL_CORPUS_PARENT`) |
+| OneDrive write-back | **Not implemented** — OAuth scopes are read-only; no Graph upload/PUT |
 
 ### 2.5 Backend capabilities not surfaced in UI
 
@@ -133,7 +137,7 @@ ContractorAI's workspace is a **credible three-panel AI + document shell** with 
 **Gaps:**
 - No **split view** (chat + full-page side by side on ultrawide without collapsing panels)
 - No **highlight sync** — AI citation box doesn't persist while reading answer
-- No **"ask about this selection"** from PDF text (continuous mode has no text layer)
+- No **"ask about this selection"** from PDF text (text layer now enabled; chat bridge still missing)
 - No **compare revisions** (critical for construction)
 - No **sheet index / discipline filter** for drawing sets
 - `displayedPdfPage` tracked but **not sent back** to chat as context on follow-up
@@ -200,7 +204,7 @@ ContractorAI's workspace is a **credible three-panel AI + document shell** with 
 | 3 | **Session title + rename** | Long projects need many threads; untitled sessions don't scale |
 | 4 | **Index status in file tree** | Users must know if AI can "see" a file (`indexed` vs `pending`) |
 | 5 | **Mobile breakpoint layout** | Tabbed Files / Viewer / Chat below 900px |
-| 6 | **Continuous-mode text selection + ask** | Can't quote spec language without OCR/text layer |
+| 6 | **Continuous-mode text selection + ask** | Copy/select works (2026-06-29); ask-AI-on-selection still blocked |
 | 7 | **Project suggestions API in empty states** | `/suggestions` already exists — surface it |
 | 8 | **Send visible page to chat context** | Follow-ups like "what about this page?" need `displayedPdfPage` |
 

@@ -78,7 +78,20 @@ ContractorAI’s chat workspace PDF viewer now supports **continuous scroll (def
 
 ---
 
-## 5. Rotation, Spread View, Facing Pages
+## 5b. Text Selection & Copy
+
+| Feature | Bluebeam | Acrobat | PDF.js | Browser | PlanGrid | PDF Expert | **ContractorAI** | Gap | Priority |
+|---------|----------|---------|--------|---------|----------|------------|------------------|-----|----------|
+| Select & copy text | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ **NEW** — continuous + single, native Ctrl/Cmd+C | — | — |
+| Selection → highlight markup | ✅ | ✅ | — | — | — | ✅ | ❌ | P1 follow-up | P1 |
+| Ask AI / comment on selection | plugins | — | — | — | — | — | ❌ | P1 — chat integration | P1 |
+| Text selection while drawing | blocked | blocked | — | — | — | — | ⚠️ disabled during draw tools | Use select/pan to copy | — |
+
+**Implemented this sprint:** `renderTextLayer={true}` on all viewer pages; markup overlay `z-index` above text layer with `pointer-events: none` except during active drawing tools; standard `::selection` highlight via `workspace.css`.
+
+---
+
+## 6. Rotation, Spread View, Facing Pages
 
 | Feature | Bluebeam | Acrobat | PDF.js | Browser | PlanGrid | PDF Expert | **ContractorAI** | Gap | Priority |
 |---------|----------|---------|--------|---------|----------|------------|------------------|-----|----------|
@@ -92,7 +105,7 @@ ContractorAI’s chat workspace PDF viewer now supports **continuous scroll (def
 
 ---
 
-## 6. Split View / Tabs
+## 7. Split View / Tabs
 
 | Feature | Bluebeam | Acrobat | PDF.js | Browser | PlanGrid | PDF Expert | **ContractorAI** | Gap | Priority |
 |---------|----------|---------|--------|---------|----------|------------|------------------|-----|----------|
@@ -104,7 +117,7 @@ ContractorAI’s chat workspace PDF viewer now supports **continuous scroll (def
 
 ---
 
-## 7. Search / Find
+## 8. Search / Find
 
 | Feature | Bluebeam | Acrobat | PDF.js | Browser | PlanGrid | PDF Expert | **ContractorAI** | Gap | Priority |
 |---------|----------|---------|--------|---------|----------|------------|------------------|-----|----------|
@@ -118,7 +131,7 @@ See [pdf-viewer-gap-audit.md §3.4](./pdf-viewer-gap-audit.md) for search implem
 
 ---
 
-## 8. Measurement Navigation
+## 9. Measurement Navigation
 
 | Feature | Bluebeam | Acrobat | PDF.js | Browser | PlanGrid | PDF Expert | **ContractorAI** | Gap | Priority |
 |---------|----------|---------|--------|---------|----------|------------|------------------|-----|----------|
@@ -131,7 +144,7 @@ See [pdf-viewer-gap-audit.md §3.4](./pdf-viewer-gap-audit.md) for search implem
 
 ---
 
-## 9. Touch / Tablet
+## 10. Touch / Tablet
 
 | Feature | Bluebeam | Acrobat | PDF.js | Browser | PlanGrid | PDF Expert | **ContractorAI** | Gap | Priority |
 |---------|----------|---------|--------|---------|----------|------------|------------------|-----|----------|
@@ -143,7 +156,7 @@ See [pdf-viewer-gap-audit.md §3.4](./pdf-viewer-gap-audit.md) for search implem
 
 ---
 
-## 10. Cross-Reference: What We Have vs Gap Audit
+## 11. Cross-Reference: What We Have vs Gap Audit
 
 | Area | pdf-viewer-gap-audit status | This audit update |
 |------|----------------------------|-------------------|
@@ -157,7 +170,7 @@ See [pdf-viewer-gap-audit.md §3.4](./pdf-viewer-gap-audit.md) for search implem
 
 ---
 
-## 11. Cross-Reference: Keyboard Shortcuts
+## 12. Cross-Reference: Keyboard Shortcuts
 
 From [markup-keyboard-shortcuts.md](./markup-keyboard-shortcuts.md):
 
@@ -173,7 +186,7 @@ From [markup-keyboard-shortcuts.md](./markup-keyboard-shortcuts.md):
 
 ---
 
-## 12. Recommended Roadmap (Navigation-Focused)
+## 13. Recommended Roadmap (Navigation-Focused)
 
 ### P0 — Blocks field / office daily use
 
@@ -201,7 +214,7 @@ From [markup-keyboard-shortcuts.md](./markup-keyboard-shortcuts.md):
 
 ---
 
-## 13. Implementation Notes (Pinch Zoom)
+## 14. Implementation Notes (Pinch Zoom)
 
 **Files:** `ConstructionPdfViewer.tsx`, `workspace.css`
 

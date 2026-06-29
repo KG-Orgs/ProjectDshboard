@@ -25,7 +25,9 @@ The chat workspace PDF viewer is a **capable prototype with construction-specifi
 
 **What already feels good:** Three-panel workspace, citation chips that open the right file/page, bounding-box flash on AI citations, construction markup categories/statuses, bookmark tree from PDF outline, continuous scroll as default (after recent fixes).
 
-**What breaks the “professional” feel:** Toolbar reads as a developer prototype (text buttons, inline styles, no icons); markups are hidden and **non-interactive in the default scroll mode**; in-document search UI was removed while backend logic remains; all pages mount at once in continuous mode; no keyboard shortcuts; no text selection in continuous mode.
+**What breaks the “professional” feel:** Toolbar reads as a developer prototype (text buttons, inline styles, no icons); markups are hidden and **non-interactive in the default scroll mode**; in-document search UI was removed while backend logic remains; all pages mount at once in continuous mode; no keyboard shortcuts; **no “highlight selection as markup” or “ask AI on selection”** from PDF text.
+
+**Text selection (2026-06-29):** Continuous and single-page modes now render the PDF.js text layer (`renderTextLayer={true}`). Users can select and copy with native browser selection + Ctrl/Cmd+C when pan/select is active or markup tools are closed. Drawing tools temporarily disable text selection to avoid gesture conflicts. **Still missing (P1):** turn a text selection into a highlight markup; right-click / toolbar “Ask AI about selection”.
 
 **Scroll fix status:** Subagent [Fix PDF blank scroll bug](d0eceee7-bbf7-41b6-b3e4-bece5e617fae) **completed** in commit `c25bc87`. Root cause was a parent↔child feedback loop: scroll updated `page` → parent wrote it to `activePdfPage` → `initialPage` change reset `numPages` to 0 while `Document` stayed mounted → blank viewer. Fix: `onVisiblePageChange` only updates `displayedPdfPage`; document reset limited to `url`/`fileId`. **Verify in browser** on large plan sets; remaining risks are performance/memory, not the prior wipe bug.
 
@@ -51,7 +53,7 @@ The chat workspace PDF viewer is a **capable prototype with construction-specifi
 | **Citations** | `citationRequest` → jump to page, orange bounding-box flash (5s); optional `textSnippet` triggers programmatic search |
 | **Search (internal)** | `runSearch()` scans all pages via `getTextContent`; highlights in **single mode only** when `searchApplied` set — **no user-facing Find UI** |
 | **Download** | “Save” downloads original PDF URL |
-| **Rendering** | `renderAnnotationLayer={false}`, `renderTextLayer={false}` in continuous mode; text layer only in single mode when search active |
+| **Rendering** | `renderAnnotationLayer={false}`; **`renderTextLayer={true}`** in continuous + single mode; text selectable via pan/select (drawing tools block selection) |
 
 ### Workspace integration (`page.tsx`)
 
@@ -212,7 +214,7 @@ Workspace **shell** polish improved in `2c1ea62`; **viewer chrome** did not rece
 |---|------|-----------|-------|
 | P1-1 | **Virtualize continuous scroll** (render window ±N pages) | Required for construction drawing sets | New hook/module; `StablePdfPage` |
 | P1-2 | **Keyboard shortcuts** (page, zoom, find, hand) | Table stakes | `ConstructionPdfViewer.tsx` |
-| P1-3 | **Enable text layer + selection in continuous mode** | Spec review requires copy/paste | Page `renderTextLayer` policy |
+| P1-3 | ~~**Enable text layer + selection in continuous mode**~~ | ✅ **Done** (2026-06-29) — `renderTextLayer` + CSS; copy via native selection | Follow-ups: highlight selection as markup, ask AI on selection |
 | P1-4 | **Lazy thumbnail sidebar** | Opening thumbs on 200-page doc hangs | Thumbnail tab loop (~829–849) |
 | P1-5 | **Bundled PDF.js worker** | CDN dependency / CSP | worker import in TSX |
 | P1-6 | **Show sync’d page in doc tab or toolbar** | Use `displayedPdfPage` from parent | `page.tsx`, tab label |

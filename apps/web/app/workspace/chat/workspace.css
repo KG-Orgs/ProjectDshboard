@@ -1442,6 +1442,33 @@
   touch-action: pan-x pan-y;
 }
 
+/* PDF text layer — selectable copy in continuous and single-page modes */
+.pdf-page--text-selectable .react-pdf__Page__textContent,
+.pdf-continuous-page[data-text-selectable='true'] .react-pdf__Page__textContent {
+  z-index: 2;
+  user-select: text;
+  -webkit-user-select: text;
+  pointer-events: auto;
+}
+
+.pdf-page--text-blocked .react-pdf__Page__textContent,
+.pdf-continuous-page[data-text-selectable='false'] .react-pdf__Page__textContent {
+  z-index: 2;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+}
+
+.pdf-page--text-selectable .react-pdf__Page__textContent span::selection,
+.pdf-continuous-page[data-text-selectable='true'] .react-pdf__Page__textContent span::selection {
+  background: rgba(0, 120, 215, 0.35);
+  color: transparent;
+}
+
+.pdf-markup-overlay {
+  z-index: 3;
+}
+
 .pdf-viewer-stage-state {
   position: absolute;
   inset: 0;

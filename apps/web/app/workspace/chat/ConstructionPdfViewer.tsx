@@ -1,7 +1,7 @@
 'use client';
 
 import { Bookmark, ChevronDown, ChevronRight, ChevronUp, LayoutGrid, PanelLeft, PanelLeftClose, Search, StickyNote } from 'lucide-react';
-import { MouseEvent as ReactMouseEvent, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { MouseEvent as ReactMouseEvent, ReactNode, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -277,6 +277,7 @@ const StablePdfPage = memo(function StablePdfPage({
   slotWidth,
   slotHeight,
   highlightSearchTerm,
+  textSelectionEnabled = true,
 }: {
   pageNumber: number;
   scale: number;
@@ -284,17 +285,18 @@ const StablePdfPage = memo(function StablePdfPage({
   slotWidth: number;
   slotHeight: number;
   highlightSearchTerm?: string;
+  textSelectionEnabled?: boolean;
 }) {
-  const showTextLayer = Boolean(highlightSearchTerm);
   return (
     <Page
       pageNumber={pageNumber}
       scale={scale}
       rotate={rotation}
       renderAnnotationLayer={false}
-      renderTextLayer={showTextLayer}
-      customTextRenderer={showTextLayer ? ({ str }) => highlightSearchInText(str, highlightSearchTerm!) : undefined}
+      renderTextLayer
+      customTextRenderer={highlightSearchTerm ? ({ str }) => highlightSearchInText(str, highlightSearchTerm) : undefined}
       loading={<div style={{ width: slotWidth, height: slotHeight, background: '#e5e7eb' }} />}
+      className={textSelectionEnabled ? 'pdf-page--text-selectable' : 'pdf-page--text-blocked'}
     />
   );
 });
@@ -602,18 +604,12 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
   const selectedMarkup = useMemo(() => markups.find((m) => m.id === selectedMarkupId) ?? null, [markups, selectedMarkupId]);
 
-  /** Per-page interactivity — avoids blocking scroll on every page when one markup is selected. */
-  const isMarkupPageInteractive = useCallback((pageNum: number) => {
-    if (showMarkupTools && tool !== 'pan') return true;
-    if (selectedMarkup?.pageNumber === pageNum) return true;
-    return false;
-  }, [showMarkupTools, tool, selectedMarkup]);
-
-  const markupOverlayInteractive = showMarkupTools && tool !== 'pan'
-    ? true
-    : Boolean(selectedMarkupId);
-
   const isDrawingTool = (t: Tool): t is MarkupType => t !== 'select' && t !== 'pan';
+
+  /** Drawing tools attach pointer handlers to the page; pan/select leave the text layer selectable. */
+  const isMarkupDrawingActive = showMarkupTools && isDrawingTool(tool);
+
+  const markupOverlayInteractive = isMarkupDrawingActive;
 
   const handleToolChange = useCallback((nextTool: Tool) => {
     if (isDrawingTool(nextTool)) {
@@ -1455,28 +1451,37 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     );
   };
 
-  const markupLayerPointerHandlers = (pageNum: number, interactive: boolean) => (
+  const markupLayerDragHandlers = {
+    onMouseMove: onPointerMove,
+    onMouseUp: () => { void finishDraw(); },
+    onMouseLeave: () => { void finishDraw(); },
+  };
+
+  const markupLayerDrawingHandlers = (pageNum: number, interactive: boolean) => (
     interactive ? {
       onMouseDown: (e: ReactMouseEvent<HTMLDivElement>) => onPointerDown(e, pageNum),
-      onMouseMove: onPointerMove,
-      onMouseUp: () => { void finishDraw(); },
-      onMouseLeave: () => { void finishDraw(); },
       onDoubleClick: () => { if (tool === 'area' && draftAreaPoints.length >= 3) { void finishArea(); } },
       onClick: () => { if (tool === 'select') setSelectedMarkupId(null); },
     } : {}
   );
 
+  const markupLayerPointerHandlers = (pageNum: number, interactive: boolean) => ({
+    ...markupLayerDragHandlers,
+    ...markupLayerDrawingHandlers(pageNum, interactive),
+  });
+
   const renderMarkupLayer = (pageNum: number, interactive: boolean, attachHandlers: boolean) => (
     <div
       data-markup-layer
       data-markup-page={pageNum}
+      className="pdf-markup-overlay"
       style={{
         position: 'absolute',
         inset: 0,
         pointerEvents: attachHandlers && interactive ? 'auto' : 'none',
-        cursor: interactive && attachHandlers ? (tool === 'select' ? 'default' : 'crosshair') : undefined,
+        cursor: interactive && attachHandlers ? 'crosshair' : undefined,
       }}
-      {...(attachHandlers ? markupLayerPointerHandlers(pageNum, interactive) : {})}
+      {...(attachHandlers ? markupLayerPointerHandlers(pageNum, interactive) : markupLayerDragHandlers)}
     >
       {renderPageOverlayContent(pageNum)}
     </div>
@@ -2104,8 +2109,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                     scale={scale}
                     rotate={rotation}
                     renderAnnotationLayer={false}
-                    renderTextLayer={Boolean(searchApplied)}
-                    customTextRenderer={({ str }) => highlightSearchInText(str, searchApplied)}
+                    renderTextLayer
+                    customTextRenderer={searchApplied ? ({ str }) => highlightSearchInText(str, searchApplied) : undefined}
+                    className={markupOverlayInteractive ? 'pdf-page--text-blocked' : 'pdf-page--text-selectable'}
                     loading={<div style={{ width: Math.round(612 * scale), height: Math.round(792 * scale), background: '#e5e7eb' }} />}
                   />
 
@@ -2114,20 +2120,19 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
               </div>
             ) : (
               <div ref={continuousScrollRef} className="pdf-continuous-scroll" style={{ position: 'absolute', inset: 0, overflow: 'auto', padding: '12px 0', background: '#f3f4f6', display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-                {Array.from({ length: numPages }, (_, i) => i + 1).map((p) => {
-                  const pageInteractive = isMarkupPageInteractive(p);
-                  return (
+                {Array.from({ length: numPages }, (_, i) => i + 1).map((p) => (
                   <div
                     key={`cont-${p}`}
                     data-page={p}
                     className="pdf-continuous-page"
+                    data-text-selectable={isMarkupDrawingActive ? 'false' : 'true'}
                     style={{
                       position: 'relative',
                       minWidth: continuousPageSlotSize.width,
                       minHeight: continuousPageSlotSize.height,
-                      cursor: pageInteractive ? (tool === 'select' ? 'default' : 'crosshair') : undefined,
+                      cursor: isMarkupDrawingActive ? 'crosshair' : undefined,
                     }}
-                    {...markupLayerPointerHandlers(p, pageInteractive)}
+                    {...markupLayerPointerHandlers(p, isMarkupDrawingActive)}
                   >
                     <StablePdfPage
                       pageNumber={p}
@@ -2135,14 +2140,14 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                       rotation={rotation}
                       slotWidth={continuousPageSlotSize.width}
                       slotHeight={continuousPageSlotSize.height}
+                      textSelectionEnabled={!isMarkupDrawingActive}
                       highlightSearchTerm={
                         searchApplied && p === activeSearchHighlightPage ? searchApplied : undefined
                       }
                     />
-                    {renderMarkupLayer(p, pageInteractive, false)}
+                    {renderMarkupLayer(p, isMarkupDrawingActive, false)}
                   </div>
-                  );
-                })}
+                ))}
               </div>
             )}
           </Document>

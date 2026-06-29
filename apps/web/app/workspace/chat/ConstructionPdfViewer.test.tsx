@@ -56,8 +56,16 @@ vi.mock('react-pdf', async () => {
     },
     // NOTE: No data-page on the Page mock — the continuous-scroll wrapper divs use data-page,
     // so we keep the attribute off the inner component to avoid collision.
-    Page: ({ pageNumber }: { pageNumber: number }) => (
-      <div data-testid={`pdf-page-${pageNumber}`} />
+    Page: ({ pageNumber, renderTextLayer, className }: { pageNumber: number; renderTextLayer?: boolean; className?: string }) => (
+      <div
+        data-testid={`pdf-page-${pageNumber}`}
+        data-render-text-layer={renderTextLayer === false ? 'false' : 'true'}
+        className={className ? `${className} react-pdf__Page` : 'react-pdf__Page'}
+      >
+        {renderTextLayer !== false ? (
+          <div className="react-pdf__Page__textContent" data-testid={`pdf-text-layer-${pageNumber}`} />
+        ) : null}
+      </div>
     ),
     pdfjs: { GlobalWorkerOptions: {}, version: '3.0.0' },
   };
@@ -2579,6 +2587,67 @@ describe('ConstructionPdfViewer – continuous scroll markup interaction', () =>
     document.querySelectorAll('[data-markup-layer]').forEach((layer) => {
       expect(layer).toHaveStyle({ pointerEvents: 'none' });
     });
+  });
+
+  it('renders text layer on every page in continuous scroll for copy/select', async () => {
+    mockFetch({ '/markups': { markups: [] } });
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+
+    expect(screen.getByTestId('pdf-text-layer-1')).toHaveClass('react-pdf__Page__textContent');
+    expect(screen.getByTestId('pdf-text-layer-2')).toBeInTheDocument();
+    expect(screen.getByTestId('pdf-text-layer-3')).toBeInTheDocument();
+    document.querySelectorAll('[data-page]').forEach((page) => {
+      expect(page).toHaveAttribute('data-text-selectable', 'true');
+    });
+  });
+
+  it('disables text selection while a drawing tool is active in continuous mode', async () => {
+    mockFetch({ '/markups': { markups: [] } });
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 2 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'rectangle' }));
+
+    document.querySelectorAll('[data-page]').forEach((page) => {
+      expect(page).toHaveAttribute('data-text-selectable', 'false');
+    });
+    expect(screen.getByTestId('pdf-page-1')).toHaveClass('pdf-page--text-blocked');
+  });
+
+  it('keeps text selection enabled with select tool in continuous mode', async () => {
+    mockFetch({ '/markups': { markups: [] } });
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 2 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'select' }));
+
+    expect(document.querySelector('[data-page="1"]')).toHaveAttribute('data-text-selectable', 'true');
+    expect(screen.getByTestId('pdf-page-1')).toHaveClass('pdf-page--text-selectable');
   });
 
   it('creates a callout on the correct page in continuous scroll mode', async () => {
