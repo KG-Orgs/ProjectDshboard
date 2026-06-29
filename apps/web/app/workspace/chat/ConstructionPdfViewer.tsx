@@ -8,6 +8,16 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import './workspace.css';
 import PdfMarkupToolbar from './PdfMarkupToolbar';
 import {
+  DEFAULT_TEXT_BOX_SIZE,
+  MARKUP_SVG_LAYER_STYLE,
+  MARKUP_SVG_VIEWBOX,
+  isEditableKeyboardTarget,
+  normalizedLineEndpoints,
+  normalizedPolylinePoints,
+  percentRectStyle,
+  resolveRectSize,
+} from './pdf-markup-render';
+import {
   areaDisplayUnit,
   calibratedAreaFromPoints,
   calibratedLengthFromLineCoords,
@@ -163,6 +173,61 @@ function stampVariantClass(label: string): string {
     .replace(/^-|-$/g, '');
 }
 
+function NormalizedLineSvg({
+  x1,
+  y1,
+  x2,
+  y2,
+  stroke,
+  strokeWidth,
+  markerId,
+  showArrow,
+  strokeDasharray,
+  interactive,
+  onSelect,
+}: {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  stroke: string;
+  strokeWidth: number;
+  markerId?: string;
+  showArrow?: boolean;
+  strokeDasharray?: string;
+  interactive?: boolean;
+  onSelect?: (event: ReactMouseEvent<SVGSVGElement>) => void;
+}) {
+  const pts = normalizedLineEndpoints(x1, y1, x2, y2);
+  return (
+    <svg
+      viewBox={MARKUP_SVG_VIEWBOX}
+      preserveAspectRatio="none"
+      style={{ ...MARKUP_SVG_LAYER_STYLE, pointerEvents: interactive ? 'auto' : 'none' }}
+      onClick={onSelect}
+    >
+      {showArrow && markerId ? (
+        <defs>
+          <marker id={markerId} markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill={stroke} />
+          </marker>
+        </defs>
+      ) : null}
+      <line
+        x1={pts.x1}
+        y1={pts.y1}
+        x2={pts.x2}
+        y2={pts.y2}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        vectorEffect="non-scaling-stroke"
+        strokeDasharray={strokeDasharray}
+        markerEnd={showArrow && markerId ? `url(#${markerId})` : undefined}
+      />
+    </svg>
+  );
+}
+
 function calloutLeaderStart(box: { x: number; y: number; width: number; height: number }, anchor: Point): Point {
   const cx = clamp(anchor.x, box.x, box.x + box.width);
   const cy = clamp(anchor.y, box.y, box.y + box.height);
@@ -225,8 +290,11 @@ function triggerDownloadFromResponse(blob: Blob, filename: string): void {
 }
 
 export default function ConstructionPdfViewer({ projectId, fileId, fileName, url, initialPage, citationRequest, onCitationHandled, onVisiblePageChange }: Props) {
+  const viewerRootRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<HTMLDivElement | null>(null);
+  const documentHostRef = useRef<HTMLDivElement | null>(null);
   const pageHostRef = useRef<HTMLDivElement | null>(null);
+  const previousToolRef = useRef<Tool>('pan');
   const pdfRef = useRef<pdfjs.PDFDocumentProxy | null>(null);
   const textCacheRef = useRef<Map<number, string>>(new Map());
   const panStartRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
@@ -636,7 +704,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   }, [projectId, fileId, revealMarkupPanels]);
 
   const removeMarkup = useCallback(async (markupId: string) => {
-    if (!projectId || !fileId) return;
+    if (!projectId || !fileId) {
+      setMarkups((curr) => curr.filter((m) => m.id !== markupId));
+      if (selectedMarkupId === markupId) setSelectedMarkupId(null);
+      return;
+    }
     const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(fileId)}/markups/${encodeURIComponent(markupId)}`, { method: 'DELETE' });
     if (!response.ok && response.status !== 204) return;
     setMarkups((curr) => curr.filter((m) => m.id !== markupId));
@@ -703,17 +775,106 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const activeHit = hitIndex >= 0 ? hits[hitIndex] : null;
   const activeSearchHighlightPage = activeHit?.pageNumber;
 
+  const cancelDraw = useCallback(() => {
+    setDraftStart(null);
+    setDraftCurrent(null);
+    setDraftPageNumber(null);
+    draftStartRef.current = null;
+    draftCurrentRef.current = null;
+    draftPageNumberRef.current = null;
+    setDraftAreaPoints([]);
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === 'f') {
         event.preventDefault();
         findInputRef.current?.focus();
         findInputRef.current?.select();
+        return;
+      }
+
+      if (isEditableKeyboardTarget(event.target)) return;
+
+      const viewerFocused = viewerRootRef.current?.contains(document.activeElement)
+        || document.activeElement === document.body
+        || document.activeElement === documentHostRef.current;
+      if (!viewerFocused) return;
+
+      const key = event.key;
+      const mod = event.metaKey || event.ctrlKey;
+
+      if (key === 'Escape') {
+        if (draftStartRef.current || draftAreaPoints.length > 0 || pendingCalibration) {
+          event.preventDefault();
+          cancelDraw();
+          if (pendingCalibration) {
+            setPendingCalibration(null);
+            setCalibrationInputValue('');
+          }
+          return;
+        }
+        if (selectedMarkupId) {
+          event.preventDefault();
+          setSelectedMarkupId(null);
+          return;
+        }
+        if (tool !== 'pan') {
+          event.preventDefault();
+          setTool('pan');
+        }
+        return;
+      }
+
+      if ((key === 'Delete' || key === 'Backspace') && selectedMarkupId) {
+        event.preventDefault();
+        void removeMarkup(selectedMarkupId);
+        return;
+      }
+
+      if (mod && key.toLowerCase() === 'z') {
+        // Undo stack not implemented — documented as P1 in markup-keyboard-shortcuts.md
+        return;
+      }
+
+      if (!mod && !event.altKey && key.length === 1) {
+        const lower = key.toLowerCase();
+        if (lower === 'v') {
+          event.preventDefault();
+          handleToolChange('select');
+          return;
+        }
+        if (lower === 'h') {
+          event.preventDefault();
+          previousToolRef.current = tool === 'pan' ? 'select' : tool;
+          setTool('pan');
+          return;
+        }
+      }
+
+      if (key === '+' || key === '=') {
+        event.preventDefault();
+        setFitMode('manual');
+        setZoom((z) => Math.min(300, z + 10));
+        return;
+      }
+      if (key === '-' || key === '_') {
+        event.preventDefault();
+        setFitMode('manual');
+        setZoom((z) => Math.max(40, z - 10));
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [
+    cancelDraw,
+    draftAreaPoints.length,
+    handleToolChange,
+    pendingCalibration,
+    removeMarkup,
+    selectedMarkupId,
+    tool,
+  ]);
 
   useEffect(() => {
     if (!citationRequest || citationRequest.fileId !== fileId) return;
@@ -737,6 +898,14 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (layer instanceof HTMLElement) return layer;
     return pageHostRef.current;
   };
+
+  const beginMarkupDrag = useCallback((markup: Markup, handle: string, event: ReactMouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    markupPageRef.current = markup.pageNumber;
+    const p = pagePointFromEvent(event, pageHostFromEvent(event));
+    if (!p) return;
+    markupDragRef.current = { markupId: markup.id, handle, startPoint: p, startCoords: { ...markup.coordinates } };
+  }, []);
 
   const activeMarkupPage = () => markupPageRef.current || page;
 
@@ -915,9 +1084,23 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     const endPos = draftCurrentRef.current ?? draftCurrent!;
     const targetPage = activeMarkupPage();
     if (tool === 'rectangle' || tool === 'highlight' || tool === 'cloud' || tool === 'text') {
-      const rect = rectFrom(startPos, endPos);
+      let rect = rectFrom(startPos, endPos);
+      if (tool === 'text' && rect.width < 0.005 && rect.height < 0.005) {
+        const { width: defaultW, height: defaultH } = DEFAULT_TEXT_BOX_SIZE;
+        rect = {
+          x: clamp(startPos.x, 0, 1 - defaultW),
+          y: clamp(startPos.y, 0, 1 - defaultH),
+          width: defaultW,
+          height: defaultH,
+        };
+      }
       if (rect.width > 0.002 && rect.height > 0.002) {
-        await createMarkup({ pageNumber: targetPage, type: tool, coordinates: rect });
+        await createMarkup({
+          pageNumber: targetPage,
+          type: tool,
+          coordinates: rect,
+          comment: tool === 'text' ? '' : undefined,
+        });
       }
     }
 
@@ -1057,13 +1240,14 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
         {draftStart && draftCurrent && draftPage === pageNum && tool === 'callout' ? (() => {
           const r = rectFrom(draftStart, draftCurrent);
           const leaderStart = calloutLeaderStart(r, draftStart);
+          const leader = normalizedLineEndpoints(leaderStart.x, leaderStart.y, draftStart.x, draftStart.y);
           return (
             <>
-              <svg style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }}>
-                <line x1={`${leaderStart.x * 100}%`} y1={`${leaderStart.y * 100}%`} x2={`${draftStart.x * 100}%`} y2={`${draftStart.y * 100}%`} stroke="#f97316" strokeWidth={2} />
-                <circle cx={`${draftStart.x * 100}%`} cy={`${draftStart.y * 100}%`} r={4} fill="#f97316" />
+              <svg viewBox={MARKUP_SVG_VIEWBOX} preserveAspectRatio="none" style={{ ...MARKUP_SVG_LAYER_STYLE, pointerEvents: 'none' }}>
+                <line x1={leader.x1} y1={leader.y1} x2={leader.x2} y2={leader.y2} stroke="#f97316" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+                <circle cx={draftStart.x * 100} cy={draftStart.y * 100} r={1.2} fill="#f97316" vectorEffect="non-scaling-stroke" />
               </svg>
-              <div style={{ position: 'absolute', left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.width * 100}%`, height: `${r.height * 100}%`, border: '2px dashed #f97316', background: 'rgba(255,255,255,.85)' }} />
+              <div style={{ ...percentRectStyle(r.x, r.y, r.width, r.height), border: '2px dashed #f97316', background: 'rgba(255,255,255,.85)' }} />
             </>
           );
         })() : null}
@@ -1089,31 +1273,43 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
         })() : null}
 
         {draftStart && draftCurrent && draftPage === pageNum && (tool === 'arrow' || tool === 'line' || tool === 'length' || tool === 'calibrate') ? (
-          <svg style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
-            {tool === 'arrow' ? (
-              <defs>
-                <marker id="draft-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                  <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
-                </marker>
-              </defs>
-            ) : null}
-            <line x1={`${draftStart.x * 100}%`} y1={`${draftStart.y * 100}%`} x2={`${draftCurrent.x * 100}%`} y2={`${draftCurrent.y * 100}%`} stroke={tool === 'calibrate' ? '#8b5cf6' : tool === 'line' ? '#0ea5e9' : '#ef4444'} strokeWidth={3} strokeDasharray={tool === 'calibrate' ? '5 4' : undefined} markerEnd={tool === 'arrow' ? 'url(#draft-arrow)' : undefined} />
+          <>
+            <NormalizedLineSvg
+              x1={draftStart.x}
+              y1={draftStart.y}
+              x2={draftCurrent.x}
+              y2={draftCurrent.y}
+              stroke={tool === 'calibrate' ? '#8b5cf6' : tool === 'line' ? '#0ea5e9' : '#ef4444'}
+              strokeWidth={3}
+              markerId="draft-arrow"
+              showArrow={tool === 'arrow'}
+              strokeDasharray={tool === 'calibrate' ? '5 4' : undefined}
+            />
             {tool === 'length' && documentScale ? (
-              <text x={`${((draftStart.x + draftCurrent.x) / 2) * 100}%`} y={`${((draftStart.y + draftCurrent.y) / 2) * 100}%`} fontSize="11" fill="#111827" textAnchor="middle">
-                {formatMeasurementValue(calibratedLengthFromLineCoords(
-                  { x1: draftStart.x, y1: draftStart.y, x2: draftCurrent.x, y2: draftCurrent.y },
-                  documentScale,
-                  pageSpaceDims.width,
-                  pageSpaceDims.height,
-                ))} {documentScale.unit}
-              </text>
+              <svg viewBox={MARKUP_SVG_VIEWBOX} preserveAspectRatio="none" style={{ ...MARKUP_SVG_LAYER_STYLE, pointerEvents: 'none' }}>
+                <text
+                  x={((draftStart.x + draftCurrent.x) / 2) * 100}
+                  y={((draftStart.y + draftCurrent.y) / 2) * 100}
+                  fontSize="3"
+                  fill="#111827"
+                  textAnchor="middle"
+                  vectorEffect="non-scaling-stroke"
+                >
+                  {formatMeasurementValue(calibratedLengthFromLineCoords(
+                    { x1: draftStart.x, y1: draftStart.y, x2: draftCurrent.x, y2: draftCurrent.y },
+                    documentScale,
+                    pageSpaceDims.width,
+                    pageSpaceDims.height,
+                  ))} {documentScale.unit}
+                </text>
+              </svg>
             ) : null}
-          </svg>
+          </>
         ) : null}
 
         {tool === 'area' && draftPage === pageNum && draftAreaPoints.length > 0 ? (
-          <svg style={{ position: 'absolute', inset: 0 }}>
-            <polyline points={draftAreaPoints.map((pt) => `${pt.x * 100},${pt.y * 100}`).join(' ')} fill="rgba(16,185,129,.2)" stroke="#10b981" strokeWidth={2} />
+          <svg viewBox={MARKUP_SVG_VIEWBOX} preserveAspectRatio="none" style={{ ...MARKUP_SVG_LAYER_STYLE, pointerEvents: 'none' }}>
+            <polyline points={normalizedPolylinePoints(draftAreaPoints)} fill="rgba(16,185,129,.2)" stroke="#10b981" strokeWidth={0.4} vectorEffect="non-scaling-stroke" />
           </svg>
         ) : null}
 
@@ -1158,57 +1354,42 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (markup.type === 'rectangle' || markup.type === 'highlight' || markup.type === 'cloud' || markup.type === 'text') {
       const x = toNum(markup.coordinates.x);
       const y = toNum(markup.coordinates.y);
-      const w = Math.max(0.002, toNum(markup.coordinates.width, 0.1));
-      const h = Math.max(0.002, toNum(markup.coordinates.height, 0.06));
-      return (
-        <div key={markup.id} style={{ position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%`, border: markup.type === 'cloud' ? `2px dashed ${selected ? '#dc2626' : '#fb923c'}` : `2px solid ${selected ? '#2563eb' : '#06b6d4'}`, borderRadius: markup.type === 'cloud' ? 16 : 4, background: markup.type === 'highlight' ? 'rgba(250,204,21,.35)' : 'transparent', pointerEvents: 'auto' }} onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}>
-          {markup.type === 'text' ? <div style={{ fontSize: 11, color: '#111827', background: 'rgba(255,255,255,.8)', padding: '2px 4px' }}>{markup.comment || 'Text'}</div> : null}
-        </div>
+      const { width: w, height: h } = resolveRectSize(
+        markup.coordinates,
+        markup.type === 'text' ? DEFAULT_TEXT_BOX_SIZE : { width: 0.1, height: 0.06 },
       );
-    }
-
-    if (markup.type === 'callout') {
-      const anchorX = toNum(markup.coordinates.anchorX);
-      const anchorY = toNum(markup.coordinates.anchorY);
-      const x = toNum(markup.coordinates.x);
-      const y = toNum(markup.coordinates.y);
-      const w = Math.max(0.02, toNum(markup.coordinates.width, 0.15));
-      const h = Math.max(0.02, toNum(markup.coordinates.height, 0.08));
-      const box = { x, y, width: w, height: h };
-      const leaderStart = calloutLeaderStart(box, { x: anchorX, y: anchorY });
-      const strokeColor = selected ? '#ea580c' : '#f97316';
+      const borderColor = selected ? '#2563eb' : markup.type === 'cloud' ? '#fb923c' : '#06b6d4';
       return (
-        <div key={markup.id} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          <svg style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'auto' }} onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}>
-            <line x1={`${leaderStart.x * 100}%`} y1={`${leaderStart.y * 100}%`} x2={`${anchorX * 100}%`} y2={`${anchorY * 100}%`} stroke={strokeColor} strokeWidth={selected ? 3 : 2} />
-            <circle cx={`${anchorX * 100}%`} cy={`${anchorY * 100}%`} r={selected ? 5 : 4} fill={strokeColor} />
-          </svg>
-          <div
-            style={{
-              position: 'absolute',
-              left: `${x * 100}%`,
-              top: `${y * 100}%`,
-              width: `${w * 100}%`,
-              minHeight: `${h * 100}%`,
-              border: `2px solid ${strokeColor}`,
-              borderRadius: 4,
-              background: 'rgba(255,255,255,.92)',
-              pointerEvents: 'auto',
-              boxSizing: 'border-box',
-            }}
-            onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
-          >
-            {selected ? (
+        <div
+          key={markup.id}
+          style={{
+            ...percentRectStyle(x, y, w, h),
+            border: markup.type === 'cloud' ? `2px dashed ${borderColor}` : `2px solid ${borderColor}`,
+            borderRadius: markup.type === 'cloud' ? 16 : 4,
+            background: markup.type === 'highlight' ? 'rgba(250,204,21,.35)' : markup.type === 'text' ? 'rgba(255,255,255,.92)' : 'transparent',
+            pointerEvents: 'auto',
+            zIndex: selected && markup.type === 'text' ? 20 : undefined,
+            cursor: selected && tool === 'select' ? 'move' : undefined,
+          }}
+          onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+          onMouseDown={(e) => {
+            if (markup.type !== 'text' || !selected || tool !== 'select') return;
+            if ((e.target as HTMLElement).closest('textarea')) return;
+            beginMarkupDrag(markup, 'move', e);
+          }}
+        >
+          {markup.type === 'text' ? (
+            selected ? (
               <textarea
+                autoFocus
                 value={markup.comment ?? ''}
-                placeholder="Callout text"
+                placeholder="Text"
                 onChange={(e) => setMarkups((curr) => curr.map((item) => (item.id === markup.id ? { ...item, comment: e.target.value } : item)))}
                 onBlur={(e) => void saveMarkup(markup.id, { comment: e.target.value })}
                 onMouseDown={(e) => e.stopPropagation()}
                 style={{
                   width: '100%',
                   height: '100%',
-                  minHeight: 48,
                   border: 'none',
                   background: 'transparent',
                   resize: 'none',
@@ -1220,7 +1401,76 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                 }}
               />
             ) : (
-              <div style={{ fontSize: 11, color: '#111827', padding: '4px 6px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+              <div style={{ fontSize: 11, color: '#111827', padding: '4px 6px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', height: '100%' }}>
+                {markup.comment?.trim() ? markup.comment : 'Text'}
+              </div>
+            )
+          ) : null}
+        </div>
+      );
+    }
+
+    if (markup.type === 'callout') {
+      const anchorX = toNum(markup.coordinates.anchorX);
+      const anchorY = toNum(markup.coordinates.anchorY);
+      const x = toNum(markup.coordinates.x);
+      const y = toNum(markup.coordinates.y);
+      const { width: w, height: h } = resolveRectSize(markup.coordinates, { width: 0.15, height: 0.08 });
+      const box = { x, y, width: w, height: h };
+      const leaderStart = calloutLeaderStart(box, { x: anchorX, y: anchorY });
+      const strokeColor = selected ? '#ea580c' : '#f97316';
+      const leader = normalizedLineEndpoints(leaderStart.x, leaderStart.y, anchorX, anchorY);
+      return (
+        <div key={markup.id} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <svg
+            viewBox={MARKUP_SVG_VIEWBOX}
+            preserveAspectRatio="none"
+            style={{ ...MARKUP_SVG_LAYER_STYLE, pointerEvents: 'auto' }}
+            onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+          >
+            <line x1={leader.x1} y1={leader.y1} x2={leader.x2} y2={leader.y2} stroke={strokeColor} strokeWidth={selected ? 3 : 2} vectorEffect="non-scaling-stroke" />
+            <circle cx={anchorX * 100} cy={anchorY * 100} r={selected ? 1.5 : 1.2} fill={strokeColor} vectorEffect="non-scaling-stroke" />
+          </svg>
+          <div
+            style={{
+              ...percentRectStyle(x, y, w, h),
+              border: `2px solid ${strokeColor}`,
+              borderRadius: 4,
+              background: 'rgba(255,255,255,.92)',
+              pointerEvents: 'auto',
+              zIndex: selected ? 20 : undefined,
+              cursor: selected && tool === 'select' ? 'move' : undefined,
+            }}
+            onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+            onMouseDown={(e) => {
+              if (!selected || tool !== 'select') return;
+              if ((e.target as HTMLElement).closest('textarea')) return;
+              beginMarkupDrag(markup, 'move', e);
+            }}
+          >
+            {selected ? (
+              <textarea
+                autoFocus
+                value={markup.comment ?? ''}
+                placeholder="Callout text"
+                onChange={(e) => setMarkups((curr) => curr.map((item) => (item.id === markup.id ? { ...item, comment: e.target.value } : item)))}
+                onBlur={(e) => void saveMarkup(markup.id, { comment: e.target.value })}
+                onMouseDown={(e) => e.stopPropagation()}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  background: 'transparent',
+                  resize: 'none',
+                  fontSize: 11,
+                  color: '#111827',
+                  padding: '4px 6px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            ) : (
+              <div style={{ fontSize: 11, color: '#111827', padding: '4px 6px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', height: '100%' }}>
                 {markup.comment?.trim() ? markup.comment : 'Callout'}
               </div>
             )}
@@ -1232,8 +1482,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (markup.type === 'stamp') {
       const x = toNum(markup.coordinates.x);
       const y = toNum(markup.coordinates.y);
-      const w = Math.max(0.02, toNum(markup.coordinates.width, DEFAULT_STAMP_SIZE.width));
-      const h = Math.max(0.02, toNum(markup.coordinates.height, DEFAULT_STAMP_SIZE.height));
+      const { width: w, height: h } = resolveRectSize(markup.coordinates, DEFAULT_STAMP_SIZE);
       const label = stampLabelFromMarkup(markup);
       return (
         <div
@@ -1256,17 +1505,35 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const strokeColor = markup.type === 'calibrate' ? '#8b5cf6' : markup.type === 'length' ? '#10b981' : markup.type === 'line' ? '#0ea5e9' : '#ef4444';
       const markerId = `arrow-${markup.id}`;
       return (
-        <svg key={markup.id} style={{ position: 'absolute', inset: 0, pointerEvents: 'auto', overflow: 'visible' }} onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}>
-          {isArrow ? (
-            <defs>
-              <marker id={markerId} markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill={strokeColor} />
-              </marker>
-            </defs>
+        <div key={markup.id} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <NormalizedLineSvg
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            stroke={strokeColor}
+            strokeWidth={selected ? 4 : 3}
+            markerId={markerId}
+            showArrow={isArrow}
+            strokeDasharray={markup.type === 'calibrate' ? '5 4' : undefined}
+            interactive
+            onSelect={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+          />
+          {markup.measurement?.value != null ? (
+            <svg viewBox={MARKUP_SVG_VIEWBOX} preserveAspectRatio="none" style={{ ...MARKUP_SVG_LAYER_STYLE, pointerEvents: 'none' }}>
+              <text
+                x={((x1 + x2) / 2) * 100}
+                y={((y1 + y2) / 2) * 100}
+                fontSize="3"
+                fill="#111827"
+                textAnchor="middle"
+                vectorEffect="non-scaling-stroke"
+              >
+                {markup.measurement.value} {markup.measurement.unit ?? ''}
+              </text>
+            </svg>
           ) : null}
-          <line x1={`${x1 * 100}%`} y1={`${y1 * 100}%`} x2={`${x2 * 100}%`} y2={`${y2 * 100}%`} stroke={strokeColor} strokeWidth={selected ? 4 : 3} strokeDasharray={markup.type === 'calibrate' ? '5 4' : undefined} markerEnd={isArrow ? `url(#${markerId})` : undefined} />
-          {markup.measurement?.value != null ? <text x={`${((x1 + x2) / 2) * 100}%`} y={`${((y1 + y2) / 2) * 100}%`} fontSize="11" fill="#111827" textAnchor="middle">{markup.measurement.value} {markup.measurement.unit ?? ''}</text> : null}
-        </svg>
+        </div>
       );
     }
 
@@ -1277,10 +1544,24 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const cx = centroid.x / points.length;
       const cy = centroid.y / points.length;
       return (
-        <svg key={markup.id} style={{ position: 'absolute', inset: 0, pointerEvents: 'auto', overflow: 'visible' }} onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}>
-          <polygon points={points.map((p) => `${p.x * 100},${p.y * 100}`).join(' ')} fill="rgba(16,185,129,.25)" stroke={selected ? '#059669' : '#34d399'} strokeWidth={selected ? 3 : 2} />
+        <svg
+          key={markup.id}
+          viewBox={MARKUP_SVG_VIEWBOX}
+          preserveAspectRatio="none"
+          style={{ ...MARKUP_SVG_LAYER_STYLE, pointerEvents: 'auto' }}
+          onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+        >
+          <polygon
+            points={normalizedPolylinePoints(points)}
+            fill="rgba(16,185,129,.25)"
+            stroke={selected ? '#059669' : '#34d399'}
+            strokeWidth={selected ? 0.5 : 0.35}
+            vectorEffect="non-scaling-stroke"
+          />
           {markup.measurement?.value != null ? (
-            <text x={`${cx * 100}%`} y={`${cy * 100}%`} fontSize="11" fill="#111827" textAnchor="middle">{markup.measurement.value} {markup.measurement.unit ?? ''}</text>
+            <text x={cx * 100} y={cy * 100} fontSize="3" fill="#111827" textAnchor="middle" vectorEffect="non-scaling-stroke">
+              {markup.measurement.value} {markup.measurement.unit ?? ''}
+            </text>
           ) : null}
         </svg>
       );
@@ -1300,31 +1581,33 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     const HANDLE = 8;
     const HS = HANDLE / 2;
     const startDrag = (handle: string) => (e: ReactMouseEvent<HTMLDivElement>) => {
-      e.stopPropagation();
-      markupPageRef.current = markup.pageNumber;
-      const p = pagePointFromEvent(e, pageHostFromEvent(e));
-      if (!p) return;
-      markupDragRef.current = { markupId: markup.id, handle, startPoint: p, startCoords: { ...markup.coordinates } };
+      beginMarkupDrag(markup, handle, e);
     };
+
+    const skipMoveOverlay = markup.type === 'text' || markup.type === 'callout';
 
     if (markup.type === 'rectangle' || markup.type === 'highlight' || markup.type === 'cloud' || markup.type === 'text' || markup.type === 'stamp') {
       const x = toNum(markup.coordinates.x);
       const y = toNum(markup.coordinates.y);
-      const w = Math.max(0.002, toNum(markup.coordinates.width, 0.1));
-      const h = Math.max(0.002, toNum(markup.coordinates.height, 0.06));
+      const { width: w, height: h } = resolveRectSize(
+        markup.coordinates,
+        markup.type === 'text' ? DEFAULT_TEXT_BOX_SIZE : markup.type === 'stamp' ? DEFAULT_STAMP_SIZE : { width: 0.1, height: 0.06 },
+      );
       const corners: Array<[string, number, number]> = [['nw', x, y], ['ne', x + w, y], ['sw', x, y + h], ['se', x + w, y + h]];
       return (
         <>
-          <div
-            data-handle="move"
-            style={{ position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%`, cursor: 'move', pointerEvents: 'auto', zIndex: 10 }}
-            onMouseDown={startDrag('move')}
-          />
+          {!skipMoveOverlay ? (
+            <div
+              data-handle="move"
+              style={{ position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%`, cursor: 'move', pointerEvents: 'auto', zIndex: 10 }}
+              onMouseDown={startDrag('move')}
+            />
+          ) : null}
           {corners.map(([corner, cx, cy]) => (
             <div
               key={corner}
               data-handle={corner}
-              style={{ position: 'absolute', left: `calc(${cx * 100}% - ${HS}px)`, top: `calc(${cy * 100}% - ${HS}px)`, width: HANDLE, height: HANDLE, background: '#2563eb', border: '2px solid #fff', borderRadius: 2, cursor: `${corner}-resize`, pointerEvents: 'auto', zIndex: 11 }}
+              style={{ position: 'absolute', left: `calc(${cx * 100}% - ${HS}px)`, top: `calc(${cy * 100}% - ${HS}px)`, width: HANDLE, height: HANDLE, background: '#2563eb', border: '2px solid #fff', borderRadius: 2, cursor: `${corner}-resize`, pointerEvents: 'auto', zIndex: 21 }}
               onMouseDown={startDrag(corner)}
             />
           ))}
@@ -1337,26 +1620,20 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const anchorY = toNum(markup.coordinates.anchorY);
       const x = toNum(markup.coordinates.x);
       const y = toNum(markup.coordinates.y);
-      const w = Math.max(0.02, toNum(markup.coordinates.width, 0.15));
-      const h = Math.max(0.02, toNum(markup.coordinates.height, 0.08));
+      const { width: w, height: h } = resolveRectSize(markup.coordinates, { width: 0.15, height: 0.08 });
       const corners: Array<[string, number, number]> = [['nw', x, y], ['ne', x + w, y], ['sw', x, y + h], ['se', x + w, y + h]];
       return (
         <>
           <div
-            data-handle="move"
-            style={{ position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%`, cursor: 'move', pointerEvents: 'auto', zIndex: 10 }}
-            onMouseDown={startDrag('move')}
-          />
-          <div
             data-handle="anchor"
-            style={{ position: 'absolute', left: `calc(${anchorX * 100}% - 6px)`, top: `calc(${anchorY * 100}% - 6px)`, width: 12, height: 12, borderRadius: '50%', background: '#f97316', border: '2px solid #fff', cursor: 'crosshair', pointerEvents: 'auto', zIndex: 11 }}
+            style={{ position: 'absolute', left: `calc(${anchorX * 100}% - 6px)`, top: `calc(${anchorY * 100}% - 6px)`, width: 12, height: 12, borderRadius: '50%', background: '#f97316', border: '2px solid #fff', cursor: 'crosshair', pointerEvents: 'auto', zIndex: 21 }}
             onMouseDown={startDrag('anchor')}
           />
           {corners.map(([corner, cx, cy]) => (
             <div
               key={corner}
               data-handle={corner}
-              style={{ position: 'absolute', left: `calc(${cx * 100}% - ${HS}px)`, top: `calc(${cy * 100}% - ${HS}px)`, width: HANDLE, height: HANDLE, background: '#2563eb', border: '2px solid #fff', borderRadius: 2, cursor: `${corner}-resize`, pointerEvents: 'auto', zIndex: 11 }}
+              style={{ position: 'absolute', left: `calc(${cx * 100}% - ${HS}px)`, top: `calc(${cy * 100}% - ${HS}px)`, width: HANDLE, height: HANDLE, background: '#2563eb', border: '2px solid #fff', borderRadius: 2, cursor: `${corner}-resize`, pointerEvents: 'auto', zIndex: 21 }}
               onMouseDown={startDrag(corner)}
             />
           ))}
@@ -1418,7 +1695,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, overflow: 'hidden' }}>
+    <div ref={viewerRootRef} style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, overflow: 'hidden' }}>
       <div className="pdf-viewer-toolbar">
         <div className="pdf-viewer-toolbar-row">
           <button type="button" onClick={() => goToPage(Math.max(1, page - 1))} className="pdf-toolbar-btn">Prev</button>
@@ -1655,7 +1932,12 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           )}
         </aside>
 
-        <div className="pdf-viewer-document-host">
+        <div
+          ref={documentHostRef}
+          className="pdf-viewer-document-host"
+          tabIndex={-1}
+          onMouseDown={() => documentHostRef.current?.focus({ preventScroll: true })}
+        >
           <Document
             key={`${url}-${documentRetryKey}`}
             file={url}

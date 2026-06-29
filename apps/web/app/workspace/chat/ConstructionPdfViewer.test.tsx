@@ -1865,8 +1865,8 @@ describe('ConstructionPdfViewer – create and manage markups', () => {
 
     await waitFor(() => {
       expect(document.querySelector('[data-handle="anchor"]')).toBeInTheDocument();
-      expect(document.querySelector('[data-handle="move"]')).toBeInTheDocument();
       expect(document.querySelector('[data-handle="se"]')).toBeInTheDocument();
+      expect(document.querySelector('[data-handle="move"]')).not.toBeInTheDocument();
     });
   });
 
@@ -3107,5 +3107,205 @@ describe('ConstructionPdfViewer – document loading and error states', () => {
     await waitFor(() => {
       expect(document.querySelector('[data-page="1"]')).toBeInTheDocument();
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Test suite: Markup rendering fixes & keyboard shortcuts
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ConstructionPdfViewer – markup rendering & shortcuts', () => {
+  const now = new Date().toISOString();
+
+  function makeTextMarkup(overrides: Partial<{ id: string; coordinates: Record<string, unknown>; comment: string }> = {}) {
+    return {
+      id: overrides.id ?? 'text-1',
+      projectId: 'proj-draw',
+      fileId: 'file-draw',
+      pageNumber: 1,
+      type: 'text',
+      coordinates: overrides.coordinates ?? { x: 0.2, y: 0.2, width: 0.12, height: 0.05 },
+      category: 'General Comment',
+      status: 'Open',
+      comment: overrides.comment ?? '',
+      createdBy: 'Tester',
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
+  function makeArrowMarkup() {
+    return {
+      id: 'arrow-1',
+      projectId: 'proj-draw',
+      fileId: 'file-draw',
+      pageNumber: 1,
+      type: 'arrow',
+      coordinates: { x1: 0.1, y1: 0.1, x2: 0.6, y2: 0.4 },
+      category: 'General Comment',
+      status: 'Open',
+      createdBy: 'Tester',
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
+  beforeEach(() => {
+    _capturedOnLoadSuccess = undefined;
+    _lastObserver = undefined;
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  async function renderWithMarkup(markup: object) {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/markups')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [markup] }) } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-draw"
+        fileId="file-draw"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    expandMarkupPanel();
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+  }
+
+  it('renders arrow markups with numeric SVG viewBox coordinates', async () => {
+    await renderWithMarkup(makeArrowMarkup());
+    enableContinuousScrollMode();
+    fireEvent.click(screen.getByRole('cell', { name: 'arrow' }).closest('tr')!);
+
+    await waitFor(() => {
+      const svg = document.querySelector('[data-markup-layer] svg[viewBox="0 0 100 100"]');
+      expect(svg).toBeInTheDocument();
+      const line = svg?.querySelector('line');
+      expect(line).toHaveAttribute('x1', '10');
+      expect(line).toHaveAttribute('y1', '10');
+      expect(line).toHaveAttribute('x2', '60');
+      expect(line).toHaveAttribute('y2', '40');
+      expect(svg?.querySelector('marker')).toBeInTheDocument();
+    });
+  });
+
+  it('renders text box at drawn normalized dimensions', async () => {
+    await renderWithMarkup(makeTextMarkup({ coordinates: { x: 0.2, y: 0.3, width: 0.12, height: 0.05 } }));
+    enableContinuousScrollMode();
+    fireEvent.click(screen.getByRole('cell', { name: 'text' }).closest('tr')!);
+
+    await waitFor(() => {
+      const box = document.querySelector('[data-markup-layer] textarea[placeholder="Text"]')?.parentElement as HTMLElement;
+      expect(box).toBeTruthy();
+      expect(box.style.width).toBe('12%');
+      expect(box.style.height).toBe('5%');
+    });
+  });
+
+  it('allows typing in selected text box in continuous scroll mode', async () => {
+    let lastPatch: Record<string, unknown> = {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/markups') && (!init?.method || init.method === 'GET')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [makeTextMarkup()] }) } as Response;
+        }
+        if (init?.method === 'PATCH') {
+          lastPatch = JSON.parse(String(init.body)) as Record<string, unknown>;
+          return { ok: true, status: 200, json: async () => ({ markup: { ...makeTextMarkup(), ...lastPatch } }) } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-draw"
+        fileId="file-draw"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    expandMarkupPanel();
+    enableContinuousScrollMode();
+    await waitFor(() => screen.getByRole('cell', { name: 'text' }));
+    fireEvent.click(screen.getByRole('cell', { name: 'text' }).closest('tr')!);
+
+    const textarea = await screen.findByPlaceholderText('Text');
+    fireEvent.change(textarea, { target: { value: 'Field note' } });
+    fireEvent.blur(textarea);
+
+    await waitFor(() => {
+      expect(lastPatch.comment).toBe('Field note');
+    });
+  });
+
+  it('Backspace deletes the selected markup when viewer is focused', async () => {
+    const markup = makeArrowMarkup();
+    let deleted = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/markups') && (!init?.method || init.method === 'GET')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [markup] }) } as Response;
+        }
+        if (init?.method === 'DELETE') {
+          deleted = true;
+          return { ok: true, status: 204, json: async () => ({}) } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-draw"
+        fileId="file-draw"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    expandMarkupPanel();
+    await waitFor(() => screen.getByRole('cell', { name: 'arrow' }));
+    fireEvent.click(screen.getByRole('cell', { name: 'arrow' }).closest('tr')!);
+
+    const host = document.querySelector('.pdf-viewer-document-host') as HTMLElement;
+    host?.focus();
+    fireEvent.keyDown(window, { key: 'Backspace' });
+
+    await waitFor(() => {
+      expect(deleted).toBe(true);
+      expect(screen.queryByRole('cell', { name: 'arrow' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('V switches to select tool via keyboard', async () => {
+    mockFetch();
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} projectId="p" fileId="f" />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 2 }));
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'rectangle' }));
+
+    fireEvent.keyDown(window, { key: 'v' });
+
+    expect(screen.getByRole('button', { name: 'select' })).toHaveClass('pdf-toolbar-btn--active');
   });
 });
