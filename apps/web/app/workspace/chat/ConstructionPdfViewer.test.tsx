@@ -1989,9 +1989,9 @@ describe('ConstructionPdfViewer – scale calibration', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function getContinuousPageLayer(pageNum: number): HTMLElement {
-  const layer = document.querySelector(`[data-markup-layer][data-markup-page="${pageNum}"]`) as HTMLElement;
-  if (!layer) throw new Error(`No continuous markup layer for page ${pageNum}`);
-  return layer;
+  const container = document.querySelector(`[data-page="${pageNum}"]`) as HTMLElement;
+  if (!container) throw new Error(`No continuous page container for page ${pageNum}`);
+  return container;
 }
 
 function mockLayerRect(el: HTMLElement) {
@@ -2241,6 +2241,123 @@ describe('ConstructionPdfViewer – continuous scroll markup interaction', () =>
     });
 
     expect(document.querySelectorAll('[data-page]').length).toBe(5);
+  });
+
+  it('creates a highlight in continuous mode without switching to single-page view', async () => {
+    let capturedPost: Record<string, unknown> = {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/markups') && (!init?.method || init.method === 'GET')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [] }) } as Response;
+        }
+        if (init?.method === 'POST') {
+          capturedPost = JSON.parse(String(init.body)) as Record<string, unknown>;
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              markup: makeMarkup({
+                id: 'created-highlight',
+                type: 'highlight',
+                pageNumber: Number(capturedPost.pageNumber),
+                coordinates: capturedPost.coordinates as Record<string, unknown>,
+              }),
+            }),
+          } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'highlight' }));
+
+    const page2Container = document.querySelector('[data-page="2"]') as HTMLElement;
+    mockLayerRect(page2Container);
+    fireEvent.mouseDown(page2Container, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(page2Container, { clientX: 400, clientY: 300 });
+    await act(async () => {
+      fireEvent.mouseUp(page2Container);
+    });
+
+    await waitFor(() => {
+      expect(capturedPost.type).toBe('highlight');
+      expect(capturedPost.pageNumber).toBe(2);
+    });
+
+    expect(document.querySelectorAll('[data-page]').length).toBe(5);
+    expect(isContinuousScrollMode()).toBe(true);
+    expect(screen.getByRole('button', { name: 'Scroll' })).toHaveStyle({ background: '#e0f2fe' });
+  });
+
+  it('late projectId / markup refetch does not wipe loaded page count', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/markups')) {
+        return { ok: true, status: 200, json: async () => ({ markups: [] }) } as Response;
+      }
+      return { ok: true, status: 200, json: async () => ({}) } as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { rerender } = render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 5 }));
+    enableContinuousScrollMode();
+    expect(document.querySelectorAll('[data-page]').length).toBe(5);
+
+    rerender(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/markups'), expect.anything());
+    });
+
+    expect(document.querySelectorAll('[data-page]').length).toBe(5);
+    expect(document.querySelectorAll('[data-testid^="pdf-page-"]').length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('markup overlay layers use pointer-events none in continuous mode so scroll is not blocked', async () => {
+    mockFetch({ '/markups': { markups: [] } });
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-cont"
+        fileId="file-cont"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'highlight' }));
+
+    document.querySelectorAll('[data-markup-layer]').forEach((layer) => {
+      expect(layer).toHaveStyle({ pointerEvents: 'none' });
+    });
   });
 
   it('creates a callout on the correct page in continuous scroll mode', async () => {

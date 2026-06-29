@@ -342,7 +342,16 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
   const selectedMarkup = useMemo(() => markups.find((m) => m.id === selectedMarkupId) ?? null, [markups, selectedMarkupId]);
 
-  const markupOverlayInteractive = Boolean(selectedMarkupId) || (showMarkupTools && tool !== 'pan');
+  /** Per-page interactivity — avoids blocking scroll on every page when one markup is selected. */
+  const isMarkupPageInteractive = useCallback((pageNum: number) => {
+    if (showMarkupTools && tool !== 'pan') return true;
+    if (selectedMarkup?.pageNumber === pageNum) return true;
+    return false;
+  }, [showMarkupTools, tool, selectedMarkup]);
+
+  const markupOverlayInteractive = showMarkupTools && tool !== 'pan'
+    ? true
+    : Boolean(selectedMarkupId);
 
   const loadMarkups = useCallback(async () => {
     if (!projectId || !fileId) { setMarkups([]); return; }
@@ -459,8 +468,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     textCacheRef.current.clear();
     pdfRef.current = null;
     setDocumentScale(fileId ? loadDocumentScale(fileId) : null);
+  }, [url, fileId]);
+
+  useEffect(() => {
     void loadMarkups();
-  }, [url, fileId, loadMarkups]);
+  }, [loadMarkups]);
 
   useEffect(() => {
     if (initialPage == null) return;
@@ -620,6 +632,8 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   };
 
   const pageHostFromEvent = (event: ReactMouseEvent<HTMLDivElement>): HTMLElement | null => {
+    const pageContainer = (event.target as HTMLElement).closest('[data-page]');
+    if (pageContainer instanceof HTMLElement) return pageContainer;
     const layer = (event.target as HTMLElement).closest('[data-markup-layer]');
     if (layer instanceof HTMLElement) return layer;
     return pageHostRef.current;
@@ -1011,24 +1025,28 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     );
   };
 
-  const renderMarkupLayer = (pageNum: number, interactive: boolean) => (
+  const markupLayerPointerHandlers = (pageNum: number, interactive: boolean) => (
+    interactive ? {
+      onMouseDown: (e: ReactMouseEvent<HTMLDivElement>) => onPointerDown(e, pageNum),
+      onMouseMove: onPointerMove,
+      onMouseUp: () => { void finishDraw(); },
+      onMouseLeave: () => { void finishDraw(); },
+      onDoubleClick: () => { if (tool === 'area' && draftAreaPoints.length >= 3) { void finishArea(); } },
+      onClick: () => { if (tool === 'select') setSelectedMarkupId(null); },
+    } : {}
+  );
+
+  const renderMarkupLayer = (pageNum: number, interactive: boolean, attachHandlers: boolean) => (
     <div
       data-markup-layer
       data-markup-page={pageNum}
       style={{
         position: 'absolute',
         inset: 0,
-        pointerEvents: interactive ? 'auto' : 'none',
-        cursor: interactive ? (tool === 'select' ? 'default' : 'crosshair') : undefined,
+        pointerEvents: attachHandlers && interactive ? 'auto' : 'none',
+        cursor: interactive && attachHandlers ? (tool === 'select' ? 'default' : 'crosshair') : undefined,
       }}
-      {...(interactive ? {
-        onMouseDown: (e: ReactMouseEvent<HTMLDivElement>) => onPointerDown(e, pageNum),
-        onMouseMove: onPointerMove,
-        onMouseUp: () => { void finishDraw(); },
-        onMouseLeave: () => { void finishDraw(); },
-        onDoubleClick: () => { if (tool === 'area' && draftAreaPoints.length >= 3) { void finishArea(); } },
-        onClick: () => { if (tool === 'select') setSelectedMarkupId(null); },
-      } : {})}
+      {...(attachHandlers ? markupLayerPointerHandlers(pageNum, interactive) : {})}
     >
       {renderPageOverlayContent(pageNum)}
     </div>
@@ -1452,12 +1470,14 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                     loading={<div style={{ width: Math.round(612 * scale), height: Math.round(792 * scale), background: '#e5e7eb' }} />}
                   />
 
-                  {renderMarkupLayer(page, markupOverlayInteractive)}
+                  {renderMarkupLayer(page, markupOverlayInteractive, true)}
                 </div>
               </div>
             ) : (
               <div ref={continuousScrollRef} className="pdf-continuous-scroll" style={{ position: 'absolute', inset: 0, overflow: 'auto', padding: '12px 0', background: '#f3f4f6', display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-                {Array.from({ length: numPages }, (_, i) => i + 1).map((p) => (
+                {Array.from({ length: numPages }, (_, i) => i + 1).map((p) => {
+                  const pageInteractive = isMarkupPageInteractive(p);
+                  return (
                   <div
                     key={`cont-${p}`}
                     data-page={p}
@@ -1466,7 +1486,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                       position: 'relative',
                       minWidth: continuousPageSlotSize.width,
                       minHeight: continuousPageSlotSize.height,
+                      cursor: pageInteractive ? (tool === 'select' ? 'default' : 'crosshair') : undefined,
                     }}
+                    {...markupLayerPointerHandlers(p, pageInteractive)}
                   >
                     <StablePdfPage
                       pageNumber={p}
@@ -1475,9 +1497,10 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                       slotWidth={continuousPageSlotSize.width}
                       slotHeight={continuousPageSlotSize.height}
                     />
-                    {renderMarkupLayer(p, markupOverlayInteractive)}
+                    {renderMarkupLayer(p, pageInteractive, false)}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </Document>
