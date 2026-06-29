@@ -945,6 +945,194 @@
   }
 }
 
+/* ─── PDF viewer toolbar ─────────────────── */
+.pdf-viewer-toolbar {
+  flex: 0 0 auto;
+  z-index: 30;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.pdf-viewer-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.pdf-viewer-toolbar-row:last-child {
+  border-bottom: none;
+}
+
+.pdf-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+  flex-shrink: 0;
+}
+
+.pdf-toolbar-btn:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.pdf-toolbar-btn--active {
+  border-color: #93c5fd;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.pdf-toolbar-btn--labeled {
+  min-width: auto;
+  padding: 0 8px;
+}
+
+.pdf-toolbar-btn--success {
+  border-color: #10b981;
+  background: #dcfce7;
+  color: #047857;
+  min-width: auto;
+  padding: 0 10px;
+  font-weight: 500;
+}
+
+.pdf-toolbar-btn--danger {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+.pdf-toolbar-btn--toggle-active {
+  border-color: #93c5fd;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.pdf-toolbar-btn--hand-active {
+  border-color: #93c5fd;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.pdf-toolbar-control {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 1.2;
+  background: #fff;
+  color: #0f172a;
+  font-family: inherit;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.pdf-toolbar-control--page {
+  width: 46px;
+  text-align: center;
+}
+
+.pdf-toolbar-page-label {
+  font-size: 10px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.pdf-toolbar-zoom-label {
+  min-width: 36px;
+  text-align: center;
+  font-size: 10px;
+  color: #374151;
+  flex-shrink: 0;
+}
+
+.pdf-toolbar-spacer {
+  flex: 1;
+  min-width: 8px;
+}
+
+.pdf-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: #e2e8f0;
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.pdf-toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.pdf-markup-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #fff;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.pdf-toolbar-select {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 11px;
+  background: #fff;
+  color: #0f172a;
+  font-family: inherit;
+  height: 28px;
+  max-width: 180px;
+  flex-shrink: 0;
+}
+
+.pdf-toolbar-select--compact {
+  max-width: 56px;
+}
+
+.pdf-toolbar-markups-btn {
+  position: relative;
+  min-width: auto;
+  padding: 0 10px;
+  font-weight: 500;
+}
+
+.pdf-toolbar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 4px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
 /* ─── PDF markup scale indicator ──────────── */
 .pdf-scale-indicator {
   font-size: 10px;

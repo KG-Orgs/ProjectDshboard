@@ -5,12 +5,12 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import './workspace.css';
+import PdfMarkupToolbar from './PdfMarkupToolbar';
 import {
   areaDisplayUnit,
   calibratedAreaFromPoints,
   calibratedLengthFromLineCoords,
   formatMeasurementValue,
-  formatScaleIndicator,
   LENGTH_UNITS,
   loadDocumentScale,
   pageDimensionsFromRotation,
@@ -1307,66 +1307,83 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     document.body.removeChild(anchor);
   };
 
-  const compactControlBase = {
-    border: '1px solid #d1d5db',
-    borderRadius: 4,
-    padding: '2px 4px',
-    fontSize: 11,
-    lineHeight: 1.2,
-    background: '#fff',
-    color: '#0f172a',
-  } as const;
+  const activeToggleStyle = { background: '#e0f2fe' } as const;
+  const activeHandStyle = { background: '#dbeafe' } as const;
+
+  const compactControlClass = (active?: boolean, variant?: 'hand' | 'toggle') => {
+    const classes = ['pdf-toolbar-btn'];
+    if (active) {
+      classes.push(variant === 'hand' ? 'pdf-toolbar-btn--hand-active' : 'pdf-toolbar-btn--toggle-active');
+    }
+    return classes.join(' ');
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, overflow: 'hidden' }}>
-      <div style={{ flex: '0 0 auto', zIndex: 30, borderBottom: '1px solid #e5e7eb', boxShadow: '0 1px 2px rgba(15,23,42,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', borderBottom: '1px solid #e5e7eb', background: '#f8fafc', flexWrap: 'nowrap', overflowX: 'auto' }}>
-          <button type="button" onClick={() => goToPage(Math.max(1, page - 1))} style={compactControlBase}>Prev</button>
-          <input type="number" min={1} max={Math.max(1, numPages)} value={page} onChange={(e) => goToPage(clamp(toPositiveInt(e.target.value, page), 1, Math.max(1, numPages || 1)))} style={{ ...compactControlBase, width: 46 }} />
-          <span style={{ fontSize: 10, color: '#6b7280' }}>of {numPages || '--'}</span>
-          <button type="button" onClick={() => goToPage(Math.min(Math.max(1, numPages), page + 1))} style={compactControlBase}>Next</button>
-          <button type="button" onClick={() => { setFitMode('manual'); setZoom((z) => Math.max(40, z - 10)); }} style={compactControlBase}>-</button>
-          <span style={{ minWidth: 36, textAlign: 'center', fontSize: 10 }}>{Math.round(scale * 100)}%</span>
-          <button type="button" onClick={() => { setFitMode('manual'); setZoom((z) => Math.min(300, z + 10)); }} style={compactControlBase}>+</button>
-          <button type="button" onClick={() => setFitMode('width')} style={{ ...compactControlBase, background: fitMode === 'width' ? '#e0f2fe' : '#fff' }}>Fit Width</button>
-          <button type="button" onClick={() => setFitMode('page')} style={{ ...compactControlBase, background: fitMode === 'page' ? '#e0f2fe' : '#fff' }}>Fit Page</button>
-          <button type="button" onClick={() => setRotation((r) => (r + 90) % 360)} style={compactControlBase}>Rotate</button>
-          <button type="button" onClick={() => setTool((t) => t === 'pan' ? 'select' : 'pan')} style={{ ...compactControlBase, background: tool === 'pan' ? '#dbeafe' : '#fff' }}>Hand</button>
-          <button type="button" onClick={() => setScrollMode((m) => (m === 'single' ? 'continuous' : 'single'))} style={{ ...compactControlBase, background: scrollMode === 'continuous' ? '#e0f2fe' : '#fff' }} title="Toggle continuous scroll">Scroll</button>
-          <button type="button" onClick={() => setShowMarkupTools((v) => !v)} style={{ ...compactControlBase, background: showMarkupTools ? '#e0f2fe' : '#fff' }}>Markups</button>
-          <div style={{ flex: 1 }} />
-          <button type="button" onClick={downloadOriginalPdf} style={compactControlBase} title="Download PDF">Save</button>
+      <div className="pdf-viewer-toolbar">
+        <div className="pdf-viewer-toolbar-row">
+          <button type="button" onClick={() => goToPage(Math.max(1, page - 1))} className="pdf-toolbar-btn">Prev</button>
+          <input type="number" min={1} max={Math.max(1, numPages)} value={page} onChange={(e) => goToPage(clamp(toPositiveInt(e.target.value, page), 1, Math.max(1, numPages || 1)))} className="pdf-toolbar-control pdf-toolbar-control--page" />
+          <span className="pdf-toolbar-page-label">of {numPages || '--'}</span>
+          <button type="button" onClick={() => goToPage(Math.min(Math.max(1, numPages), page + 1))} className="pdf-toolbar-btn">Next</button>
+          <button type="button" onClick={() => { setFitMode('manual'); setZoom((z) => Math.max(40, z - 10)); }} className="pdf-toolbar-btn" aria-label="-">-</button>
+          <span className="pdf-toolbar-zoom-label">{Math.round(scale * 100)}%</span>
+          <button type="button" onClick={() => { setFitMode('manual'); setZoom((z) => Math.min(300, z + 10)); }} className="pdf-toolbar-btn" aria-label="+">+</button>
+          <button type="button" onClick={() => setFitMode('width')} className={compactControlClass(fitMode === 'width', 'toggle')} style={fitMode === 'width' ? activeToggleStyle : undefined}>Fit Width</button>
+          <button type="button" onClick={() => setFitMode('page')} className={compactControlClass(fitMode === 'page', 'toggle')} style={fitMode === 'page' ? activeToggleStyle : undefined}>Fit Page</button>
+          <button type="button" onClick={() => setRotation((r) => (r + 90) % 360)} className="pdf-toolbar-btn">Rotate</button>
+          <button
+            type="button"
+            onClick={() => setTool((t) => (t === 'pan' ? 'select' : 'pan'))}
+            className={compactControlClass(tool === 'pan', 'hand')}
+            style={tool === 'pan' ? activeHandStyle : undefined}
+            aria-label="Hand"
+          >
+            Hand
+          </button>
+          <button
+            type="button"
+            onClick={() => setScrollMode((m) => (m === 'single' ? 'continuous' : 'single'))}
+            className={compactControlClass(scrollMode === 'continuous', 'toggle')}
+            style={scrollMode === 'continuous' ? activeToggleStyle : undefined}
+            title="Toggle continuous scroll"
+            aria-label="Scroll"
+          >
+            Scroll
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowMarkupTools((v) => !v)}
+            className={`pdf-toolbar-btn pdf-toolbar-markups-btn${showMarkupTools ? ' pdf-toolbar-btn--toggle-active' : ''}`}
+            style={showMarkupTools ? activeToggleStyle : undefined}
+            aria-label="Markups"
+          >
+            Markups
+            {markups.length > 0 ? (
+              <span className="pdf-toolbar-badge" aria-hidden>{markups.length}</span>
+            ) : null}
+          </button>
+          <div className="pdf-toolbar-spacer" />
+          <button type="button" onClick={downloadOriginalPdf} className="pdf-toolbar-btn" title="Download PDF" aria-label="Save">Save</button>
         </div>
 
         {showMarkupTools ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', background: '#fff', flexWrap: 'nowrap', overflowX: 'auto' }}>
-          {(['select', 'cloud', 'arrow', 'callout', 'stamp', 'text', 'highlight', 'line', 'rectangle', 'calibrate', 'length', 'area', 'count'] as Tool[]).map((t) => (
-            <button key={t} type="button" onClick={() => setTool(t)} style={{ ...compactControlBase, background: tool === t ? '#dbeafe' : '#fff', textTransform: 'capitalize' }}>{t}</button>
-          ))}
-          {tool === 'stamp' ? (
-            <select
-              aria-label="Stamp preset"
-              value={selectedStampLabel}
-              onChange={(e) => setSelectedStampLabel(e.target.value as ConstructionStampLabel)}
-              style={{ ...compactControlBase, maxWidth: 180 }}
-            >
-              {CONSTRUCTION_STAMPS.map((label) => (
-                <option key={label} value={label}>{label}</option>
-              ))}
-            </select>
-          ) : null}
-          <select value={unit} onChange={(e) => setUnit(e.target.value as (typeof UNITS)[number])} style={compactControlBase}>{UNITS.map((u) => <option key={u} value={u}>{u}</option>)}</select>
-          {documentScale ? (
-            <span className="pdf-scale-indicator" title="Drawing scale from calibration">{formatScaleIndicator(documentScale)}</span>
-          ) : (
-            <span className="pdf-scale-indicator pdf-scale-indicator--unset" title="Draw a calibrate line to set scale">No scale set</span>
-          )}
-          {tool === 'area' && draftAreaPoints.length >= 3 ? <button type="button" onClick={() => void finishArea()} style={{ ...compactControlBase, border: '1px solid #10b981', background: '#dcfce7' }}>Finish Area</button> : null}
-          {selectedMarkup ? <button type="button" onClick={() => void removeMarkup(selectedMarkup.id)} style={{ ...compactControlBase, border: '1px solid #fecaca', background: '#fff1f2', color: '#b91c1c' }}>Delete</button> : null}
-          <div style={{ flex: 1 }} />
-          <button type="button" onClick={() => void exportComments('csv')} style={compactControlBase}>CSV</button>
-          <button type="button" onClick={() => void exportComments('xlsx')} style={compactControlBase}>Excel</button>
-        </div>
+          <PdfMarkupToolbar
+            tool={tool}
+            onToolChange={setTool}
+            stampLabels={CONSTRUCTION_STAMPS}
+            selectedStampLabel={selectedStampLabel}
+            onStampLabelChange={(label) => setSelectedStampLabel(label as ConstructionStampLabel)}
+            unit={unit}
+            onUnitChange={setUnit}
+            documentScale={documentScale}
+            showFinishArea={tool === 'area' && draftAreaPoints.length >= 3}
+            onFinishArea={() => { void finishArea(); }}
+            selectedMarkupId={selectedMarkup?.id ?? null}
+            onDeleteSelected={() => { if (selectedMarkup) void removeMarkup(selectedMarkup.id); }}
+            onExportCsv={() => { void exportComments('csv'); }}
+            onExportExcel={() => { void exportComments('xlsx'); }}
+          />
         ) : null}
       </div>
 
