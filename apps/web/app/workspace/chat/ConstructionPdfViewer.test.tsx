@@ -1152,14 +1152,99 @@ describe('ConstructionPdfViewer – in-PDF text search', () => {
     vi.unstubAllGlobals();
   });
 
-  it('does not render the in-viewer search toolbar row', async () => {
+  it('renders compact find controls in the PDF toolbar', async () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
     await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
 
-    expect(screen.queryByPlaceholderText('Search this PDF')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Find' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Prev Hit' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Next Hit' })).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search this PDF')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Previous match' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next match' })).toBeInTheDocument();
+  });
+
+  it('runs search on Enter and shows match counter', async () => {
+    const user = userEvent.setup();
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
+    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
+
+    const input = screen.getByPlaceholderText('Search this PDF');
+    await user.type(input, 'load bearing');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(screen.getByText('1 of 2')).toBeInTheDocument();
+    });
+  });
+
+  it('navigates between search hits with prev/next buttons', async () => {
+    const user = userEvent.setup();
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} initialPage={1} />);
+    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
+
+    const input = screen.getByPlaceholderText('Search this PDF');
+    await user.type(input, 'load bearing');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(screen.getByText('1 of 2')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Next match' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('2 of 2')).toBeInTheDocument();
+    });
+
+    const pageInput = screen.getByRole('spinbutton') as HTMLInputElement;
+    expect(Number(pageInput.value)).toBe(2);
+  });
+
+  it('shows no-match message when search finds nothing', async () => {
+    const user = userEvent.setup();
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
+
+    const input = screen.getByPlaceholderText('Search this PDF');
+    await user.type(input, 'zzzznotfound');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(screen.getByText(/No matches found for "zzzznotfound"/)).toBeInTheDocument();
+      expect(screen.getByText('0 of 0')).toBeInTheDocument();
+    });
+  });
+
+  it('focuses find field on Ctrl+F / Cmd+F', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
+
+    const input = screen.getByPlaceholderText('Search this PDF');
+    expect(document.activeElement).not.toBe(input);
+
+    fireEvent.keyDown(window, { key: 'f', ctrlKey: true });
+    expect(document.activeElement).toBe(input);
+
+    (input as HTMLInputElement).blur();
+    fireEvent.keyDown(window, { key: 'f', metaKey: true });
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('clears search state on Escape in find field', async () => {
+    const user = userEvent.setup();
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoad(makeSearchableMockDoc(SEARCH_PAGE_TEXTS));
+
+    const input = screen.getByPlaceholderText('Search this PDF');
+    await user.type(input, 'load bearing');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(screen.getByText('1 of 2')).toBeInTheDocument();
+    });
+
+    await user.keyboard('{Escape}');
+
+    expect(input).toHaveValue('');
+    expect(screen.queryByText('1 of 2')).not.toBeInTheDocument();
   });
 });
 

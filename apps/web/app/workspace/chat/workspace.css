@@ -1133,6 +1133,73 @@
   line-height: 1;
 }
 
+.pdf-find-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.pdf-find-bar__icon {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.pdf-find-bar__input {
+  width: 148px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  flex-shrink: 1;
+  min-width: 96px;
+}
+
+.pdf-find-bar__input:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.pdf-find-bar__input:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.pdf-find-bar__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.pdf-find-bar__counter {
+  min-width: 52px;
+  font-size: 10px;
+  color: #6b7280;
+  text-align: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.pdf-find-message {
+  padding: 4px 10px;
+  border-bottom: 1px solid #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.pdf-search-highlight {
+  background: #fde68a;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+
 /* ─── Markup table panel header ───────────── */
 .pdf-markup-panel-header-label {
   display: inline-flex;

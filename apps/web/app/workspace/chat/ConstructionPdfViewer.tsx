@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { MouseEvent as ReactMouseEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -174,6 +175,12 @@ function pageDimensions(rotation: number): { width: number; height: number } {
   return pageDimensionsFromRotation(rotation);
 }
 
+function highlightSearchInText(str: string, term: string): string {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'ig');
+  return str.replace(regex, '<mark class="pdf-search-highlight">$1</mark>');
+}
+
 /** Memoized react-pdf Page — keeps canvases mounted when only the active-page highlight changes. */
 const StablePdfPage = memo(function StablePdfPage({
   pageNumber,
@@ -181,20 +188,24 @@ const StablePdfPage = memo(function StablePdfPage({
   rotation,
   slotWidth,
   slotHeight,
+  highlightSearchTerm,
 }: {
   pageNumber: number;
   scale: number;
   rotation: number;
   slotWidth: number;
   slotHeight: number;
+  highlightSearchTerm?: string;
 }) {
+  const showTextLayer = Boolean(highlightSearchTerm);
   return (
     <Page
       pageNumber={pageNumber}
       scale={scale}
       rotate={rotation}
       renderAnnotationLayer={false}
-      renderTextLayer={false}
+      renderTextLayer={showTextLayer}
+      customTextRenderer={showTextLayer ? ({ str }) => highlightSearchInText(str, highlightSearchTerm!) : undefined}
       loading={<div style={{ width: slotWidth, height: slotHeight, background: '#e5e7eb' }} />}
     />
   );
@@ -228,6 +239,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const markupPageRef = useRef<number>(1);
   const draftPageNumberRef = useRef<number | null>(null);
   const markupsLoadExpandedRef = useRef(false);
+  const findInputRef = useRef<HTMLInputElement | null>(null);
 
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(initialPage ?? 1);
@@ -640,6 +652,28 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       setSearchBusy(false);
     }
   }, [goToPage, searchTerm]);
+
+  const moveHit = useCallback((dir: 1 | -1) => {
+    if (hits.length === 0) return;
+    const next = dir === 1 ? (hitIndex + 1) % hits.length : (hitIndex - 1 + hits.length) % hits.length;
+    setHitIndex(next);
+    goToPage(hits[next].pageNumber);
+  }, [goToPage, hitIndex, hits]);
+
+  const activeHit = hitIndex >= 0 ? hits[hitIndex] : null;
+  const activeSearchHighlightPage = activeHit?.pageNumber;
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'f') {
+        event.preventDefault();
+        findInputRef.current?.focus();
+        findInputRef.current?.select();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   useEffect(() => {
     if (!citationRequest || citationRequest.fileId !== fileId) return;
@@ -1388,9 +1422,66 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
               <span className="pdf-toolbar-badge" aria-hidden>{markups.length}</span>
             ) : null}
           </button>
+          <div className="pdf-toolbar-divider" aria-hidden />
+          <div className="pdf-find-bar" role="search">
+            <Search size={14} strokeWidth={2} className="pdf-find-bar__icon" aria-hidden />
+            <input
+              ref={findInputRef}
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void runSearch();
+                }
+                if (e.key === 'Escape') {
+                  setSearchTerm('');
+                  setSearchApplied('');
+                  setHits([]);
+                  setHitIndex(-1);
+                  setSearchMsg(null);
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
+              placeholder="Search this PDF"
+              className="pdf-find-bar__input"
+              aria-label="Find in document"
+              disabled={searchBusy}
+            />
+            <div className="pdf-toolbar-group" role="group" aria-label="Search matches">
+              <button
+                type="button"
+                className="pdf-toolbar-btn"
+                aria-label="Previous match"
+                title="Previous match"
+                onClick={() => moveHit(-1)}
+                disabled={hits.length === 0}
+              >
+                <ChevronUp size={15} strokeWidth={2} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="pdf-toolbar-btn"
+                aria-label="Next match"
+                title="Next match"
+                onClick={() => moveHit(1)}
+                disabled={hits.length === 0}
+              >
+                <ChevronDown size={15} strokeWidth={2} aria-hidden />
+              </button>
+            </div>
+            <span className="pdf-find-bar__counter" aria-live="polite">
+              {hits.length > 0 ? `${hitIndex + 1} of ${hits.length}` : searchApplied ? '0 of 0' : ''}
+            </span>
+          </div>
           <div className="pdf-toolbar-spacer" />
           <button type="button" onClick={downloadOriginalPdf} className="pdf-toolbar-btn" title="Download PDF" aria-label="Save">Save</button>
         </div>
+
+        {searchMsg ? (
+          <div className="pdf-find-message" role="status">{searchMsg}</div>
+        ) : null}
 
         {showMarkupTools ? (
           <PdfMarkupToolbar
@@ -1503,12 +1594,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                     rotate={rotation}
                     renderAnnotationLayer={false}
                     renderTextLayer={Boolean(searchApplied)}
-                    customTextRenderer={({ str }) => {
-                      if (!searchApplied) return str;
-                      const escaped = searchApplied.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                      const regex = new RegExp(`(${escaped})`, 'ig');
-                      return str.replace(regex, '<mark style="background:#fde68a;padding:0 1px;border-radius:2px;">$1</mark>');
-                    }}
+                    customTextRenderer={({ str }) => highlightSearchInText(str, searchApplied)}
                     loading={<div style={{ width: Math.round(612 * scale), height: Math.round(792 * scale), background: '#e5e7eb' }} />}
                   />
 
@@ -1538,6 +1624,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                       rotation={rotation}
                       slotWidth={continuousPageSlotSize.width}
                       slotHeight={continuousPageSlotSize.height}
+                      highlightSearchTerm={
+                        searchApplied && p === activeSearchHighlightPage ? searchApplied : undefined
+                      }
                     />
                     {renderMarkupLayer(p, pageInteractive, false)}
                   </div>
