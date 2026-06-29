@@ -17,7 +17,6 @@ import {
   FileText,
   Folder,
   FolderOpen,
-  MessageSquare,
   PanelLeft,
   PanelRightClose,
   Plus,
@@ -1405,7 +1404,6 @@ function ChatWorkspacePageContent() {
           onClick={() => setLeftPanelCollapsed((c) => !c)}
           title={leftPanelCollapsed ? 'Show project files' : 'Hide project files'}
         >
-          <PanelLeft size={14} aria-hidden />
           <span>Files</span>
         </button>
         <button
@@ -1414,7 +1412,6 @@ function ChatWorkspacePageContent() {
           onClick={() => setRightPanelCollapsed((c) => !c)}
           title={rightPanelCollapsed ? 'Show AI assistant' : 'Hide AI assistant'}
         >
-          <MessageSquare size={14} aria-hidden />
           <span>Chat</span>
         </button>
         <button type="button" className="ws-topbar-btn-primary ws-topbar-btn-icon" onClick={() => void handleSidebarNewChat()} title="New conversation">
@@ -1441,7 +1438,6 @@ function ChatWorkspacePageContent() {
               onClick={() => setLeftPanelCollapsed(false)}
               title="Show project files"
             >
-              <PanelLeft size={16} aria-hidden />
               <span>Files</span>
             </button>
           ) : (
@@ -1562,7 +1558,6 @@ function ChatWorkspacePageContent() {
               onClick={() => setRightPanelCollapsed(false)}
               title="Show AI assistant"
             >
-              <MessageSquare size={16} aria-hidden />
               <span>Chat</span>
             </button>
           ) : (
