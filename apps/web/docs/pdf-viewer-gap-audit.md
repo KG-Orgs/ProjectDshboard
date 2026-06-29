@@ -3,7 +3,8 @@
 **Branch:** `feat/frontend-chat-viewer-improvements`  
 **Date:** 2026-06-26  
 **Scope:** `ConstructionPdfViewer.tsx`, workspace layout (`page.tsx`, `workspace.css`), citation/search/markup integration  
-**Benchmarks:** Bluebeam Revu, Adobe Acrobat, PDF.js default viewer, browser native PDF
+**Benchmarks:** Bluebeam Revu, Adobe Acrobat, PDF.js default viewer, browser native PDF  
+**Markup deep-dive:** [construction-markup-premium-audit.md](./construction-markup-premium-audit.md) (tool matrix, construction workflows, competitor comparison, P0–P2 markup roadmap)
 
 ---
 
