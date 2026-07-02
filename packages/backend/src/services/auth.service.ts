@@ -5,6 +5,7 @@ import type {
   AuthLoginResponse,
   AuthMeResponse,
   AuthTokenResponse,
+  OnboardingCompleteResponse,
   User,
 } from "@contractor/shared";
 import {
@@ -74,6 +75,12 @@ function normalizeUuidClaim(claim: unknown, fallbackSeed: string): string {
   return toDeterministicUuid(source);
 }
 
+function onboardingCompletedFromTimestamp(
+  onboardingCompletedAt: Date | null | undefined
+): boolean {
+  return onboardingCompletedAt != null;
+}
+
 function buildUserFromIdToken(idToken?: string): AuthSession["user"] {
   const claims = idToken ? decodeIdToken(idToken) : null;
   const emailClaim = claims?.preferred_username ?? claims?.email;
@@ -93,6 +100,7 @@ function buildUserFromIdToken(idToken?: string): AuthSession["user"] {
     name: displayName,
     orgId: toUuid(String(tenantIdClaim)),
     role: "member",
+    onboardingCompleted: false,
     createdAt: new Date(),
   };
 }
@@ -165,6 +173,9 @@ async function persistSession(session: AuthSession): Promise<void> {
       id: users.id,
       orgId: users.orgId,
       role: users.role,
+      jobRole: users.jobRole,
+      onboardingCompletedAt: users.onboardingCompletedAt,
+      createdAt: users.createdAt,
     });
 
   const persistedUser = persistedUsers[0];
@@ -173,6 +184,11 @@ async function persistSession(session: AuthSession): Promise<void> {
     session.user.id = toUuid(persistedUser.id);
     session.user.orgId = toUuid(persistedUser.orgId);
     session.user.role = persistedUser.role;
+    session.user.jobRole = persistedUser.jobRole ?? undefined;
+    session.user.onboardingCompleted = onboardingCompletedFromTimestamp(
+      persistedUser.onboardingCompletedAt
+    );
+    session.user.createdAt = persistedUser.createdAt;
     session.organization.id = session.user.orgId;
   }
 
@@ -211,6 +227,8 @@ function sessionFromRecord(record: {
     email: string;
     name: string;
     role: "super" | "admin" | "pm" | "member";
+    jobRole?: string;
+    onboardingCompleted: boolean;
     createdAt: Date;
     organization: {
       id: string;
@@ -235,6 +253,8 @@ function sessionFromRecord(record: {
       email: record.user.email,
       name: record.user.name,
       role: record.user.role,
+      jobRole: record.user.jobRole,
+      onboardingCompleted: record.user.onboardingCompleted,
       createdAt: record.user.createdAt,
     },
     organization: {
@@ -273,6 +293,8 @@ async function getSessionByAccessToken(accessToken: string): Promise<AuthSession
       userEmail: users.email,
       userName: users.name,
       userRole: users.role,
+      userJobRole: users.jobRole,
+      userOnboardingCompletedAt: users.onboardingCompletedAt,
       userCreatedAt: users.createdAt,
       organizationId: organizations.id,
       organizationName: organizations.name,
@@ -305,6 +327,8 @@ async function getSessionByAccessToken(accessToken: string): Promise<AuthSession
       email: row.userEmail,
       name: row.userName,
       role: row.userRole,
+      jobRole: row.userJobRole ?? undefined,
+      onboardingCompleted: onboardingCompletedFromTimestamp(row.userOnboardingCompletedAt),
       createdAt: row.userCreatedAt,
       organization: {
         id: row.organizationId,
@@ -346,6 +370,8 @@ async function getSessionByRefreshToken(refreshToken: string): Promise<AuthSessi
       userEmail: users.email,
       userName: users.name,
       userRole: users.role,
+      userJobRole: users.jobRole,
+      userOnboardingCompletedAt: users.onboardingCompletedAt,
       userCreatedAt: users.createdAt,
       organizationId: organizations.id,
       organizationName: organizations.name,
@@ -378,6 +404,8 @@ async function getSessionByRefreshToken(refreshToken: string): Promise<AuthSessi
       email: row.userEmail,
       name: row.userName,
       role: row.userRole,
+      jobRole: row.userJobRole ?? undefined,
+      onboardingCompleted: onboardingCompletedFromTimestamp(row.userOnboardingCompletedAt),
       createdAt: row.userCreatedAt,
       organization: {
         id: row.organizationId,
@@ -556,6 +584,8 @@ export const authService = {
       orgId: session.user.orgId,
       orgName: session.organization.name,
       role: session.user.role,
+      jobRole: session.user.jobRole,
+      onboardingCompleted: session.user.onboardingCompleted,
     };
   },
 
@@ -571,11 +601,57 @@ export const authService = {
         orgId: toUuid(user.orgId),
         name: user.name,
         role: user.role,
+        jobRole: user.jobRole,
+        onboardingCompleted: user.onboardingCompleted,
         createdAt: new Date(),
       },
       organization: {
         id: toUuid(user.orgId),
         name: user.orgName,
+      },
+    };
+  },
+
+  async completeOnboarding(
+    user?: RequestUserContext,
+    jobRole?: string
+  ): Promise<OnboardingCompleteResponse> {
+    if (!user) {
+      throw new AppError(401, "unauthorized", "Unauthorized");
+    }
+
+    const normalizedJobRole = jobRole?.trim() || undefined;
+    const completedAt = new Date();
+    const db = getDbIfInitialized();
+    if (db) {
+      await db
+        .update(users)
+        .set({
+          onboardingCompletedAt: completedAt,
+          ...(normalizedJobRole ? { jobRole: normalizedJobRole } : {}),
+        })
+        .where(eq(users.id, user.id));
+    }
+
+    for (const session of accessSessions.values()) {
+      if (session.user.id === user.id) {
+        session.user.onboardingCompleted = true;
+        if (normalizedJobRole) {
+          session.user.jobRole = normalizedJobRole;
+        }
+      }
+    }
+
+    return {
+      user: {
+        id: toUuid(user.id),
+        email: user.email,
+        orgId: toUuid(user.orgId),
+        name: user.name,
+        role: user.role,
+        jobRole: normalizedJobRole ?? user.jobRole,
+        onboardingCompleted: true,
+        createdAt: new Date(),
       },
     };
   },

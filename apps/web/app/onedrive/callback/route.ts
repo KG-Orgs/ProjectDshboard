@@ -4,7 +4,7 @@ const APP_SESSION_COOKIE = 'app_session';
 export const dynamic = 'force-dynamic';
 
 function getBackendBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  return process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 }
 
 function buildDashboardRedirect(request: NextRequest, error: string, message: string): URL {

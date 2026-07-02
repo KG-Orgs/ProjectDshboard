@@ -233,6 +233,15 @@ const handleAuthMe = asyncHandler(async (req, res) => {
   res.json(response);
 });
 
+const handleAuthOnboardingComplete = asyncHandler(async (req, res) => {
+  const jobRole =
+    typeof (req.body as { jobRole?: unknown }).jobRole === "string"
+      ? (req.body as { jobRole: string }).jobRole.trim()
+      : undefined;
+  const response = await authService.completeOnboarding(req.user, jobRole);
+  res.json(response);
+});
+
 const handleOneDriveConnect = asyncHandler(async (req, res) => {
   const response = await onedriveService.connect(
     req.body as OneDriveConnectRequest,
@@ -315,6 +324,7 @@ const handleGetFeatureRegistry = asyncHandler(async (_req, res) => {
 
 async function createApp(): Promise<Express> {
   const app = express();
+  const env = getEnv();
 
   // Middleware
   app.use((req, res, next) => {
@@ -340,6 +350,32 @@ async function createApp(): Promise<Express> {
 
     next();
   });
+
+  if (env.webOrigins.length > 0) {
+    app.use((req, res, next) => {
+      const requestOrigin = req.headers.origin;
+      const allowedOrigin =
+        requestOrigin && env.webOrigins.includes(requestOrigin)
+          ? requestOrigin
+          : env.webOrigins[0];
+
+      res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Authorization, Content-Type, X-Requested-With"
+      );
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+
+      if (req.method === "OPTIONS") {
+        res.status(204).end();
+        return;
+      }
+
+      next();
+    });
+  }
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
@@ -399,6 +435,11 @@ async function createApp(): Promise<Express> {
     res.status(204).send();
   }));
   app.get("/api/auth/me", handleAuthMe);
+  app.post(
+    "/api/auth/onboarding-complete",
+    requireAuthenticatedRequest,
+    handleAuthOnboardingComplete
+  );
 
   // OneDrive
   app.get(

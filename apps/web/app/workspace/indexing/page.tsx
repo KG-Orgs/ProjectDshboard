@@ -32,8 +32,6 @@ interface ProjectOption {
 // Constants
 // ============================================================
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
 const CATEGORY_LABELS: Record<string, string> = {
   drawing:        '📐 Drawings',
   rfi:            '❓ RFIs',
@@ -76,11 +74,9 @@ const POLL_INTERVAL_MS = 4000;
 // API helpers
 // ============================================================
 
-async function apiFetch<T>(path: string, token: string | null): Promise<T | null> {
+async function apiFetch<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    const res = await fetch(path, { credentials: 'include' });
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {
@@ -164,7 +160,6 @@ function StatusBadge({ status }: { status: string }) {
 // ============================================================
 
 export default function IndexingDashboard() {
-  const [token, setToken] = useState<string | null>(null);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [progress, setProgress] = useState<IndexingProgress | null>(null);
@@ -173,33 +168,25 @@ export default function IndexingDashboard() {
   const [isPolling, setIsPolling] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Retrieve stored access token
-  useEffect(() => {
-    const stored = sessionStorage.getItem('accessToken') ?? localStorage.getItem('accessToken');
-    setToken(stored);
-  }, []);
-
   // Load projects list
   useEffect(() => {
-    if (!token) return;
-    apiFetch<{ projects: ProjectOption[] }>('/api/projects', token).then((data) => {
+    apiFetch<{ projects: ProjectOption[] }>('/api/projects').then((data) => {
       if (data?.projects) setProjects(data.projects);
     });
-  }, [token]);
+  }, []);
 
   const fetchProgress = useCallback(async (projectId: string) => {
-    if (!projectId || !token) return;
+    if (!projectId) return;
     setLoading(true);
     const data = await apiFetch<IndexingProgress>(
-      `/api/projects/${projectId}/indexing/progress`,
-      token
+      `/api/projects/${projectId}/indexing/progress`
     );
     if (data) {
       setProgress(data);
       setLastUpdated(new Date());
     }
     setLoading(false);
-  }, [token]);
+  }, []);
 
   // Auto-poll when a project is selected
   useEffect(() => {

@@ -49,6 +49,10 @@ export interface AuthMeResponse {
   };
 }
 
+export interface OnboardingCompleteResponse {
+  user: User;
+}
+
 // ================================
 // ONEDRIVE
 // ================================

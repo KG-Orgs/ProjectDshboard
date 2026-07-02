@@ -8,6 +8,7 @@ export interface AppEnv {
   microsoftClientSecret?: string;
   microsoftTenantId?: string;
   oauthRedirectUri: string;
+  webOrigins: string[];
   onedriveApiEndpoint: string;
   geminiApiKey?: string;
   geminiChatModel?: string;
@@ -137,6 +138,10 @@ export function getEnv(): AppEnv {
     microsoftTenantId: process.env.MICROSOFT_TENANT_ID,
     oauthRedirectUri:
       process.env.OAUTH_REDIRECT_URI ?? "http://localhost:3000/auth/callback",
+    webOrigins: (process.env.WEB_ORIGIN ?? process.env.CORS_ORIGIN ?? "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
     onedriveApiEndpoint:
       process.env.ONEDRIVE_API_ENDPOINT ?? "https://graph.microsoft.com/v1.0",
     geminiApiKey,

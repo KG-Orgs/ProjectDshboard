@@ -10,28 +10,21 @@ function getBackendBaseUrl(): string {
 export async function POST(request: NextRequest) {
   try {
     const sessionToken = request.cookies.get(APP_SESSION_COOKIE)?.value;
-    const response = await fetch(`${getBackendBaseUrl()}/api/auth/logout`, {
+    const body = await request.json().catch(() => ({}));
+    const response = await fetch(`${getBackendBaseUrl()}/api/auth/onboarding-complete`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify(body),
       cache: 'no-store',
     });
 
-    const nextResponse = new NextResponse(null, { status: response.status });
-    nextResponse.cookies.set(APP_SESSION_COOKIE, '', {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      expires: new Date(0),
-    });
-
-    return nextResponse;
+    const data = await response.json().catch(() => ({}));
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Logout auth error:', error);
+    console.error('Onboarding complete error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

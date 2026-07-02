@@ -26,6 +26,7 @@ vi.mock("@contractor/shared", async (importOriginal) => {
         name: "Jane Contractor",
         orgId: "org-1",
         role: "member",
+        onboardingCompleted: true,
         createdAt: new Date().toISOString(),
       },
       isAuthenticated: true,
@@ -145,6 +146,7 @@ describe("Workspace chat interactions", () => {
     render(<ChatWorkspacePage />);
 
     expect(screen.queryByPlaceholderText("Search in document")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /tour/i })).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Files" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Chat" }).length).toBeGreaterThan(0);
     expect(screen.queryByPlaceholderText("Ask about drawings, specs, RFIs...")).not.toBeInTheDocument();
@@ -163,6 +165,76 @@ describe("Workspace chat interactions", () => {
     await waitFor(() => {
       expect(screen.getAllByText("spec.pdf").length).toBeGreaterThan(0);
     });
+  });
+
+  it("keeps conversation controls in the header, not inside the chat panel", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+
+        if (url.endsWith("/api/projects") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              projects: [{ id: "project-321", name: "North Tower" }],
+            }),
+          });
+        }
+
+        if (url.includes("/api/projects/project-321/files") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ files: [] }),
+          });
+        }
+
+        if (url.endsWith("/api/chat/sessions") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              sessions: [
+                {
+                  id: "session-1",
+                  projectId: "project-321",
+                  title: "RFI follow-up",
+                  pinned: false,
+                  createdAt: "2026-05-05T10:00:00.000Z",
+                  updatedAt: "2026-05-05T12:00:00.000Z",
+                },
+              ],
+            }),
+          });
+        }
+
+        if (url.includes("/api/chat/sessions/session-1/messages") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ messages: [] }),
+          });
+        }
+
+        return Promise.reject(new Error(`Unexpected request: ${url} (${method})`));
+      })
+    );
+
+    const user = userEvent.setup();
+    render(<ChatWorkspacePage />);
+
+    expect(screen.getByRole("button", { name: "Chat history" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New chat" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Open conversation history" })).not.toBeInTheDocument();
+
+    await user.click(screen.getAllByRole("button", { name: "Chat" })[0]);
+
+    expect(screen.getByPlaceholderText("Ask about drawings, specs, RFIs...")).toBeInTheDocument();
+    expect(screen.queryByText("Conversations")).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Search (Ctrl+/)")).not.toBeInTheDocument();
   });
 
   it("expands the files panel when the vertical Files control is clicked", async () => {

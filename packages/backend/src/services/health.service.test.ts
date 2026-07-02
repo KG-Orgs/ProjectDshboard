@@ -10,6 +10,7 @@ const BASE_TEST_ENV: AppEnv = {
   classifierModel: "gpt-4.1-nano",
   classifierEndpoint: "https://api.openai.com/v1/chat/completions",
   oauthRedirectUri: "http://localhost:3000/auth/callback",
+  webOrigins: [],
   onedriveApiEndpoint: "https://graph.microsoft.com/v1.0",
   openAiEmbeddingModel: "text-embedding-3-small",
   openAiEmbeddingEndpoint: "https://api.openai.com/v1/embeddings",

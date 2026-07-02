@@ -70,6 +70,7 @@ vi.mock('@contractor/shared', async (importOriginal) => {
         name: 'Jane Contractor',
         orgId: 'org-1',
         role: 'member',
+        onboardingCompleted: true,
         createdAt: new Date().toISOString(),
       },
       isAuthenticated: true,

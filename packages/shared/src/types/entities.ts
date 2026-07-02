@@ -47,6 +47,9 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  /** Construction job title (e.g. Superintendent) — distinct from auth role. */
+  jobRole?: string;
+  onboardingCompleted: boolean;
   createdAt: Date;
 }
 

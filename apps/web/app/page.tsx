@@ -4,6 +4,8 @@ import { useAuthStore } from '@contractor/shared';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import OnboardingModal from '../components/OnboardingModal';
+import { shouldAutoShowOnboarding } from '../lib/onboarding';
 import './page.css';
 
 interface HomeProject {
@@ -151,6 +153,21 @@ interface ChatSendResponse {
 
 const PROJECT_STATUS_POLL_INTERVAL_MS = 4000;
 
+function formatFileSearchStatus(status: FileInventoryItem['indexStatus']): string {
+  switch (status) {
+    case 'indexed':
+      return 'Ready to search';
+    case 'processing':
+      return 'Processing';
+    case 'pending':
+      return 'Waiting';
+    case 'failed':
+      return 'Failed';
+    default:
+      return status;
+  }
+}
+
 export default function Home() {
   const { isAuthenticated, user, hydrate, logout, isLoading, error } = useAuthStore();
   const router = useRouter();
@@ -160,6 +177,7 @@ export default function Home() {
       : new URLSearchParams(window.location.search).get('onedriveMessage');
   const [onboardingLoading, setOnboardingLoading] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
+  const [productTourOpen, setProductTourOpen] = useState(false);
   const [oneDriveStatus, setOneDriveStatus] = useState<OneDriveStatus | null>(null);
   const [projects, setProjects] = useState<HomeProject[]>([]);
   const [projectName, setProjectName] = useState('');
@@ -201,12 +219,6 @@ export default function Home() {
   const projectFilesInFlightRef = useRef(false);
   const indexingProgressInFlightRef = useRef(false);
   const syncProgressInFlightRef = useRef(false);
-  const [userRole, setUserRole] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return window.localStorage.getItem('contractor-ai-user-role') ?? '';
-    }
-    return '';
-  });
 
   // Restore the last successful app session from persisted auth state.
   useEffect(() => {
@@ -858,7 +870,7 @@ export default function Home() {
     setChatSources([]);
     setChatRouteSummary(null);
     setSyncProgress(null);
-    setSyncStatusMessage('Updating project folder, clearing old index, and starting a fresh sync...');
+    setSyncStatusMessage('Updating project folder, clearing old files, and starting a fresh sync...');
     setIsSyncing(true);
 
     try {
@@ -966,26 +978,18 @@ export default function Home() {
     }
   }, [loadOnboardingData, oneDriveFolders, selectedMainFolderId, handleRunManualSync]);
 
-  const handleSaveRole = (role: string) => {
-    const value = role.trim() || 'Team Member';
-    setUserRole(value);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('contractor-ai-user-role', value);
-    }
-    handleOpenAiChat();
-  };
-
   const activeProject = projects.find((p) => p.id === selectedProjectId) ?? null;
   const needsOneDrive = !onboardingLoading && oneDriveStatus !== null && !oneDriveStatus.connected;
   const needsProject = !onboardingLoading && oneDriveStatus?.connected === true && projects.length === 0;
-  const needsRole = !onboardingLoading && oneDriveStatus?.connected === true && projects.length > 0 && !userRole;
-  const onboardingStep = needsOneDrive ? 1 : needsProject ? 2 : needsRole ? 3 : 0;
+  const onboardingStep = needsOneDrive ? 1 : needsProject ? 2 : 0;
   const isOnboarding = onboardingStep > 0;
 
-  const ROLE_CHIPS = [
-    'Project Manager', 'Project Engineer', 'Superintendent', 'Field Engineer',
-    'Scheduler', 'Cost Engineer', 'QC Manager', 'Safety Manager', 'Document Control',
-  ];
+  useEffect(() => {
+    if (!isAuthenticated || isLoading || onboardingLoading || isOnboarding) return;
+    if (shouldAutoShowOnboarding(user)) {
+      setProductTourOpen(true);
+    }
+  }, [isAuthenticated, isLoading, onboardingLoading, isOnboarding, user]);
 
   const sty = {
     card: {
@@ -1012,58 +1016,53 @@ export default function Home() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f3f4f6', fontFamily: "'Segoe UI', -apple-system, sans-serif" }}>
+    <div className="dash-root">
 
-      {/* â"€â"€ Top Bar â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
-      <header style={{
-        background: '#fff', borderBottom: '1px solid #e5e7eb', height: '56px',
-        display: 'flex', alignItems: 'center', padding: '0 24px', gap: '12px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.06)', position: 'sticky', top: 0, zIndex: 10,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{
-            width: '32px', height: '32px', background: '#0078d4', borderRadius: '8px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: '13px', fontWeight: 700,
-          }}>AI</div>
-          <span style={{ fontWeight: 700, color: '#111827', fontSize: '15px' }}>ContractorAI</span>
+      <header className="dash-header">
+        <div className="dash-brand">
+          <div className="dash-brand-mark">AI</div>
+          <span className="dash-brand-name">ContractorAI</span>
         </div>
         {activeProject && !isOnboarding ? (
           <>
-            <div style={{ width: '1px', height: '20px', background: '#e5e7eb', margin: '0 2px' }} />
-            <span style={{ fontSize: '14px', color: '#6b7280', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {activeProject.name}
-            </span>
+            <div style={{ width: '1px', height: '20px', background: '#e5e7eb' }} />
+            <span className="dash-project-label">{activeProject.name}</span>
           </>
         ) : null}
-        <div style={{ flex: 1 }} />
+        <div className="dash-header-actions">
+        {!isOnboarding ? (
+          <button
+            type="button"
+            onClick={() => setProductTourOpen(true)}
+            className="dash-btn-secondary"
+            style={{ fontSize: '12px', padding: '7px 12px' }}
+          >
+            Take tour
+          </button>
+        ) : null}
         {!isOnboarding && selectedProjectId ? (
-          <button type="button" onClick={handleOpenAiChat} style={sty.btnPrimary}>
+          <button type="button" onClick={handleOpenAiChat} className="dash-btn-primary">
             Open Workspace
           </button>
         ) : null}
-        <button type="button" onClick={() => void logout()} style={{ ...sty.btnSecondary, color: '#6b7280' }}>
+        <button type="button" onClick={() => void logout()} className="dash-btn-secondary" style={{ color: '#64748b' }}>
           Sign Out
         </button>
-        <div style={{
-          width: '32px', height: '32px', borderRadius: '50%', background: '#dbeafe',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '12px', fontWeight: 700, color: '#1d4ed8', flexShrink: 0,
-        }}>
+        <div className="dash-avatar">
           {user?.name?.charAt(0)?.toUpperCase() ?? 'U'}
+        </div>
         </div>
       </header>
 
-      <main style={{ maxWidth: '960px', margin: '0 auto', padding: '40px 24px' }}>
+      <main className="dash-main">
 
-        {/* Welcome */}
-        <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: '0 0 6px' }}>
+        <div className="dash-hero">
+          <h1>
             {isOnboarding
               ? `Welcome, ${user?.name?.split(' ')[0] || 'there'}`
               : `Welcome back, ${user?.name?.split(' ')[0] || 'there'}`}
           </h1>
-          <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
+          <p>
             {isLoading
               ? 'Restoring your session...'
               : isOnboarding
@@ -1083,16 +1082,13 @@ export default function Home() {
 
         {/* â"€â"€ Not authenticated fallback â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
         {!isAuthenticated && !isLoading ? (
-          <div style={{ ...sty.card, textAlign: 'center', padding: '60px 24px' }}>
+          <div className="dash-card dash-signin-card">
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>[?]</div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '8px' }}>ContractorAI</h2>
-            <p style={{ color: '#6b7280', marginBottom: '28px', fontSize: '14px' }}>
+            <h2>ContractorAI</h2>
+            <p className="dash-muted" style={{ marginBottom: '28px' }}>
               {error ?? 'Sign in to access your project workspace.'}
             </p>
-            <Link href="/login" style={{
-              background: '#0078d4', color: '#fff', textDecoration: 'none',
-              borderRadius: '10px', padding: '13px 32px', fontSize: '14px', fontWeight: 600,
-            }}>
+            <Link href="/login" className="dash-btn-primary" style={{ display: 'inline-block', textDecoration: 'none', padding: '13px 32px' }}>
               Sign In with Microsoft
             </Link>
           </div>
@@ -1106,9 +1102,8 @@ export default function Home() {
               {[
                 { n: 1, label: 'Connect OneDrive' },
                 { n: 2, label: 'Select Folder' },
-                { n: 3, label: 'Your Role' },
               ].map((step, i) => (
-                <div key={step.n} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? 1 : 0 }}>
+                <div key={step.n} style={{ display: 'flex', alignItems: 'center', flex: i < 1 ? 1 : 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     <div style={{
                       width: '28px', height: '28px', borderRadius: '50%',
@@ -1125,7 +1120,7 @@ export default function Home() {
                       whiteSpace: 'nowrap',
                     }}>{step.label}</span>
                   </div>
-                  {i < 2 ? <div style={{ flex: 1, height: '1px', background: '#e5e7eb', margin: '0 8px' }} /> : null}
+                  {i < 1 ? <div style={{ flex: 1, height: '1px', background: '#e5e7eb', margin: '0 8px' }} /> : null}
                 </div>
               ))}
             </div>
@@ -1137,7 +1132,7 @@ export default function Home() {
                   Connect Microsoft OneDrive
                 </h2>
                 <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '32px', lineHeight: '1.7' }}>
-                  Connect your OneDrive account to browse and select your project folder. Your files stay in OneDrive. We only read and index them to power AI search.
+                  Connect your OneDrive account to browse and select your project folder. Your files stay in OneDrive. We only read them to make them searchable for AI answers.
                 </p>
                 <button type="button" onClick={handleStartOneDriveConnect} style={sty.btnPrimary}>
                   Connect OneDrive
@@ -1201,50 +1196,6 @@ export default function Home() {
               </div>
             ) : null}
 
-            {/* Step 3: Role */}
-            {onboardingStep === 3 ? (
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '10px' }}>
-                  What is your role on this project?
-                </h2>
-                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '20px', lineHeight: '1.7' }}>
-                  This helps tailor your AI assistant. You can type any role.
-                </p>
-                <input
-                  type="text"
-                  value={userRole}
-                  onChange={(e) => setUserRole(e.target.value)}
-                  placeholder="e.g. Project Engineer, Superintendent..."
-                  style={{ ...sty.input, marginBottom: '16px' }}
-                />
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '28px' }}>
-                  {ROLE_CHIPS.map((role) => (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => setUserRole(role)}
-                      style={{
-                        padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer',
-                        border: `1px solid ${userRole === role ? '#0078d4' : '#e5e7eb'}`,
-                        background: userRole === role ? '#dbeafe' : '#f9fafb',
-                        color: userRole === role ? '#1d4ed8' : '#374151',
-                        fontWeight: userRole === role ? 600 : 400,
-                      }}
-                    >
-                      {role}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleSaveRole(userRole)}
-                  style={sty.btnPrimary}
-                >
-                  Enter Project Workspace &rarr;
-                </button>
-              </div>
-            ) : null}
-
             {onboardingError ? (
               <div style={{
                 marginTop: '20px', padding: '12px 16px', background: '#fef2f2',
@@ -1259,93 +1210,64 @@ export default function Home() {
         {/* â"€â"€ Dashboard (authenticated, set up) â"€â"€â"€â"€â"€â"€ */}
         {isAuthenticated && !isLoading && !onboardingLoading && !isOnboarding ? (
           <div>
-            {/* Quick action cards */}
-            <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-              gap: '16px', marginBottom: '24px',
-            }}>
-              {/* Open Workspace */}
-              <div
-                role="button"
-                tabIndex={0}
+            <div className="dash-grid">
+              <button
+                type="button"
+                className="dash-workspace-card"
                 onClick={handleOpenAiChat}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleOpenAiChat(); }}
-                style={{
-                  background: 'linear-gradient(135deg, #0078d4 0%, #005a9e 100%)',
-                  borderRadius: '12px', padding: '24px', color: '#fff', cursor: 'pointer',
-                  boxShadow: '0 4px 16px rgba(0,120,212,0.28)', outline: 'none',
-                }}
               >
-                <div
-                  style={{
-                    fontSize: '18px',
-                    fontWeight: 700,
-                    marginBottom: '12px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
+                <div className="dash-workspace-project">
                   {activeProject?.name ?? 'Project'}
                 </div>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px' }}>Open Project Workspace</h3>
-                <p style={{ fontSize: '13px', opacity: 0.85, margin: 0, lineHeight: '1.5' }}>
+                <h3 className="dash-workspace-title">Open Project Workspace</h3>
+                <p className="dash-workspace-copy">
                   File explorer, PDF viewer, and AI assistant in a three-panel workspace.
                 </p>
-              </div>
+              </button>
 
-              {/* OneDrive */}
-              <div style={sty.card}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: 0, flex: 1 }}>OneDrive</h3>
-                  <span style={{
-                    fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                    background: oneDriveStatus?.connected ? '#dcfce7' : '#fef9c3',
-                    color: oneDriveStatus?.connected ? '#166534' : '#92400e',
-                  }}>
+              <div className="dash-card">
+                <div className="dash-card-header">
+                  <h3 style={{ flex: 1 }}>OneDrive</h3>
+                  <span className={`dash-badge ${oneDriveStatus?.connected ? 'dash-badge-success' : 'dash-badge-warning'}`}>
                     {oneDriveStatus?.connected ? 'Connected' : 'Not Connected'}
                   </span>
                 </div>
                 {oneDriveStatus?.accountEmail ? (
-                  <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 4px' }}>{oneDriveStatus.accountEmail}</p>
+                  <p className="dash-muted">{oneDriveStatus.accountEmail}</p>
                 ) : null}
                 {(oneDriveStatus?.fileCount ?? 0) > 0 ? (
-                  <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 16px' }}>{oneDriveStatus?.fileCount} files detected</p>
+                  <p className="dash-muted" style={{ marginBottom: '16px' }}>{oneDriveStatus?.fileCount} files detected</p>
                 ) : (
                   <div style={{ height: '16px' }} />
                 )}
                 {oneDriveStatus?.connected ? (
-                  <button type="button" onClick={handleOpenOneDrive} style={sty.btnSecondary}>
+                  <button type="button" onClick={handleOpenOneDrive} className="dash-btn-secondary">
                     Open OneDrive
                   </button>
                 ) : (
-                  <button type="button" onClick={handleStartOneDriveConnect} style={sty.btnPrimary}>
+                  <button type="button" onClick={handleStartOneDriveConnect} className="dash-btn-primary">
                     Connect OneDrive
                   </button>
                 )}
               </div>
 
-              {/* Sync & Index */}
-              <div style={sty.card}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: 0 }}>Sync & Index</h3>
+              <div className="dash-card">
+                <div className="dash-card-header">
+                  <h3>File Sync</h3>
                 </div>
                 <div style={{ marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                    <span style={{ fontSize: '12px', color: '#6b7280' }}>Indexing progress</span>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>Search readiness</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
                       {indexingProgress ? `${indexingProgress.completionPercent}%` : '--'}
                     </span>
                   </div>
-                  <div style={{ height: '6px', background: '#e5e7eb', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%', background: '#0078d4', borderRadius: '3px',
-                      width: `${indexingProgress?.completionPercent ?? 0}%`, transition: 'width 0.3s',
-                    }} />
+                  <div className="dash-progress-track">
+                    <div className="dash-progress-fill" style={{ width: `${indexingProgress?.completionPercent ?? 0}%` }} />
                   </div>
                   {indexingProgress ? (
-                    <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '5px' }}>
-                      {indexingProgress.indexed} indexed | {indexingProgress.pending} pending | {indexingProgress.failed} failed
+                    <p className="dash-progress-meta">
+                      {indexingProgress.indexed} ready to search | {indexingProgress.pending} waiting | {indexingProgress.failed} failed
                     </p>
                   ) : null}
                 </div>
@@ -1353,8 +1275,8 @@ export default function Home() {
                   type="button"
                   onClick={() => void handleRunManualSync()}
                   disabled={!selectedProjectId || isSyncing}
+                  className="dash-btn-secondary"
                   style={{
-                    ...sty.btnSecondary,
                     opacity: !selectedProjectId ? 0.5 : 1,
                     cursor: !selectedProjectId || isSyncing ? 'not-allowed' : 'pointer',
                   }}
@@ -1362,7 +1284,7 @@ export default function Home() {
                   {isSyncing ? `Syncing... (${syncElapsedSeconds}s)` : 'Run Sync'}
                 </button>
                 {syncStatusMessage ? (
-                  <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px', lineHeight: '1.5' }}>{syncStatusMessage}</p>
+                  <p className="dash-muted" style={{ marginTop: '8px', lineHeight: 1.5 }}>{syncStatusMessage}</p>
                 ) : null}
                 {syncError ? (
                   <p style={{ fontSize: '12px', color: '#d83b01', marginTop: '8px' }}>{syncError}</p>
@@ -1370,32 +1292,23 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Project Settings */}
-            <div style={{ ...sty.card, marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: '0 0 20px' }}>
-                Project Setup
-              </h3>
+            <div className="dash-card dash-section">
+              <h3 className="dash-section-title">Project Setup</h3>
 
               {/* Projects list */}
               {projects.length > 0 ? (
                 <div style={{ marginBottom: '24px' }}>
                   <span style={sty.label}>Your Projects</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div className="dash-project-list">
                     {projects.map((project) => (
                       <button
                         key={project.id}
                         type="button"
                         onClick={() => handleSelectProject(project.id)}
-                        style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: '11px 14px', borderRadius: '10px',
-                        border: `1.5px solid ${selectedProjectId === project.id ? '#0078d4' : '#e5e7eb'}`,
-                        background: selectedProjectId === project.id ? '#eff6ff' : '#f9fafb',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}>
+                        className={`dash-project-btn ${selectedProjectId === project.id ? 'dash-project-btn-active' : ''}`}
+                      >
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: '13px', fontWeight: 600, color: '#111827', margin: 0 }}>{project.name}</p>
+                          <p className="dash-project-name">{project.name}</p>
                         </div>
                       </button>
                     ))}
@@ -1440,7 +1353,7 @@ export default function Home() {
                           cursor: !selectedProjectId || !selectedMainFolderId ? 'not-allowed' : 'pointer',
                         }}
                       >
-                        {isUpdatingMainFolder ? 'Applying...' : 'Apply & Re-index'}
+                        {isUpdatingMainFolder ? 'Applying...' : 'Apply & refresh files'}
                       </button>
                     </>
                   ) : null}
@@ -1477,13 +1390,13 @@ export default function Home() {
 
             {/* Project Files */}
             {projectFilesTotal > 0 ? (
-              <div style={sty.card}>
+              <div className="dash-card">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', margin: 0 }}>
                     Project Files
                     <span style={{
                       marginLeft: '8px', fontSize: '12px', fontWeight: 600, padding: '2px 8px',
-                      borderRadius: '12px', background: '#f3f4f6', color: '#6b7280',
+                      borderRadius: '12px', background: '#f1f5f9', color: '#64748b',
                     }}>{projectFilesTotal}</span>
                   </h3>
                   <button type="button" onClick={handleOpenAiChat} style={{
@@ -1493,29 +1406,23 @@ export default function Home() {
                     Open in Workspace &rarr;
                   </button>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {projectFiles.slice(0, 6).map((file) => {
                     const ext = file.fileName.toLowerCase().split('.').pop() ?? '';
                     const icon = ext === 'pdf' ? '[PDF]' : ['doc', 'docx'].includes(ext) ? '[DOC]' : ['xls', 'xlsx'].includes(ext) ? '[XLS]' : ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? '[IMG]' : '[DOC]';
                     return (
-                      <div key={file.id} style={{
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                        padding: '8px 12px', background: '#f9fafb',
-                        borderRadius: '8px', border: '1px solid #e5e7eb',
-                      }}>
+                      <div key={file.id} className="dash-file-row">
                         <span style={{ fontSize: '16px', flexShrink: 0 }}>{icon}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: '13px', fontWeight: 500, color: '#111827', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {file.fileName}
-                          </p>
-                          <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.filePath}</p>
+                          <p className="dash-file-name">{file.fileName}</p>
+                          <p className="dash-file-path">{file.filePath}</p>
                         </div>
                         <span style={{
                           fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600, flexShrink: 0,
                           background: file.indexStatus === 'indexed' ? '#dcfce7' : file.indexStatus === 'failed' ? '#fef2f2' : '#fef9c3',
                           color: file.indexStatus === 'indexed' ? '#166534' : file.indexStatus === 'failed' ? '#b91c1c' : '#92400e',
                         }}>
-                          {file.indexStatus}
+                          {formatFileSearchStatus(file.indexStatus)}
                         </span>
                       </div>
                     );
@@ -1541,6 +1448,12 @@ export default function Home() {
         ) : null}
 
       </main>
+
+      <OnboardingModal
+        open={productTourOpen}
+        onOpenChange={setProductTourOpen}
+        projectName={activeProject?.name}
+      />
     </div>
   );
 }
