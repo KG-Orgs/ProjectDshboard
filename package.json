@@ -13,7 +13,10 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "demo:up": "docker compose -f docker-compose.demo.yml up -d --build",
+    "demo:down": "docker compose -f docker-compose.demo.yml down",
+    "demo:logs": "docker compose -f docker-compose.demo.yml logs -f"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

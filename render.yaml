@@ -1,0 +1,76 @@
+# Render Blueprint — one-click demo deploy (web + API + external Neon DB)
+# Docs: docs/DEMO_DEPLOYMENT.md
+#
+# After connecting this repo in Render:
+#   1. Set sync: false secrets in the dashboard (DATABASE_URL, OAuth, AI keys)
+#   2. Deploy blueprint
+#   3. Add Azure redirect URI: https://<web-service>.onrender.com/auth/callback
+
+services:
+  - type: web
+    name: contractorai-api
+    runtime: docker
+    dockerfilePath: ./packages/backend/Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /health/api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: contractorai-api
+          property: host
+      - key: WEB_ORIGIN
+        fromService:
+          type: web
+          name: contractorai-web
+          property: host
+      - key: MICROSOFT_CLIENT_ID
+        sync: false
+      - key: MICROSOFT_CLIENT_SECRET
+        sync: false
+      - key: MICROSOFT_TENANT_ID
+        value: common
+      - key: OAUTH_REDIRECT_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: RETRIEVAL_HYBRID_ENABLED
+        value: "true"
+      - key: RETRIEVAL_RERANK_ENABLED
+        value: "true"
+      - key: RETRIEVAL_RERANK_PROVIDER
+        value: llm
+
+  - type: web
+    name: contractorai-web
+    runtime: docker
+    dockerfilePath: ./apps/web/Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_API_URL
+        fromService:
+          type: web
+          name: contractorai-api
+          property: host
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: contractorai-api
+          property: host
+      - key: NEXT_PUBLIC_APP_NAME
+        value: ContractorAI
