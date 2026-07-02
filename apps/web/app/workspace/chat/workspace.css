@@ -1512,10 +1512,13 @@
   touch-action: pan-x pan-y;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
 }
 
 .pdf-zoom-preview-layer {
   transform-origin: 0 0;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .pdf-zoom-preview-layer--continuous {
@@ -1532,8 +1535,8 @@
 }
 
 .pdf-viewer-document-host.pdf-zoom-committing .react-pdf__Page canvas {
-  transition: opacity 0.15s ease;
-  opacity: 0.88;
+  transition: opacity 0.2s ease;
+  opacity: 0.92;
 }
 
 .pdf-viewer-document-host:not(.pdf-zoom-committing) .react-pdf__Page canvas {
@@ -1545,11 +1548,14 @@
   min-width: var(--pdf-page-slot-width, 612px);
   min-height: var(--pdf-page-slot-height, 792px);
   contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: var(--pdf-page-slot-width, 612px) var(--pdf-page-slot-height, 792px);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .pdf-continuous-page .react-pdf__Page canvas {
   backface-visibility: hidden;
+  background: #fff;
 }
 
 .pdf-page-loading-slot {

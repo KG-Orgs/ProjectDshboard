@@ -136,8 +136,10 @@ function clamp(value: number, min: number, max: number): number { return Math.mi
 const ZOOM_MIN = 40;
 const ZOOM_MAX = 300;
 const WHEEL_ZOOM_SENSITIVITY = 0.01;
-const ZOOM_COMMIT_IDLE_MS = 180;
-const ZOOM_COMMIT_FADE_MS = 150;
+const ZOOM_COMMIT_IDLE_MS = 280;
+const ZOOM_COMMIT_FADE_MS = 200;
+const ZOOM_COMMIT_RENDER_TIMEOUT_MS = 450;
+const INTERSECTION_MIN_RATIO = 0.35;
 
 function layerOriginFromFocal(scrollEl: HTMLElement, layer: HTMLElement, focalX: number, focalY: number): { originX: number; originY: number } {
   return {
@@ -174,7 +176,7 @@ function touchCenter(touches: TouchList): { x: number; y: number } {
 
 function wheelZoomPercent(currentZoom: number, deltaY: number): number {
   const factor = Math.exp(-deltaY * WHEEL_ZOOM_SENSITIVITY);
-  return clamp(Math.round(currentZoom * factor), ZOOM_MIN, ZOOM_MAX);
+  return clamp(currentZoom * factor, ZOOM_MIN, ZOOM_MAX);
 }
 
 function effectiveZoomPercent(
@@ -329,6 +331,7 @@ type StablePdfPageProps = {
   slotHeight: number;
   highlightSearchTerm?: string;
   textSelectionEnabled?: boolean;
+  onRenderComplete?: () => void;
 };
 
 function stablePdfPagePropsEqual(prev: StablePdfPageProps, next: StablePdfPageProps): boolean {
@@ -352,6 +355,7 @@ const StablePdfPage = memo(function StablePdfPage({
   slotHeight,
   highlightSearchTerm,
   textSelectionEnabled = true,
+  onRenderComplete,
 }: StablePdfPageProps) {
   return (
     <Page
@@ -362,6 +366,7 @@ const StablePdfPage = memo(function StablePdfPage({
       renderTextLayer
       customTextRenderer={highlightSearchTerm ? ({ str }) => highlightSearchInText(str, highlightSearchTerm) : undefined}
       loading={null}
+      onRenderSuccess={onRenderComplete}
       className={textSelectionEnabled ? 'pdf-page--text-selectable' : 'pdf-page--text-blocked'}
     />
   );
@@ -412,6 +417,12 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const isPreviewZoomRef = useRef(false);
   const clearPreviewOnLayoutRef = useRef(false);
   const zoomCommitFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const zoomCommitRenderFallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const zoomCommitRendersPendingRef = useRef(0);
+  const awaitingZoomCommitClearRef = useRef(false);
+  const zoomPreviewRafRef = useRef<number | null>(null);
+  const pendingPreviewApplyRef = useRef<{ clientX: number; clientY: number; newZoomPercent: number } | null>(null);
+  const pageVisibilityRatiosRef = useRef<Map<number, number>>(new Map());
   const finishDrawRef = useRef<() => void>(() => {});
   const finishDrawBusyRef = useRef(false);
   const visiblePageRef = useRef(initialPage ?? 1);
@@ -492,7 +503,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   useEffect(() => () => {
     if (zoomCommitTimerRef.current != null) clearTimeout(zoomCommitTimerRef.current);
     if (zoomCommitFadeTimerRef.current != null) clearTimeout(zoomCommitFadeTimerRef.current);
+    if (zoomCommitRenderFallbackRef.current != null) clearTimeout(zoomCommitRenderFallbackRef.current);
     if (visiblePageRafRef.current != null) cancelAnimationFrame(visiblePageRafRef.current);
+    if (zoomPreviewRafRef.current != null) cancelAnimationFrame(zoomPreviewRafRef.current);
   }, []);
 
   useEffect(() => {
@@ -528,6 +541,41 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       });
     });
   }, [clearPreviewZoom]);
+
+  const beginAwaitingZoomCommitClear = useCallback(() => {
+    awaitingZoomCommitClearRef.current = true;
+    const visible = visiblePageRef.current;
+    const total = pageCountRef.current;
+    const pagesToWait = new Set<number>();
+    if (scrollModeRef.current === 'single') {
+      pagesToWait.add(visible);
+    } else {
+      for (let p = Math.max(1, visible - 1); p <= Math.min(total, visible + 1); p += 1) {
+        pagesToWait.add(p);
+      }
+    }
+    zoomCommitRendersPendingRef.current = Math.max(1, pagesToWait.size);
+
+    if (zoomCommitRenderFallbackRef.current != null) clearTimeout(zoomCommitRenderFallbackRef.current);
+    zoomCommitRenderFallbackRef.current = setTimeout(() => {
+      zoomCommitRenderFallbackRef.current = null;
+      if (!awaitingZoomCommitClearRef.current) return;
+      awaitingZoomCommitClearRef.current = false;
+      scheduleClearPreviewZoom();
+    }, ZOOM_COMMIT_RENDER_TIMEOUT_MS);
+  }, [scheduleClearPreviewZoom]);
+
+  const handlePageRenderComplete = useCallback(() => {
+    if (!awaitingZoomCommitClearRef.current) return;
+    zoomCommitRendersPendingRef.current -= 1;
+    if (zoomCommitRendersPendingRef.current > 0) return;
+    awaitingZoomCommitClearRef.current = false;
+    if (zoomCommitRenderFallbackRef.current != null) {
+      clearTimeout(zoomCommitRenderFallbackRef.current);
+      zoomCommitRenderFallbackRef.current = null;
+    }
+    scheduleClearPreviewZoom();
+  }, [scheduleClearPreviewZoom]);
 
   const commitZoomAtFocalPoint = useCallback((
     focalX: number,
@@ -581,7 +629,10 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     commitZoomAtFocalPoint(pending.focalX, pending.focalY, pending.zoom, pending.scrollEl);
   }, [commitZoomAtFocalPoint]);
 
-  const applyZoomAtFocalPoint = useCallback((clientX: number, clientY: number, newZoomPercent: number) => {
+  const flushPreviewZoomApply = useCallback(() => {
+    const pending = pendingPreviewApplyRef.current;
+    if (!pending) return;
+
     const scrollEl = scrollModeRef.current === 'single' ? viewerRef.current : continuousScrollRef.current;
     if (!scrollEl) return;
 
@@ -591,9 +642,10 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (!layer) return;
 
     const rect = scrollEl.getBoundingClientRect();
-    const focalX = clientX - rect.left;
-    const focalY = clientY - rect.top;
-    const clampedZoom = clamp(Math.round(newZoomPercent), ZOOM_MIN, ZOOM_MAX);
+    const focalX = pending.clientX - rect.left;
+    const focalY = pending.clientY - rect.top;
+    const clampedZoom = clamp(pending.newZoomPercent, ZOOM_MIN, ZOOM_MAX);
+    const roundedDisplay = Math.round(clampedZoom);
 
     const currentZoom = committedZoomPercent(fitModeRef.current, zoomRef.current, scaleRef.current);
     const previewRatio = clampedZoom / currentZoom;
@@ -601,20 +653,41 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
     previewRatioRef.current = previewRatio;
     applyPreviewTransformToLayer(layer, previewRatio, originX, originY);
-    isPreviewZoomRef.current = true;
-    setIsPreviewZooming(true);
-    setDisplayZoomPercent(clampedZoom);
+    if (!isPreviewZoomRef.current) {
+      isPreviewZoomRef.current = true;
+      setIsPreviewZooming(true);
+    }
+    setDisplayZoomPercent(roundedDisplay);
 
-    pendingPreviewCommitRef.current = { zoom: clampedZoom, focalX, focalY, scrollEl };
+    pendingPreviewCommitRef.current = { zoom: roundedDisplay, focalX, focalY, scrollEl };
     schedulePreviewZoomCommit();
   }, [schedulePreviewZoomCommit]);
+
+  const applyZoomAtFocalPoint = useCallback((clientX: number, clientY: number, newZoomPercent: number) => {
+    pendingPreviewApplyRef.current = { clientX, clientY, newZoomPercent };
+    if (zoomPreviewRafRef.current != null) return;
+    zoomPreviewRafRef.current = requestAnimationFrame(() => {
+      zoomPreviewRafRef.current = null;
+      flushPreviewZoomApply();
+    });
+  }, [flushPreviewZoomApply]);
 
   const applyToolbarZoom = useCallback((updater: (current: number) => number) => {
     if (zoomCommitTimerRef.current != null) {
       clearTimeout(zoomCommitTimerRef.current);
       zoomCommitTimerRef.current = null;
     }
+    if (zoomCommitRenderFallbackRef.current != null) {
+      clearTimeout(zoomCommitRenderFallbackRef.current);
+      zoomCommitRenderFallbackRef.current = null;
+    }
+    awaitingZoomCommitClearRef.current = false;
     pendingPreviewCommitRef.current = null;
+    pendingPreviewApplyRef.current = null;
+    if (zoomPreviewRafRef.current != null) {
+      cancelAnimationFrame(zoomPreviewRafRef.current);
+      zoomPreviewRafRef.current = null;
+    }
     clearPreviewZoom();
     setIsZoomCommitting(false);
     setFitMode('manual');
@@ -628,7 +701,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   useLayoutEffect(() => {
     if (clearPreviewOnLayoutRef.current) {
       clearPreviewOnLayoutRef.current = false;
-      scheduleClearPreviewZoom();
+      beginAwaitingZoomCommitClear();
     }
 
     const pending = pendingZoomScrollRef.current;
@@ -637,7 +710,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     const { el, scrollLeft, scrollTop } = pending;
     el.scrollLeft = scrollLeft;
     el.scrollTop = scrollTop;
-  }, [zoom, fitMode, scheduleClearPreviewZoom]);
+  }, [zoom, fitMode, beginAwaitingZoomCommitClear]);
 
   useEffect(() => {
     const host = documentHostRef.current;
@@ -686,7 +759,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const center = touchCenter(event.touches);
       const ratio = distance / pinchStateRef.current.distance;
       const newZoom = clamp(
-        Math.round(pinchStateRef.current.zoom * ratio),
+        pinchStateRef.current.zoom * ratio,
         ZOOM_MIN,
         ZOOM_MAX,
       );
@@ -915,26 +988,32 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     const observer = new IntersectionObserver(
       (entries) => {
         if (suppressIntersectionRef.current) return;
+        for (const entry of entries) {
+          const p = Number((entry.target as HTMLElement).dataset.page);
+          if (p > 0) pageVisibilityRatiosRef.current.set(p, entry.intersectionRatio);
+        }
         let maxRatio = 0;
         let mostVisible = 0;
-        for (const entry of entries) {
-          if (entry.intersectionRatio > maxRatio) {
-            maxRatio = entry.intersectionRatio;
-            const p = Number((entry.target as HTMLElement).dataset.page);
-            if (p > 0) mostVisible = p;
+        for (const [p, ratio] of pageVisibilityRatiosRef.current) {
+          if (ratio >= INTERSECTION_MIN_RATIO && ratio > maxRatio) {
+            maxRatio = ratio;
+            mostVisible = p;
           }
         }
-        if (mostVisible > 0) {
-          visiblePageRef.current = mostVisible;
-          if (visiblePageRafRef.current != null) return;
-          visiblePageRafRef.current = requestAnimationFrame(() => {
-            visiblePageRafRef.current = null;
-            const next = visiblePageRef.current;
-            setPage((curr) => (next > 0 && curr !== next ? next : curr));
-          });
-        }
+        if (mostVisible <= 0) return;
+        const currentPage = visiblePageRef.current;
+        const currentRatio = pageVisibilityRatiosRef.current.get(currentPage) ?? 0;
+        if (mostVisible === currentPage) return;
+        if (maxRatio <= currentRatio) return;
+        visiblePageRef.current = mostVisible;
+        if (visiblePageRafRef.current != null) return;
+        visiblePageRafRef.current = requestAnimationFrame(() => {
+          visiblePageRafRef.current = null;
+          const next = visiblePageRef.current;
+          setPage((curr) => (next > 0 && curr !== next ? next : curr));
+        });
       },
-      { root, threshold: [0, 0.25, 0.5, 0.75, 1] },
+      { root, threshold: [0, 0.35, 0.6, 1] },
     );
 
     root.querySelectorAll<HTMLElement>('[data-page]').forEach((el) => observer.observe(el));
@@ -2395,6 +2474,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                       customTextRenderer={searchApplied ? ({ str }) => highlightSearchInText(str, searchApplied) : undefined}
                       className={markupOverlayInteractive ? 'pdf-page--text-blocked' : 'pdf-page--text-selectable'}
                       loading={null}
+                      onRenderSuccess={handlePageRenderComplete}
                     />
 
                     {renderMarkupLayer(page, markupOverlayInteractive, true)}
@@ -2427,6 +2507,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                         highlightSearchTerm={
                           searchApplied && p === activeSearchHighlightPage ? searchApplied : undefined
                         }
+                        onRenderComplete={handlePageRenderComplete}
                       />
                       {renderMarkupLayer(p, isMarkupPointerActive, false)}
                     </div>

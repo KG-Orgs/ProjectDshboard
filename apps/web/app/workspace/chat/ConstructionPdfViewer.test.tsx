@@ -1231,7 +1231,10 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
 
     const previewLayer = document.querySelector('.pdf-zoom-preview-layer') as HTMLElement;
     expect(previewLayer).toBeTruthy();
-    expect(previewLayer.style.transform).toMatch(/scale\(/);
+
+    await waitFor(() => {
+      expect(previewLayer.style.transform).toMatch(/scale\(/);
+    });
 
     await waitFor(() => {
       expect(host.classList.contains('pdf-zoom-preview-active')).toBe(true);
@@ -1278,7 +1281,10 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
     }));
 
     const previewLayer = document.querySelector('.pdf-zoom-preview-layer') as HTMLElement;
-    expect(previewLayer.style.transform).toMatch(/scale\(/);
+
+    await waitFor(() => {
+      expect(previewLayer.style.transform).toMatch(/scale\(/);
+    });
 
     host.dispatchEvent(new TouchEvent('touchend', {
       bubbles: true,
@@ -1289,7 +1295,7 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
     await waitFor(() => {
       expect(previewLayer.style.transform).toBe('');
       expect(host.classList.contains('pdf-zoom-preview-active')).toBe(false);
-    });
+    }, { timeout: 3000 });
   });
 
   it('Fit Width button activates fit-width mode (highlighted)', async () => {
