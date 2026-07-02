@@ -7,6 +7,7 @@ export interface RequestUserContext {
   orgId: string;
   orgName: string;
   role: "super" | "admin" | "pm" | "member";
+  onboardingCompleted: boolean;
 }
 
 export function toUuid(value: string): UUID {

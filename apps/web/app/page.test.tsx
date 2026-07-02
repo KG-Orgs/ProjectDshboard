@@ -28,7 +28,6 @@ vi.mock('next/link', () => ({
 describe('Home page', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    window.localStorage.setItem('onboarding_completed', 'true');
     mockUseAuthStore.mockReset();
     mockPush.mockReset();
   });
@@ -60,7 +59,7 @@ describe('Home page', () => {
     const hydrate = vi.fn();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor' },
+      user: { name: 'Jane Contractor', onboardingCompleted: true },
       hydrate,
       logout,
       isLoading: false,
@@ -159,7 +158,7 @@ describe('Home page', () => {
     render(<Home />);
 
     expect(hydrate).toHaveBeenCalled();
-    expect(await screen.findByText('Welcome, Jane Contractor')).toBeInTheDocument();
+    expect(await screen.findByText('Welcome, Jane')).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Airport Expansion' })).toBeInTheDocument();
     expect(await screen.findByText('Connection:')).toBeInTheDocument();
     expect(await screen.findByText('Account:')).toBeInTheDocument();
@@ -172,7 +171,7 @@ describe('Home page', () => {
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor' },
+      user: { name: 'Jane Contractor', onboardingCompleted: true },
       hydrate: vi.fn(),
       logout: vi.fn(),
       isLoading: false,
@@ -284,7 +283,7 @@ describe('Home page', () => {
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor' },
+      user: { name: 'Jane Contractor', onboardingCompleted: true },
       hydrate: vi.fn(),
       logout: vi.fn(),
       isLoading: false,
@@ -422,7 +421,7 @@ describe('Home page', () => {
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor' },
+      user: { name: 'Jane Contractor', onboardingCompleted: true },
       hydrate: vi.fn(),
       logout: vi.fn(),
       isLoading: false,
@@ -514,7 +513,7 @@ describe('Home page', () => {
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor' },
+      user: { name: 'Jane Contractor', onboardingCompleted: true },
       hydrate: vi.fn(),
       logout: vi.fn(),
       isLoading: false,
@@ -650,7 +649,7 @@ describe('Home page', () => {
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor' },
+      user: { name: 'Jane Contractor', onboardingCompleted: true },
       hydrate: vi.fn(),
       logout: vi.fn(),
       isLoading: false,

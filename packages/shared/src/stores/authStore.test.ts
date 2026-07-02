@@ -10,6 +10,7 @@ const demoUser: User = {
   name: 'Demo User',
   email: 'demo@contractor.ai',
   role: 'admin' as const,
+  onboardingCompleted: true,
   createdAt: new Date('2026-04-13T00:00:00.000Z'),
 };
 

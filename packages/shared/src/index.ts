@@ -39,6 +39,7 @@ export type {
   AuthRefreshRequest,
   AuthTokenResponse,
   AuthMeResponse,
+  OnboardingCompleteResponse,
   OneDriveConnectRequest,
   OneDriveConnectStartResponse,
   OneDriveConnectResponse,

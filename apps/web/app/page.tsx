@@ -987,10 +987,10 @@ export default function Home() {
 
   useEffect(() => {
     if (!isAuthenticated || isLoading || onboardingLoading || isOnboarding) return;
-    if (shouldAutoShowOnboarding()) {
+    if (shouldAutoShowOnboarding(user)) {
       setProductTourOpen(true);
     }
-  }, [isAuthenticated, isLoading, onboardingLoading, isOnboarding]);
+  }, [isAuthenticated, isLoading, onboardingLoading, isOnboarding, user]);
 
   const ROLE_CHIPS = [
     'Project Manager', 'Project Engineer', 'Superintendent', 'Field Engineer',

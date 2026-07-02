@@ -273,6 +273,21 @@ describe("backend server", () => {
 
     expect(me.status).toBe(200);
     expect(me.body.user.email).toBe("jane@contractor.ai");
+    expect(me.body.user.onboardingCompleted).toBe(false);
+
+    const completed = await request(app)
+      .post("/api/auth/onboarding-complete")
+      .set("Authorization", `Bearer ${response.body.accessToken}`);
+
+    expect(completed.status).toBe(200);
+    expect(completed.body.user.onboardingCompleted).toBe(true);
+
+    const meAfterComplete = await request(app)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${response.body.accessToken}`);
+
+    expect(meAfterComplete.status).toBe(200);
+    expect(meAfterComplete.body.user.onboardingCompleted).toBe(true);
   });
 
   it("completes OneDrive connect flow and browses folders", async () => {

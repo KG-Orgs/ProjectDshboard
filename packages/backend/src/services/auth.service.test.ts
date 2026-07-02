@@ -13,6 +13,7 @@ describe("auth session user merge", () => {
       email: "jane@contractor.ai",
       name: "Jane Contractor",
       role: "member",
+      onboardingCompleted: false,
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
     };
 

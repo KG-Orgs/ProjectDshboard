@@ -15,7 +15,8 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { markOnboardingCompleted } from '../lib/onboarding';
+import { useAuthStore } from '@contractor/shared';
+import { completeOnboarding } from '../lib/onboarding';
 import './onboarding.css';
 
 export interface OnboardingModalProps {
@@ -130,29 +131,43 @@ const stepVariants = {
 };
 
 export default function OnboardingModal({ open, onOpenChange, projectName }: OnboardingModalProps) {
+  const setAuth = useAuthStore((state) => state.setAuth);
   const steps = useMemo(() => buildSteps(projectName), [projectName]);
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
 
   const step = steps[stepIndex];
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === steps.length - 1;
   const StepIcon = step.icon;
 
-  const closeAndPersist = useCallback(() => {
-    markOnboardingCompleted();
-    onOpenChange(false);
-    setStepIndex(0);
-    setDirection(1);
-  }, [onOpenChange]);
+  const closeAndPersist = useCallback(async () => {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updatedUser = await completeOnboarding();
+      setAuth(updatedUser);
+      onOpenChange(false);
+      setStepIndex(0);
+      setDirection(1);
+    } catch {
+      // Keep the modal open so the user can retry.
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSaving, onOpenChange, setAuth]);
 
   const handleSkip = useCallback(() => {
-    closeAndPersist();
+    void closeAndPersist();
   }, [closeAndPersist]);
 
   const handleNext = useCallback(() => {
     if (isLast) {
-      closeAndPersist();
+      void closeAndPersist();
       return;
     }
     setDirection(1);
@@ -281,7 +296,7 @@ export default function OnboardingModal({ open, onOpenChange, projectName }: Onb
 
             <footer className="onboarding-modal__footer">
               <div className="onboarding-modal__footer-left">
-                <button type="button" className="onboarding-modal__skip" onClick={handleSkip}>
+                <button type="button" className="onboarding-modal__skip" onClick={handleSkip} disabled={isSaving}>
                   Skip · don&apos;t show again
                 </button>
               </div>
@@ -300,6 +315,7 @@ export default function OnboardingModal({ open, onOpenChange, projectName }: Onb
                   type="button"
                   className="onboarding-modal__btn onboarding-modal__btn-primary"
                   onClick={handleNext}
+                  disabled={isSaving}
                 >
                   {isLast ? 'Get started' : 'Next'}
                   {!isLast ? <ArrowRight size={16} aria-hidden /> : null}

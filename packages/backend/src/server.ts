@@ -233,6 +233,11 @@ const handleAuthMe = asyncHandler(async (req, res) => {
   res.json(response);
 });
 
+const handleAuthOnboardingComplete = asyncHandler(async (req, res) => {
+  const response = await authService.completeOnboarding(req.user);
+  res.json(response);
+});
+
 const handleOneDriveConnect = asyncHandler(async (req, res) => {
   const response = await onedriveService.connect(
     req.body as OneDriveConnectRequest,
@@ -426,6 +431,11 @@ async function createApp(): Promise<Express> {
     res.status(204).send();
   }));
   app.get("/api/auth/me", handleAuthMe);
+  app.post(
+    "/api/auth/onboarding-complete",
+    requireAuthenticatedRequest,
+    handleAuthOnboardingComplete
+  );
 
   // OneDrive
   app.get(

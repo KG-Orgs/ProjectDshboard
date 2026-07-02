@@ -473,10 +473,10 @@ function ChatWorkspacePageContent() {
   }, [projectDisplayName]);
 
   useEffect(() => {
-    if (shouldAutoShowOnboarding()) {
+    if (shouldAutoShowOnboarding(user)) {
       setProductTourOpen(true);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let cancelled = false;

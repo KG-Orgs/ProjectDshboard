@@ -1,9 +1,15 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import OnboardingModal from './OnboardingModal';
-import { ONBOARDING_STORAGE_KEY } from '../lib/onboarding';
+
+const mockSetAuth = vi.fn();
+
+vi.mock('@contractor/shared', () => ({
+  useAuthStore: (selector: (state: { setAuth: typeof mockSetAuth }) => unknown) =>
+    selector({ setAuth: mockSetAuth }),
+}));
 
 vi.mock('framer-motion', () => {
   const passthrough = ({ children, ...props }: { children?: ReactNode; [key: string]: unknown }) => (
@@ -21,9 +27,26 @@ vi.mock('framer-motion', () => {
   };
 });
 
+const completedUser = {
+  id: 'user-1',
+  orgId: 'org-1',
+  email: 'jane@contractor.ai',
+  name: 'Jane Contractor',
+  role: 'member' as const,
+  onboardingCompleted: true,
+  createdAt: new Date('2026-01-01T00:00:00.000Z'),
+};
+
 describe('OnboardingModal', () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    mockSetAuth.mockReset();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ user: completedUser }),
+      })
+    );
   });
 
   it('renders the welcome step when open', () => {
@@ -63,7 +86,13 @@ describe('OnboardingModal', () => {
 
     await user.click(screen.getByRole('button', { name: 'Get started' }));
 
-    expect(window.localStorage.getItem(ONBOARDING_STORAGE_KEY)).toBe('true');
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/auth/onboarding-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    expect(mockSetAuth).toHaveBeenCalledWith(completedUser);
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
@@ -75,7 +104,13 @@ describe('OnboardingModal', () => {
 
     await user.click(screen.getByRole('button', { name: /Skip · don't show again/i }));
 
-    expect(window.localStorage.getItem(ONBOARDING_STORAGE_KEY)).toBe('true');
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/auth/onboarding-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    expect(mockSetAuth).toHaveBeenCalledWith(completedUser);
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });
