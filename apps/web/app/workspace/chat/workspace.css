@@ -1461,6 +1461,15 @@
   pointer-events: none;
 }
 
+.pdf-viewer-document-host.pdf-zoom-committing .react-pdf__Page canvas {
+  transition: opacity 0.15s ease;
+  opacity: 0.88;
+}
+
+.pdf-viewer-document-host:not(.pdf-zoom-committing) .react-pdf__Page canvas {
+  opacity: 1;
+}
+
 .pdf-continuous-page {
   position: relative;
   min-width: var(--pdf-page-slot-width, 612px);

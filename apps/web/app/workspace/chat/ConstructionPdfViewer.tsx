@@ -136,7 +136,8 @@ function clamp(value: number, min: number, max: number): number { return Math.mi
 const ZOOM_MIN = 40;
 const ZOOM_MAX = 300;
 const WHEEL_ZOOM_SENSITIVITY = 0.01;
-const ZOOM_COMMIT_IDLE_MS = 120;
+const ZOOM_COMMIT_IDLE_MS = 180;
+const ZOOM_COMMIT_FADE_MS = 150;
 
 function layerOriginFromFocal(scrollEl: HTMLElement, layer: HTMLElement, focalX: number, focalY: number): { originX: number; originY: number } {
   return {
@@ -243,6 +244,7 @@ function NormalizedLineSvg({
   showArrow,
   strokeDasharray,
   interactive,
+  wideHitArea,
   onSelect,
 }: {
   x1: number;
@@ -255,6 +257,7 @@ function NormalizedLineSvg({
   showArrow?: boolean;
   strokeDasharray?: string;
   interactive?: boolean;
+  wideHitArea?: boolean;
   onSelect?: (event: ReactMouseEvent<SVGSVGElement>) => void;
 }) {
   const pts = normalizedLineEndpoints(x1, y1, x2, y2);
@@ -271,6 +274,17 @@ function NormalizedLineSvg({
             <polygon points="0 0, 8 3, 0 6" fill={stroke} />
           </marker>
         </defs>
+      ) : null}
+      {wideHitArea ? (
+        <line
+          x1={pts.x1}
+          y1={pts.y1}
+          x2={pts.x2}
+          y2={pts.y2}
+          stroke="transparent"
+          strokeWidth={12}
+          vectorEffect="non-scaling-stroke"
+        />
       ) : null}
       <line
         x1={pts.x1}
@@ -397,6 +411,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const previewRatioRef = useRef(1);
   const isPreviewZoomRef = useRef(false);
   const clearPreviewOnLayoutRef = useRef(false);
+  const zoomCommitFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finishDrawRef = useRef<() => void>(() => {});
+  const finishDrawBusyRef = useRef(false);
   const visiblePageRef = useRef(initialPage ?? 1);
   const visiblePageRafRef = useRef<number | null>(null);
   const pageCountRef = useRef(0);
@@ -411,6 +428,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const [zoom, setZoom] = useState(120);
   const [displayZoomPercent, setDisplayZoomPercent] = useState(120);
   const [isPreviewZooming, setIsPreviewZooming] = useState(false);
+  const [isZoomCommitting, setIsZoomCommitting] = useState(false);
   const [fitMode, setFitMode] = useState<FitMode>('manual');
   const [rotation, setRotation] = useState(0);
   const [tab, setTab] = useState<SidebarTab>('thumbnails');
@@ -473,6 +491,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
   useEffect(() => () => {
     if (zoomCommitTimerRef.current != null) clearTimeout(zoomCommitTimerRef.current);
+    if (zoomCommitFadeTimerRef.current != null) clearTimeout(zoomCommitFadeTimerRef.current);
     if (visiblePageRafRef.current != null) cancelAnimationFrame(visiblePageRafRef.current);
   }, []);
 
@@ -497,6 +516,19 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     applyPreviewTransformToLayer(singleZoomPreviewLayerRef.current, 1, 0, 0);
   }, []);
 
+  const scheduleClearPreviewZoom = useCallback(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        clearPreviewZoom();
+        if (zoomCommitFadeTimerRef.current != null) clearTimeout(zoomCommitFadeTimerRef.current);
+        zoomCommitFadeTimerRef.current = setTimeout(() => {
+          zoomCommitFadeTimerRef.current = null;
+          setIsZoomCommitting(false);
+        }, ZOOM_COMMIT_FADE_MS);
+      });
+    });
+  }, [clearPreviewZoom]);
+
   const commitZoomAtFocalPoint = useCallback((
     focalX: number,
     focalY: number,
@@ -509,6 +541,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (clampedZoom === currentZoom && fitModeRef.current === 'manual') {
       clearPreviewZoom();
       setDisplayZoomPercent(clampedZoom);
+      setIsZoomCommitting(false);
       return;
     }
 
@@ -520,6 +553,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     };
 
     clearPreviewOnLayoutRef.current = true;
+    setIsZoomCommitting(true);
     setFitMode('manual');
     setZoom(clampedZoom);
     setDisplayZoomPercent(clampedZoom);
@@ -582,6 +616,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     }
     pendingPreviewCommitRef.current = null;
     clearPreviewZoom();
+    setIsZoomCommitting(false);
     setFitMode('manual');
     setZoom((current) => {
       const next = clamp(updater(current), ZOOM_MIN, ZOOM_MAX);
@@ -593,7 +628,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   useLayoutEffect(() => {
     if (clearPreviewOnLayoutRef.current) {
       clearPreviewOnLayoutRef.current = false;
-      clearPreviewZoom();
+      scheduleClearPreviewZoom();
     }
 
     const pending = pendingZoomScrollRef.current;
@@ -602,7 +637,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     const { el, scrollLeft, scrollTop } = pending;
     el.scrollLeft = scrollLeft;
     el.scrollTop = scrollTop;
-  }, [zoom, fitMode, clearPreviewZoom]);
+  }, [zoom, fitMode, scheduleClearPreviewZoom]);
 
   useEffect(() => {
     const host = documentHostRef.current;
@@ -618,6 +653,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       const scrollEl = resolveScrollEl();
       if (!scrollEl) return;
       event.preventDefault();
+      event.stopPropagation();
       const currentZoom = effectiveZoomPercent(
         fitModeRef.current,
         zoomRef.current,
@@ -664,20 +700,27 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
       }
     };
 
-    host.addEventListener('wheel', onWheel, { passive: false });
+    const wheelOpts: AddEventListenerOptions = { passive: false, capture: true };
+    host.addEventListener('wheel', onWheel, wheelOpts);
     host.addEventListener('touchstart', onTouchStart, { passive: true });
     host.addEventListener('touchmove', onTouchMove, { passive: false });
     host.addEventListener('touchend', clearPinch);
     host.addEventListener('touchcancel', clearPinch);
 
+    const scrollEl = resolveScrollEl();
+    if (scrollEl) {
+      scrollEl.addEventListener('wheel', onWheel, wheelOpts);
+    }
+
     return () => {
-      host.removeEventListener('wheel', onWheel);
+      host.removeEventListener('wheel', onWheel, wheelOpts);
       host.removeEventListener('touchstart', onTouchStart);
       host.removeEventListener('touchmove', onTouchMove);
       host.removeEventListener('touchend', clearPinch);
       host.removeEventListener('touchcancel', clearPinch);
+      scrollEl?.removeEventListener('wheel', onWheel, wheelOpts);
     };
-  }, [applyZoomAtFocalPoint, flushPreviewZoomCommit]);
+  }, [applyZoomAtFocalPoint, flushPreviewZoomCommit, scrollMode, numPages]);
 
   const pageSpaceDims = useMemo(() => pageDimensions(rotation), [rotation]);
 
@@ -778,15 +821,26 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
   /** Drawing tools attach pointer handlers to the page; pan/select leave the text layer selectable. */
   const isMarkupDrawingActive = showMarkupTools && isDrawingTool(tool);
+  const isMarkupEditActive = showMarkupTools && tool === 'select';
+  const isMarkupPointerActive = isMarkupDrawingActive || isMarkupEditActive;
 
-  const markupOverlayInteractive = isMarkupDrawingActive;
+  const markupOverlayInteractive = isMarkupPointerActive;
 
   const handleToolChange = useCallback((nextTool: Tool) => {
-    if (isDrawingTool(nextTool)) {
+    if (isDrawingTool(nextTool) || nextTool === 'select') {
       setShowMarkupTools(true);
     }
     setTool(nextTool);
   }, []);
+
+  const focusViewerHost = useCallback(() => {
+    documentHostRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  const selectMarkup = useCallback((markupId: string) => {
+    setSelectedMarkupId(markupId);
+    focusViewerHost();
+  }, [focusViewerHost]);
 
   const revealMarkupPanels = useCallback((opts?: { tools?: boolean; table?: boolean }) => {
     if (opts?.tools !== false) setShowMarkupTools(true);
@@ -1349,7 +1403,13 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   };
 
   const finishDraw = async () => {
+    if (finishDrawBusyRef.current) return;
     const drag = markupDragRef.current;
+    const hasDraft = Boolean((draftStartRef.current ?? draftStart) && (draftCurrentRef.current ?? draftCurrent));
+    if (!drag && !hasDraft) return;
+
+    finishDrawBusyRef.current = true;
+    try {
     if (drag) {
       markupDragRef.current = null;
       const updated = latestMarkupsRef.current.find((m) => m.id === drag.markupId);
@@ -1483,7 +1543,17 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     draftStartRef.current = null;
     draftCurrentRef.current = null;
     draftPageNumberRef.current = null;
+    } finally {
+      finishDrawBusyRef.current = false;
+    }
   };
+  finishDrawRef.current = () => { void finishDraw(); };
+
+  useEffect(() => {
+    const onWindowMouseUp = () => { finishDrawRef.current(); };
+    window.addEventListener('mouseup', onWindowMouseUp);
+    return () => window.removeEventListener('mouseup', onWindowMouseUp);
+  }, []);
 
   const confirmCalibration = async () => {
     if (!pendingCalibration) return;
@@ -1516,6 +1586,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
     setPendingCalibration(null);
     setCalibrationInputValue('');
+    setTool('select');
   };
 
   const cancelCalibration = () => {
@@ -1635,20 +1706,21 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
   const markupLayerDragHandlers = {
     onMouseMove: onPointerMove,
     onMouseUp: () => { void finishDraw(); },
-    onMouseLeave: () => { void finishDraw(); },
   };
 
-  const markupLayerDrawingHandlers = (pageNum: number, interactive: boolean) => (
-    interactive ? {
+  const markupLayerDrawingHandlers = (pageNum: number) => ({
+    ...(isMarkupDrawingActive ? {
       onMouseDown: (e: ReactMouseEvent<HTMLDivElement>) => onPointerDown(e, pageNum),
       onDoubleClick: () => { if (tool === 'area' && draftAreaPoints.length >= 3) { void finishArea(); } },
-      onClick: () => { if (tool === 'select') setSelectedMarkupId(null); },
-    } : {}
-  );
+    } : {}),
+    ...(isMarkupEditActive ? {
+      onClick: () => { setSelectedMarkupId(null); },
+    } : {}),
+  });
 
-  const markupLayerPointerHandlers = (pageNum: number, interactive: boolean) => ({
+  const markupLayerPointerHandlers = (pageNum: number) => ({
     ...markupLayerDragHandlers,
-    ...markupLayerDrawingHandlers(pageNum, interactive),
+    ...markupLayerDrawingHandlers(pageNum),
   });
 
   const renderMarkupLayer = (pageNum: number, interactive: boolean, attachHandlers: boolean) => (
@@ -1662,7 +1734,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
         pointerEvents: attachHandlers && interactive ? 'auto' : 'none',
         cursor: interactive && attachHandlers ? 'crosshair' : undefined,
       }}
-      {...(attachHandlers ? markupLayerPointerHandlers(pageNum, interactive) : markupLayerDragHandlers)}
+      {...(attachHandlers ? markupLayerPointerHandlers(pageNum) : markupLayerDragHandlers)}
     >
       {renderPageOverlayContent(pageNum)}
     </div>
@@ -1692,10 +1764,14 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
             zIndex: selected && markup.type === 'text' ? 20 : undefined,
             cursor: selected && tool === 'select' ? 'move' : undefined,
           }}
-          onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+          onClick={(e) => {
+            if (tool !== 'select' && tool !== 'pan') return;
+            e.stopPropagation();
+            selectMarkup(markup.id);
+          }}
           onMouseDown={(e) => {
-            if (markup.type !== 'text' || !selected || tool !== 'select') return;
-            if ((e.target as HTMLElement).closest('textarea')) return;
+            if (!selected || tool !== 'select') return;
+            if (markup.type === 'text' && (e.target as HTMLElement).closest('textarea')) return;
             beginMarkupDrag(markup, 'move', e);
           }}
         >
@@ -1747,7 +1823,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
             viewBox={MARKUP_SVG_VIEWBOX}
             preserveAspectRatio="none"
             style={{ ...MARKUP_SVG_LAYER_STYLE, pointerEvents: 'auto' }}
-            onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+            onClick={(e) => {
+              if (tool !== 'select' && tool !== 'pan') return;
+              e.stopPropagation();
+              selectMarkup(markup.id);
+            }}
           >
             <line x1={leader.x1} y1={leader.y1} x2={leader.x2} y2={leader.y2} stroke={strokeColor} strokeWidth={selected ? 3 : 2} vectorEffect="non-scaling-stroke" />
             <circle cx={anchorX * 100} cy={anchorY * 100} r={selected ? 1.5 : 1.2} fill={strokeColor} vectorEffect="non-scaling-stroke" />
@@ -1762,7 +1842,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
               zIndex: selected ? 20 : undefined,
               cursor: selected && tool === 'select' ? 'move' : undefined,
             }}
-            onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+            onClick={(e) => {
+              if (tool !== 'select' && tool !== 'pan') return;
+              e.stopPropagation();
+              selectMarkup(markup.id);
+            }}
             onMouseDown={(e) => {
               if (!selected || tool !== 'select') return;
               if ((e.target as HTMLElement).closest('textarea')) return;
@@ -1810,7 +1894,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           key={markup.id}
           className={`pdf-markup-stamp pdf-markup-stamp--${stampVariantClass(label)}${selected ? ' pdf-markup-stamp--selected' : ''}`}
           style={{ position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%` }}
-          onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+          onClick={(e) => {
+            if (tool !== 'select' && tool !== 'pan') return;
+            e.stopPropagation();
+            selectMarkup(markup.id);
+          }}
         >
           <span className="pdf-markup-stamp__label">{label}</span>
         </div>
@@ -1838,7 +1926,12 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
             showArrow={isArrow}
             strokeDasharray={markup.type === 'calibrate' ? '5 4' : undefined}
             interactive
-            onSelect={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+            wideHitArea={tool === 'select' || selected}
+            onSelect={(e) => {
+              if (tool !== 'select' && tool !== 'pan') return;
+              e.stopPropagation();
+              selectMarkup(markup.id);
+            }}
           />
           {markup.measurement?.value != null ? (
             <svg viewBox={MARKUP_SVG_VIEWBOX} preserveAspectRatio="none" style={{ ...MARKUP_SVG_LAYER_STYLE, pointerEvents: 'none' }}>
@@ -1870,7 +1963,11 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
           viewBox={MARKUP_SVG_VIEWBOX}
           preserveAspectRatio="none"
           style={{ ...MARKUP_SVG_LAYER_STYLE, pointerEvents: 'auto' }}
-          onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }}
+          onClick={(e) => {
+            if (tool !== 'select' && tool !== 'pan') return;
+            e.stopPropagation();
+            selectMarkup(markup.id);
+          }}
         >
           <polygon
             points={normalizedPolylinePoints(points)}
@@ -1891,7 +1988,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     if (markup.type === 'count') {
       const x = toNum(markup.coordinates.x);
       const y = toNum(markup.coordinates.y);
-      return <div key={markup.id} style={{ position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, width: 16, height: 16, borderRadius: '50%', transform: 'translate(-50%,-50%)', background: selected ? '#dc2626' : '#ef4444', pointerEvents: 'auto' }} onClick={(e) => { e.stopPropagation(); setSelectedMarkupId(markup.id); }} />;
+      return <div key={markup.id} style={{ position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, width: 16, height: 16, borderRadius: '50%', transform: 'translate(-50%,-50%)', background: selected ? '#dc2626' : '#ef4444', pointerEvents: 'auto' }} onClick={(e) => { if (tool !== 'select' && tool !== 'pan') return; e.stopPropagation(); selectMarkup(markup.id); }} />;
     }
 
     return null;
@@ -1902,6 +1999,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     const HANDLE = 8;
     const HS = HANDLE / 2;
     const startDrag = (handle: string) => (e: ReactMouseEvent<HTMLDivElement>) => {
+      if (tool !== 'select' && selectedMarkupId !== markup.id) return;
       beginMarkupDrag(markup, handle, e);
     };
 
@@ -2255,7 +2353,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
         <div
           ref={documentHostRef}
-          className={`pdf-viewer-document-host${isPreviewZooming ? ' pdf-zoom-preview-active' : ''}`}
+          className={`pdf-viewer-document-host${isPreviewZooming ? ' pdf-zoom-preview-active' : ''}${isZoomCommitting ? ' pdf-zoom-committing' : ''}`}
           tabIndex={-1}
           onMouseDown={() => documentHostRef.current?.focus({ preventScroll: true })}
         >
@@ -2317,7 +2415,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                         ['--pdf-page-slot-width' as string]: `${continuousPageSlotSize.width}px`,
                         ['--pdf-page-slot-height' as string]: `${continuousPageSlotSize.height}px`,
                       }}
-                      {...markupLayerPointerHandlers(p, isMarkupDrawingActive)}
+                      {...markupLayerPointerHandlers(p)}
                     >
                       <ContinuousPdfCanvas
                         pageNumber={p}
@@ -2330,7 +2428,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
                           searchApplied && p === activeSearchHighlightPage ? searchApplied : undefined
                         }
                       />
-                      {renderMarkupLayer(p, isMarkupDrawingActive, false)}
+                      {renderMarkupLayer(p, isMarkupPointerActive, false)}
                     </div>
                   ))}
                 </div>

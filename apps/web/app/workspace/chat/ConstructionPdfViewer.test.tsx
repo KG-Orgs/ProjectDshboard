@@ -3595,4 +3595,103 @@ describe('ConstructionPdfViewer – markup rendering & shortcuts', () => {
 
     expect(screen.getByRole('button', { name: 'select' })).toHaveClass('pdf-toolbar-btn--active');
   });
+
+  it('click-selects a line markup on the PDF in continuous mode', async () => {
+    const markup = makeArrowMarkup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/markups')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [markup] }) } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-draw"
+        fileId="file-draw"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'select' }));
+
+    const pageLayer = getContinuousPageLayer(1);
+    const lineSvg = pageLayer.querySelector('svg[style*="pointer-events: auto"]') as SVGSVGElement;
+    expect(lineSvg).toBeTruthy();
+    fireEvent.click(lineSvg);
+
+    await waitFor(() => {
+      expect(pageLayer.querySelector('[data-handle="p1"]')).toBeInTheDocument();
+      expect(pageLayer.querySelector('[data-handle="p2"]')).toBeInTheDocument();
+    });
+  });
+
+  it('shows calibration dialog after drawing calibrate line in continuous mode', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/markups') && (!init?.method || init.method === 'GET')) {
+          return { ok: true, status: 200, json: async () => ({ markups: [] }) } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response;
+      }),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        projectId="proj-scale"
+        fileId="file-cont-scale"
+        initialPage={1}
+      />,
+    );
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+    expandMarkupTools();
+    fireEvent.click(screen.getByRole('button', { name: 'calibrate' }));
+
+    const pageLayer = getContinuousPageLayer(1);
+    mockLayerRect(pageLayer);
+    fireEvent.mouseDown(pageLayer, { clientX: 100, clientY: 400 });
+    fireEvent.mouseMove(pageLayer, { clientX: 500, clientY: 400 });
+    await act(async () => {
+      fireEvent.mouseUp(pageLayer);
+    });
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Set drawing scale')).toBeInTheDocument();
+  });
+
+  it('Ctrl+wheel on continuous scroll container zooms in', async () => {
+    render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
+    await simulatePdfLoad(makeMockDoc({ numPages: 3 }));
+    enableContinuousScrollMode();
+
+    const scrollEl = document.querySelector('.pdf-continuous-scroll') as HTMLElement;
+    vi.spyOn(scrollEl, 'getBoundingClientRect').mockReturnValue({
+      left: 0, top: 0, width: 1000, height: 800, right: 1000, bottom: 800, x: 0, y: 0, toJSON: () => ({}),
+    } as DOMRect);
+
+    scrollEl.dispatchEvent(new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      ctrlKey: true,
+      clientX: 500,
+      clientY: 400,
+      deltaY: -100,
+    }));
+
+    await waitFor(() => {
+      const zoomLabel = screen.getByText(/\d+%/);
+      expect(parseInt(zoomLabel.textContent ?? '0', 10)).toBeGreaterThan(120);
+    });
+  });
 });
