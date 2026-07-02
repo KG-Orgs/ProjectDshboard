@@ -25,6 +25,12 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+const TEST_USER_ROLE = 'Project Manager';
+
+function seedOnboardedUser() {
+  window.localStorage.setItem('contractor-ai-user-role', TEST_USER_ROLE);
+}
+
 describe('Home page', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -34,6 +40,7 @@ describe('Home page', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('shows the landing view when signed out and hydrates auth state', () => {
@@ -50,11 +57,13 @@ describe('Home page', () => {
     render(<Home />);
 
     expect(hydrate).toHaveBeenCalled();
-    expect(screen.getByText('Welcome to Contractor Dashboard')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute('href', '/login');
+    expect(screen.getByRole('heading', { name: 'ContractorAI', level: 2 })).toBeInTheDocument();
+    expect(screen.getByText('Sign in to access your project workspace.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sign In with Microsoft' })).toHaveAttribute('href', '/login');
   });
 
   it('loads and renders OneDrive-connected onboarding data when signed in', async () => {
+    seedOnboardedUser();
     const logout = vi.fn();
     const hydrate = vi.fn();
     mockUseAuthStore.mockReturnValue({
@@ -158,12 +167,12 @@ describe('Home page', () => {
     render(<Home />);
 
     expect(hydrate).toHaveBeenCalled();
-    expect(await screen.findByText('Welcome, Jane')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Airport Expansion' })).toBeInTheDocument();
-    expect(await screen.findByText('Connection:')).toBeInTheDocument();
-    expect(await screen.findByText('Account:')).toBeInTheDocument();
+    expect(await screen.findByText('Welcome back, Jane')).toBeInTheDocument();
+    expect(await screen.findByText('Project: Airport Expansion')).toBeInTheDocument();
+    expect(await screen.findByText('jane@contractor.ai')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Open OneDrive' })).toBeInTheDocument();
     expect(await screen.findByText('spec.pdf')).toBeInTheDocument();
+    expect(screen.getByText('pending')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
   });
 
@@ -197,6 +206,16 @@ describe('Home page', () => {
         });
       }
 
+      if (url.endsWith('/api/onedrive/browse') && method === 'GET') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            items: [{ id: 'folder-900', name: 'Hospital Tower', isFolder: true, webUrl: 'https://example.com' }],
+          }),
+        });
+      }
+
       if (url.endsWith('/api/projects') && method === 'GET') {
         return Promise.resolve({
           ok: true,
@@ -215,6 +234,20 @@ describe('Home page', () => {
               name: 'Hospital Tower',
               onedriveFolderId: 'folder-900',
             },
+          }),
+        });
+      }
+
+      if (url.endsWith('/api/onedrive/sync') && method === 'POST') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            syncStarted: true,
+            message: 'Sync completed.',
+            scannedFileCount: 1,
+            supportedFileCount: 1,
+            unsupportedFileCount: 0,
           }),
         });
       }
@@ -248,6 +281,18 @@ describe('Home page', () => {
         });
       }
 
+      if (url.includes('/api/projects/') && url.includes('/sync/progress') && method === 'GET') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            inProgress: false,
+            downloadedFileCount: 0,
+            completionPercent: 0,
+          }),
+        });
+      }
+
       return Promise.reject(new Error(`Unexpected request: ${method} ${url}`));
     });
 
@@ -255,15 +300,10 @@ describe('Home page', () => {
 
     render(<Home />);
 
-    await screen.findByRole('button', { name: 'Create Project' });
-
-    await user.type(screen.getByLabelText('Project Name'), 'Hospital Tower');
-    await user.type(
-      screen.getByLabelText('OneDrive Folder URL Or ID'),
-      'https://onedrive.live.com/?id=folder-901'
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Create Project' }));
+    await screen.findByRole('button', { name: 'Browse OneDrive' });
+    await user.click(screen.getByRole('button', { name: 'Browse OneDrive' }));
+    await user.selectOptions(await screen.findByRole('combobox'), 'folder-900');
+    await user.click(screen.getByRole('button', { name: 'Use this folder' }));
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
@@ -272,7 +312,7 @@ describe('Home page', () => {
           method: 'POST',
           body: JSON.stringify({
             name: 'Hospital Tower',
-            onedriveFolderId: 'folder-901',
+            onedriveFolderId: 'folder-900',
           }),
         })
       );
@@ -280,6 +320,7 @@ describe('Home page', () => {
   });
 
   it('runs manual sync for the selected project', async () => {
+    seedOnboardedUser();
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
@@ -404,8 +445,8 @@ describe('Home page', () => {
 
     render(<Home />);
 
-    await screen.findByRole('heading', { name: 'Airport Expansion' });
-    await user.click(screen.getByRole('button', { name: 'Run Manual Sync' }));
+    await screen.findByText('Project: Airport Expansion');
+    await user.click(screen.getByRole('button', { name: 'Run Sync' }));
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
@@ -414,10 +455,11 @@ describe('Home page', () => {
       );
     });
 
-    expect(await screen.findByText(/Scanned 3, supported 2, unsupported 1/)).toBeInTheDocument();
+    expect(await screen.findByText('Sync completed successfully.')).toBeInTheDocument();
   });
 
   it('opens OneDrive in a new tab from the feature tile', async () => {
+    seedOnboardedUser();
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
@@ -500,7 +542,7 @@ describe('Home page', () => {
     render(<Home />);
 
     await screen.findByRole('button', { name: 'Open OneDrive' });
-    await user.click(screen.getByRole('button', { name: /OneDrive Open folder website/i }));
+    await user.click(screen.getByRole('button', { name: 'Open OneDrive' }));
 
     expect(openSpy).toHaveBeenCalledWith(
       'https://onedrive.live.com/?id=folder-123',
@@ -509,143 +551,8 @@ describe('Home page', () => {
     );
   });
 
-  it('loads chunk diagnostics and retrieval preview', async () => {
-    const user = userEvent.setup();
-    mockUseAuthStore.mockReturnValue({
-      isAuthenticated: true,
-      user: { name: 'Jane Contractor', onboardingCompleted: true },
-      hydrate: vi.fn(),
-      logout: vi.fn(),
-      isLoading: false,
-      error: null,
-    });
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input);
-        const method = init?.method ?? 'GET';
-
-        if (url.endsWith('/api/onedrive/status') && method === 'GET') {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({
-              connected: true,
-              syncInProgress: false,
-              fileCount: 1,
-              accountEmail: 'jane@contractor.ai',
-              tenantId: 'tenant-123',
-              driveType: 'business',
-            }),
-          });
-        }
-
-        if (url.endsWith('/api/projects') && method === 'GET') {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({
-              projects: [{ id: 'project-1', name: 'Airport Expansion', onedriveFolderId: 'folder-1' }],
-            }),
-          });
-        }
-
-        if (url.includes('/api/projects/project-1/files') && method === 'GET') {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({
-              files: [{ id: 'file-1', fileName: 'spec.pdf', filePath: 'spec.pdf', indexStatus: 'indexed', tags: [] }],
-              total: 1,
-              page: 1,
-              pageSize: 50,
-              hasMore: false,
-            }),
-          });
-        }
-
-        if (url.includes('/api/projects/project-1/indexing/progress') && method === 'GET') {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({
-              total: 1,
-              pending: 0,
-              processing: 0,
-              indexed: 1,
-              failed: 0,
-              completionPercent: 100,
-            }),
-          });
-        }
-
-        if (url.includes('/api/projects/project-1/sync/progress') && method === 'GET') {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({
-              inProgress: false,
-              downloadedFileCount: 12,
-              completionPercent: 100,
-            }),
-          });
-        }
-
-        if (url.includes('/api/projects/project-1/chunks') && method === 'GET') {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({
-              chunks: [
-                {
-                  id: 'chunk-1',
-                  fileId: 'file-1',
-                  fileName: 'spec.pdf',
-                  chunkIndex: 0,
-                  chunkText: 'Permit status received and approved',
-                  tokenCount: 32,
-                },
-              ],
-            }),
-          });
-        }
-
-        if (url.includes('/api/projects/project-1/retrieval/preview') && method === 'GET') {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({
-              sources: [
-                {
-                  fileId: 'file-1',
-                  fileName: 'spec.pdf',
-                  relevance: 0.91,
-                },
-              ],
-            }),
-          });
-        }
-
-        return Promise.reject(new Error(`Unexpected request: ${method} ${url}`));
-      })
-    );
-
-    render(<Home />);
-
-    await screen.findByRole('heading', { name: 'Airport Expansion' });
-    await user.click(screen.getByRole('button', { name: 'Load Chunks' }));
-    expect(await screen.findByText('Chunk count:')).toBeInTheDocument();
-    expect(await screen.findByText('Permit status received and approved')).toBeInTheDocument();
-
-    await user.clear(screen.getByLabelText('Retrieval Query'));
-    await user.type(screen.getByLabelText('Retrieval Query'), 'permit status');
-    await user.click(screen.getByRole('button', { name: 'Preview Retrieval' }));
-
-    expect(await screen.findByText('Relevance: 91%')).toBeInTheDocument();
-  });
-
   it('starts sync automatically when selecting a project folder', async () => {
+    seedOnboardedUser();
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
@@ -708,7 +615,7 @@ describe('Home page', () => {
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: async () => ({ inProgress: true, downloadedFileCount: 1, completionPercent: 10 }),
+          json: async () => ({ inProgress: false, downloadedFileCount: 1, completionPercent: 100 }),
         });
       }
 
@@ -733,8 +640,8 @@ describe('Home page', () => {
 
     render(<Home />);
 
-    await screen.findByRole('heading', { name: 'City Hall' });
-    await user.click(screen.getByRole('button', { name: 'Select Project' }));
+    await screen.findByText('City Hall');
+    await user.click(screen.getByRole('button', { name: 'City Hall' }));
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
