@@ -856,9 +856,9 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     </div>
   ), [loadProgress]);
 
-  const renderDocumentError = useCallback(() => (
+  const renderDocumentError = useCallback(({ error }: { error: Error }) => (
     <div className="pdf-viewer-stage-state pdf-viewer-stage-state--error" role="alert">
-      <p className="pdf-viewer-stage-state__label">{'Failed to load PDF.'}</p>
+      <p className="pdf-viewer-stage-state__label">{error.message || 'Failed to load PDF.'}</p>
       <button type="button" className="pdf-viewer-stage-state__retry" onClick={retryDocumentLoad}>
         Retry
       </button>
