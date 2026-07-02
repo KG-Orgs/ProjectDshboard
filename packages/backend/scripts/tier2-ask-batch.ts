@@ -56,7 +56,9 @@ function parseArgs(argv: string[]): {
       projectId = next;
       i += 1;
     } else if (arg === "--file" && next) {
-      filePath = path.resolve(next.startsWith("/") ? next : path.join(backendRoot, next));
+      // Treat as absolute if it starts with / (Unix) or a Windows drive letter (C:\, D:/)
+      const isAbsolute = next.startsWith("/") || /^[A-Za-z]:[/\\]/.test(next);
+      filePath = path.resolve(isAbsolute ? next : path.join(backendRoot, next));
       i += 1;
     } else if (arg === "--ids" && next) {
       ids = new Set(next.split(",").map((value) => value.trim()).filter(Boolean));

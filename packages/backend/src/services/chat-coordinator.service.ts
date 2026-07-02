@@ -839,7 +839,28 @@ const FILE_LOOKUP_STOP_WORDS = new Set([
   "please",
 ]);
 
-const DIRECT_DOCUMENT_HANDLE_PATTERN = /\b(qwp|swp|hasp|itp|qcp|iqp|msds|sds|coa|co|rfi|pco|cor|asi|submittal|volume|conformed|prdc|criteria|requirements)\b/i;
+const DIRECT_DOCUMENT_HANDLE_PATTERN = /\b(qwp|swp|hasp|itp|qcp|iqp|msds|sds|coa|rfi|pco|cor|asi|submittal|volume|conformed|prdc)\b/i;
+// "co" alone is too generic — it matches company abbreviations ("Cutting Co", "Co.").
+// Only treat it as a Change-Order handle when a number / # follows (CO#15, CO 15, CO15).
+const CHANGE_ORDER_HANDLE_PATTERN = /\bco\s*#?\s*\d+\b/i;
+
+// Station name → file prefix abbreviation for this project.
+// Used to inject the station code into retrieval queries so file-identity boosting
+// surfaces station-specific files (e.g. BUR-PERMIT-*.pdf) over the general register.
+const LOCATION_STATION_MAP: Array<{ pattern: RegExp; abbrev: string }> = [
+  { pattern: /\bburnside\b/i, abbrev: "BUR" },
+  { pattern: /\bmiddletown\b/i, abbrev: "MDT" },
+  { pattern: /\bmyrtle\b/i, abbrev: "MYR" },
+  { pattern: /\bavenue\s*i\b|\bave\.?\s*i\b/i, abbrev: "AVI" },
+  { pattern: /\bnorwood\b/i, abbrev: "NOR" },
+];
+
+function getStationAbbreviation(query: string): string | null {
+  for (const { pattern, abbrev } of LOCATION_STATION_MAP) {
+    if (pattern.test(query)) return abbrev;
+  }
+  return null;
+}
 
 const QUESTION_INTENT_PATTERN = /^(what|which|when|where|why|how|who|list|show|summarize|review|read|open)\b/i;
 
@@ -985,6 +1006,80 @@ function isFileLookupFragmentQuery(input: string): boolean {
   return longEnough;
 }
 
+/**
+ * Returns true when the query asks an open-ended "what is mentioned / what does it say"
+ * question about a specific document or date but gives no topical focus.
+ * In this case the coordinator should request clarification rather than guess.
+ */
+function isVagueOpenEndedQuery(query: string): boolean {
+  // Must be a catch-all "what is mentioned / said / in it" phrasing
+  const VAGUE_PATTERN =
+    /\bwhat\s+(?:is|was|are|were)\s+(?:mentioned|discussed|said|stated|described|covered|noted|included)\b|\bwhat(?:'s|\s+does\s+it|\s+is\s+in\s+(?:it|the|this))\b/i;
+  if (!VAGUE_PATTERN.test(query)) return false;
+
+  // Must reference a document/letter/report by date or type so we know it's
+  // about a real file and not a general project question
+  const HAS_DOC_REF =
+    /\b(?:letter|document|doc|report|memo|email|correspondence|meeting\s+minutes?)\b|\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}\b|\b\d{4}[-/]\d{2}[-/]\d{2}\b/i;
+  if (!HAS_DOC_REF.test(query)) return false;
+
+  // If the query also names a specific topic/aspect it is answerable — don't block it
+  const HAS_SPECIFIC_SUBJECT =
+    /\b(?:cost|price|rate|value|amount|scope|work|requirement|specification|date|deadline|party|parties|contractor|subcontractor|station|location|approval|status|risk|issue|action|change|reason|purpose|attachment|exhibit|schedule|delay|notice|payment)\b/i;
+  return !HAS_SPECIFIC_SUBJECT.test(query);
+}
+
+/**
+ * Returns true when the query asks about specification requirements without naming a
+ * specific document handle (volume N, PRDC, etc.). In this case the retrieval query
+ * is augmented with PRDC/volume terms so that Volume documents and Project Requirements
+ * & Design Criteria files rank ahead of unrelated standard-drawing lists.
+ */
+function isSpecificationRequirementsQuery(query: string): boolean {
+  // Must have "specification requirements" or "MTA spec" intent
+  const HAS_SPEC_INTENT =
+    /\bspecification\s+requirements?\b|\bspec(?:ification)?\s+(?:section|requirement|criteria|standard)\b|\bMTA\s+spec\b|\bproject\s+(?:requirements?|criteria)\b/i;
+  if (!HAS_SPEC_INTENT.test(query)) return false;
+
+  // Skip if the query already names a volume, PRDC, or direct file handle
+  // (those are handled by the direct-doc path or by the user's explicit reference)
+  const HAS_DOC_HANDLE =
+    /\bvolume\s*\d{1,2}\b|\bvol\s*\d{1,2}\b|\bprdc\b|\b(?:gen|bur|nor|myr|avi|mid)-\d{3}\b/i;
+  return !HAS_DOC_HANDLE.test(query);
+}
+
+/**
+ * Returns an augmented retrieval query for spec-requirement queries that have no
+ * document anchor. Appending PRDC/volume terms boosts Volume documents in the
+ * hybrid lexical+vector ranking without changing the query shown to the LLM.
+ */
+// Submittal types that suggest the user wants station-specific files rather than the general register.
+const STATION_SCOPED_SUBMITTAL_PATTERN = /\bpermit[s]?\b|\bshop\s+drawing[s]?\b|\bapproval[s]?\b|\bcertificat/i;
+
+function buildRetrievalQuery(query: string): string {
+  if (isSpecificationRequirementsQuery(query)) {
+    return `${query} project requirements design criteria PRDC volume`;
+  }
+  // For Division 1 / General Requirements spec sections (01 XX XX), boost Volume 4.
+  if (/\b(?:spec(?:ification)?\s+)?section\s+01\s*\d/i.test(query) || /\b01\s+\d{2}\s+\d{2}\b/.test(query)) {
+    return `${query} Volume 4 Division 1 general requirements`;
+  }
+  // For change order queries (CO#N), boost change order internal files.
+  if (/\bCO\s*#\s*\d+\b/i.test(query)) {
+    return `${query} change order CO internal`;
+  }
+  // For queries about specific submittal types at a named station, inject the station
+  // abbreviation so applyFileIdentityBoost (retrieval.service.ts) surfaces station-specific
+  // files (e.g. BUR-PERMIT-xxx.pdf) instead of the general submittal register.
+  if (STATION_SCOPED_SUBMITTAL_PATTERN.test(query)) {
+    const abbrev = getStationAbbreviation(query);
+    if (abbrev) {
+      return `${query} ${abbrev} submittal`;
+    }
+  }
+  return query;
+}
+
 function extractFileLookupTerms(input: string): string[] {
   return Array.from(
     new Set(
@@ -1007,7 +1102,7 @@ function scoreFileMatch(fileName: string, filePath: string, terms: string[]): nu
   );
 
   const tokenMatchesTerm = (token: string, term: string): boolean => {
-    if (token.includes(term) || term.includes(token)) {
+    if (token.includes(term) || (term.includes(token) && token.length >= 3)) {
       return true;
     }
 
@@ -1159,7 +1254,7 @@ async function resolveDirectDocumentCandidate(
   const hasPrdcHint = /\bprdc\b/i.test(normalized);
   const hasConformedHint = /\bconformed\b/i.test(normalized);
   const hasSectionAnchorHint = /\bsection\s*\d+(?:\.\d+){0,3}\b/i.test(normalized);
-  const hasStrongHandle = DIRECT_DOCUMENT_HANDLE_PATTERN.test(normalized) || Number.isFinite(volumeRef);
+  const hasStrongHandle = DIRECT_DOCUMENT_HANDLE_PATTERN.test(normalized) || CHANGE_ORDER_HANDLE_PATTERN.test(normalized) || Number.isFinite(volumeRef);
 
   if (!hasStrongHandle) {
     return null;
@@ -2807,7 +2902,8 @@ async function answerFromDocumentDetail(
   startedAt: number,
   history?: ChatHistoryTurn[],
   openDocs?: OpenDocContext[],
-  selectedFileName?: string
+  selectedFileName?: string,
+  options?: { forceSummaryFallback?: boolean }
 ): Promise<CoordinatorResult> {
   const featureFlags = getChatCoordinatorFeatureFlags();
   const queryTokens = expandSpellingVariants(tokenizeQuery(rawQuery));
@@ -3252,28 +3348,32 @@ async function answerFromDocumentDetail(
     (keywordMatchedChunks.length === 0 ||
       (featureFlags.strictFactualActiveDocMode && evidenceQualifiedChunks.length === 0))
   ) {
-    const domains = classifyQueryDomains(rawQuery);
-    const telemetry = buildTelemetry(startedAt);
-    const sources = buildSingleSource(detail.fileId, detail.fileName, {
-      displayName: deriveShortFormName(detail.fileName),
-    });
+    // When the caller explicitly targeted this file (e.g. from tryInTheDocumentAnswer),
+    // fall through to the LLM with top semantic-ranked chunks rather than aborting.
+    if (!(options?.forceSummaryFallback && rankedChunks.length > 0)) {
+      const domains = classifyQueryDomains(rawQuery);
+      const telemetry = buildTelemetry(startedAt);
+      const sources = buildSingleSource(detail.fileId, detail.fileName, {
+        displayName: deriveShortFormName(detail.fileName),
+      });
 
-    return {
-      content:
-        sectionSuggestions.length > 0
-          ? buildSectionSuggestionContent(detail.fileName, sectionSuggestions)
-          : buildNoExactEvidenceContent(detail.fileName),
-      sources,
-      citations: [],
-      domains,
-      coordinator: buildCoordinatorMetadata(domains, telemetry),
-      cacheHit: false,
-      suggestions: buildSuggestions(rawQuery, domains, sources, {
-        selectedFileName,
-        enforceSelectedFileScope: true,
-      }),
-      autoOpenFileName: detail.fileName,
-    };
+      return {
+        content:
+          sectionSuggestions.length > 0
+            ? buildSectionSuggestionContent(detail.fileName, sectionSuggestions)
+            : buildNoExactEvidenceContent(detail.fileName),
+        sources,
+        citations: [],
+        domains,
+        coordinator: buildCoordinatorMetadata(domains, telemetry),
+        cacheHit: false,
+        suggestions: buildSuggestions(rawQuery, domains, sources, {
+          selectedFileName,
+          enforceSelectedFileScope: true,
+        }),
+        autoOpenFileName: detail.fileName,
+      };
+    }
   }
 
   if (isDetailedExtractionQuery(rawQuery)) {
@@ -3567,7 +3667,7 @@ async function answerFromDocumentDetail(
   });
   const guardedContent =
     isFactualIntent(rawQuery) && citations.length === 0
-      ? featureFlags.strictFactualActiveDocMode
+      ? (featureFlags.strictFactualActiveDocMode && !options?.forceSummaryFallback)
         ? buildNoExactEvidenceContent(detail.fileName)
         : shouldAppendUncertaintyMarker(rawQuery, citations, activeNodes)
           ? withUncertaintyMarker(content)
@@ -4886,6 +4986,133 @@ function finalizeInterpretation(
       };
 }
 
+const MONTH_NAME_TO_NUM: Record<string, string> = {
+  january: "01", february: "02", march: "03", april: "04",
+  may: "05", june: "06", july: "07", august: "08",
+  september: "09", october: "10", november: "11", december: "12",
+  jan: "01", feb: "02", mar: "03", apr: "04",
+  jun: "06", jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
+};
+
+const MONTH_NUM_TO_NAME: Record<string, string> = {
+  "01": "january", "02": "february", "03": "march", "04": "april",
+  "05": "may", "06": "june", "07": "july", "08": "august",
+  "09": "september", "10": "october", "11": "november", "12": "december",
+};
+
+/**
+ * Expand month names to also include their numeric forms and vice versa, so that
+ * "December 19, 2025" matches file names containing "12.19.2025" and vice versa.
+ */
+function expandDocRefDateVariants(input: string): string {
+  // Expand spelled-out month names: "December" → "December 12"
+  let expanded = input.replace(
+    /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\b/gi,
+    (match) => {
+      const num = MONTH_NAME_TO_NUM[match.toLowerCase()];
+      return num ? `${match} ${num}` : match;
+    }
+  );
+  // Expand numeric date patterns MM.DD.YYYY or MM/DD/YYYY or MM-DD-YYYY: "12.19.2025" → "12.19.2025 december"
+  expanded = expanded.replace(
+    /\b(0?[1-9]|1[0-2])[./-](0?[1-9]|[12]\d|3[01])[./-](20\d{2})\b/g,
+    (match, mm) => {
+      const paddedMm = mm.padStart(2, "0");
+      const monthName = MONTH_NUM_TO_NAME[paddedMm];
+      return monthName ? `${match} ${monthName}` : match;
+    }
+  );
+  return expanded;
+}
+
+async function tryInTheDocumentAnswer(
+  projectId: UUID,
+  rawQuery: string,
+  startedAt: number,
+  history?: ChatHistoryTurn[],
+  openDocs?: OpenDocContext[]
+): Promise<CoordinatorResult | null> {
+  // Detect multiple "ask about a specific named document" patterns:
+  // 1. "In the [doc], what/which/..."  (original)
+  // 2. "What is in the [doc]?" or "What is in [doc]?"
+  // 3. "Summarize [doc]" or "Summarize what is in [doc]"
+  const inTheMatch =
+    rawQuery.trim().match(/^in\s+(?:the\s+)?(.+?)\s*,\s*(?:what|which|when|where|who|how|list|describe|tell|show|is|are|does|did)\b/i) ||
+    rawQuery.trim().match(/^what\s+is\s+in\s+(?:the\s+)?(.+?)[\?\.]*$/i) ||
+    rawQuery.trim().match(/^summarize\s+(?:what\s+is\s+in\s+)?(?:the\s+)?(.+?)[\?\.]*$/i);
+  if (!inTheMatch) return null;
+
+  const docRef = inTheMatch[1].trim();
+  // Expand month name↔number variants so "December" matches "12" in file names and vice versa
+  const terms = extractFileLookupTerms(expandDocRefDateVariants(docRef));
+  if (terms.length < 2) return null;
+
+  const candidates = await listFileLookupCandidates(projectId, terms);
+  const ranked = candidates
+    .map((file) => ({
+      file,
+      score: scoreFileMatch(file.fileName, file.filePath, terms),
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (ranked.length === 0) return null;
+
+  const best = ranked[0];
+  // Require score >= terms.length: roughly half the reference terms must match in the file name
+  // (scoreFileMatch gives +2 per term matched in the file name)
+  if (best.score < terms.length) return null;
+
+  const detail = await retrievalService.getDocumentDetail(best.file.id, projectId);
+  if (!detail) return null;
+
+  return answerFromDocumentDetail(detail, rawQuery, startedAt, history, openDocs, detail.fileName, { forceSummaryFallback: true });
+}
+
+/**
+ * For permit queries at a named station, do a filename-based search for files matching
+ * the station abbreviation + "permit" pattern and list them directly.
+ */
+async function tryPermitFilenameLookup(
+  projectId: UUID,
+  rawQuery: string,
+  startedAt: number
+): Promise<CoordinatorResult | null> {
+  if (!/\bpermit[s]?\b/i.test(rawQuery)) return null;
+  const abbrev = getStationAbbreviation(rawQuery);
+  if (!abbrev) return null;
+
+  const candidates = await listFileLookupCandidates(projectId, [abbrev.toLowerCase(), "permit"]);
+  const permitFiles = candidates
+    .filter((c) => {
+      const name = c.fileName.toLowerCase();
+      return name.includes(abbrev.toLowerCase()) && name.includes("permit");
+    })
+    .sort((a, b) => a.fileName.localeCompare(b.fileName));
+
+  if (permitFiles.length === 0) return null;
+
+  const domains: QueryDomain[] = ["documents"];
+  const telemetry = buildTelemetry(startedAt);
+  const fileLines = permitFiles.map((f) => `- ${deriveShortFormName(f.fileName)}`).join("\n");
+  const sources = permitFiles
+    .slice(0, 8)
+    .flatMap((f) => buildSingleSource(f.id, f.fileName, { displayName: deriveShortFormName(f.fileName) }));
+
+  return {
+    content: [
+      `## ${abbrev} Permit Submittals`,
+      `The following permit-related submittal files are on record for ${abbrev}:`,
+      "",
+      fileLines,
+    ].join("\n"),
+    sources,
+    domains,
+    coordinator: buildCoordinatorMetadata(domains, telemetry),
+    cacheHit: false,
+  };
+}
+
 async function tryExactIdentifierDocumentAnswer(
   projectId: UUID,
   trimmedQuery: string,
@@ -5037,6 +5264,45 @@ export const chatCoordinatorService = {
       };
     }
 
+    if (isVagueOpenEndedQuery(rawQuery)) {
+      const telemetry = buildTelemetry(startedAt);
+      const domains: QueryDomain[] = ["documents"];
+
+      // Try to identify the specific file from date/name references in the query
+      const vagueTerms = extractFileLookupTerms(expandDocRefDateVariants(rawQuery));
+      const vagueCandidates =
+        vagueTerms.length >= 2 ? await listFileLookupCandidates(projectId, vagueTerms) : [];
+      const topVagueMatch = vagueCandidates
+        .map((file) => ({ file, score: scoreFileMatch(file.fileName, file.filePath, vagueTerms) }))
+        .filter((e) => e.score > 0)
+        .sort((a, b) => b.score - a.score)[0];
+
+      const fileSuggestionLines = topVagueMatch
+        ? [
+            "",
+            `**Possible matching file:** ${deriveShortFormName(topVagueMatch.file.fileName)}`,
+            `- Try asking: _In the ${deriveShortFormName(topVagueMatch.file.fileName)}, what [specific topic]?_`,
+          ]
+        : ["- Example: _In the March 3, 2026 Cary Winston letter, what stations are referenced?_"];
+
+      return {
+        content: [
+          "## More context needed",
+          "- Your question asks what is mentioned in that document but doesn't specify a topic.",
+          "- To answer precisely, tell me what you're looking for — for example: parties involved, dates, costs, scope, action items, approvals, or a specific subject.",
+          ...fileSuggestionLines,
+        ].join("\n"),
+        sources: topVagueMatch
+          ? buildSingleSource(topVagueMatch.file.id, topVagueMatch.file.fileName, {
+              displayName: deriveShortFormName(topVagueMatch.file.fileName),
+            })
+          : [],
+        domains,
+        coordinator: buildCoordinatorMetadata(domains, telemetry),
+        cacheHit: false,
+      };
+    }
+
     const interpretationStartedAt = Date.now();
     const interpreted = await interpretationService.interpret({
       query: trimmedQuery,
@@ -5046,6 +5312,10 @@ export const chatCoordinatorService = {
     const interpretationLatencyMs = Date.now() - interpretationStartedAt;
     const retrievalInterpretation = buildRetrievalInterpretation(interpreted);
     const interpretation = finalizeInterpretation(interpreted, retrievalInterpretation);
+    // Augment the retrieval query for spec-requirement queries that have no document
+    // anchor — appends PRDC/volume terms to boost Project Requirements & Design Criteria
+    // documents in hybrid ranking. rawQuery/trimmedQuery remain unchanged for the LLM.
+    const retrievalQuery = buildRetrievalQuery(trimmedQuery);
     const exactIdentifierFirst = Boolean(interpreted.retrievalHints?.exactIdentifierFirst);
     const exactIdentifierLookup = exactIdentifierFirst
       ? await retrievalService.lookupExactIdentifier(projectId, trimmedQuery)
@@ -5085,6 +5355,16 @@ export const chatCoordinatorService = {
       if (exactIdentifierAnswer) {
         return exactIdentifierAnswer;
       }
+    }
+
+    const inTheDocAnswer = await tryInTheDocumentAnswer(projectId, rawQuery, startedAt, history, openDocs);
+    if (inTheDocAnswer) {
+      return { ...inTheDocAnswer, interpretation };
+    }
+
+    const permitAnswer = await tryPermitFilenameLookup(projectId, rawQuery, startedAt);
+    if (permitAnswer) {
+      return { ...permitAnswer, interpretation };
     }
 
     if (featureFlags.activeDocBoostEnabled && isActiveDocQuestion && (activeDocFileId || activeDocFileName)) {
@@ -5252,7 +5532,7 @@ export const chatCoordinatorService = {
 
     const routeStartedAt = Date.now();
     const [routed, contextSnapshotRaw] = await Promise.all([
-      routeGraphContext(projectId, trimmedQuery, retrievalInterpretation, {
+      routeGraphContext(projectId, retrievalQuery, retrievalInterpretation, {
         preferredFileId:
           enforceSelectedFileScope && activeDocFileId
             ? activeDocFileId
@@ -5264,9 +5544,36 @@ export const chatCoordinatorService = {
       retrievalService.getProjectContext(projectId),
     ]);
     const routeMs = Date.now() - routeStartedAt;
-    const sources = routed.sources;
-    const graphNodes = routed.graphNodes;
+    let sources = routed.sources;
+    let graphNodes = routed.graphNodes;
     const domains = routed.domains;
+
+    // Two-pass spec retrieval: when the query is about specification requirements but no
+    // PRDC / Volume / Project-Requirements file appeared in the primary hybrid results,
+    // run a targeted supplemental search and prepend those results to the context so
+    // that the LLM sees the relevant spec document first.
+    if (
+      isSpecificationRequirementsQuery(trimmedQuery) &&
+      !sources.some((s) =>
+        /volume|prdc|project.requirements|design.criteria/i.test(
+          (s.fileName ?? s.displayName ?? "").toLowerCase()
+        )
+      )
+    ) {
+      const specSupplementQuery = `project requirements design criteria PRDC volume ${trimmedQuery}`;
+      const specSearch = await retrievalService.searchProject(projectId, specSupplementQuery, {
+        topK: 4,
+        minRelevance: 0.1,
+        includeChunks: true,
+      });
+      if (specSearch.results.length > 0) {
+        const supplementalSources = sourcesFromSearchResults(specSearch.results);
+        const supplementalNodes = buildNodesFromSearchResults(trimmedQuery, specSearch.results, 400, 4);
+        const maxKeep = Math.max(0, 8 - supplementalSources.length);
+        sources = [...supplementalSources, ...sources.slice(0, maxKeep)];
+        graphNodes = [...supplementalNodes, ...graphNodes.slice(0, maxKeep)];
+      }
+    }
 
     const contradictions = detectContradictions(domains, routed.specialistResults);
 
