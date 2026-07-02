@@ -11,7 +11,6 @@ import {
   Bot,
   FileText,
   PanelLeft,
-  PanelRightClose,
   Plus,
   Search,
   Send,
@@ -1354,9 +1353,20 @@ function ChatWorkspacePageContent() {
         >
           <span>Chat</span>
         </button>
-        <button type="button" className="ws-topbar-btn-primary ws-topbar-btn-icon" onClick={() => void handleSidebarNewChat()} title="New conversation">
+        <ConversationSidebar
+          projectId={projectId}
+          activeSessionId={chatSessionId ?? storeActiveSessionId}
+          onSessionSelect={handleSessionSelect}
+          onDeleteSession={handleSessionDelete}
+        />
+        <button
+          type="button"
+          className="ws-topbar-btn-primary ws-topbar-btn-icon"
+          onClick={() => void handleSidebarNewChat()}
+          title="New chat"
+        >
           <Plus size={14} aria-hidden />
-          <span>New</span>
+          <span>New chat</span>
         </button>
         <div className="ws-user-avatar" title={user?.email ?? 'Signed in user'}>
           {userInitials}
@@ -1498,34 +1508,7 @@ function ChatWorkspacePageContent() {
               <span>Chat</span>
             </button>
           ) : (
-            <div className="chat-panel-layout">
-          <ConversationSidebar
-            projectId={projectId}
-            projectName={projectDisplayName || undefined}
-            userInitials={userInitials}
-            activeSessionId={chatSessionId ?? storeActiveSessionId}
-            onSessionSelect={handleSessionSelect}
-            onNewChat={handleSidebarNewChat}
-            onDeleteSession={handleSessionDelete}
-          />
           <div className="ws-panel-body chat-panel-body">
-          <div className="chat-panel-toolbar">
-            <span className="chat-panel-toolbar-label">
-              <Sparkles size={13} aria-hidden />
-              Assistant
-            </span>
-            <button
-              type="button"
-              className="ws-panel-collapse-btn ws-panel-collapse-btn--inline"
-              onClick={() => setRightPanelCollapsed(true)}
-              title="Hide AI assistant"
-              aria-label="Hide AI assistant"
-            >
-              <PanelRightClose size={14} aria-hidden />
-            </button>
-          </div>
-
-          {/* Messages */}
           <div ref={chatScrollRef} className="chat-messages-scroll">
             {messages.length === 0 ? (
               <div className="chat-empty-state">
@@ -1592,7 +1575,6 @@ function ChatWorkspacePageContent() {
             </form>
           </div>
           </div>
-            </div>
           )}
         </section>
 
