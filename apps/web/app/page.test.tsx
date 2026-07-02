@@ -165,7 +165,7 @@ describe('Home page', () => {
     expect(await screen.findByText('jane@contractor.ai')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Open OneDrive' })).toBeInTheDocument();
     expect(await screen.findByText('spec.pdf')).toBeInTheDocument();
-    expect(screen.getByText('pending')).toBeInTheDocument();
+    expect(screen.getByText('Waiting')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
   });
 

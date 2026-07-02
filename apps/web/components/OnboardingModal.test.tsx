@@ -58,7 +58,7 @@ describe('OnboardingModal', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('Construction document intelligence')).toBeInTheDocument();
-    expect(screen.getByText(/Semantic search across your entire project corpus/)).toBeInTheDocument();
+    expect(screen.getByText(/Search across all your project files/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
   });
 
@@ -85,10 +85,10 @@ describe('OnboardingModal', () => {
     expect(screen.getByText('Chat with your documents')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getByText('Review plans with markups & citations')).toBeInTheDocument();
+    expect(screen.getByText('Review plans with markups & sources')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getByText('Invite teammates to the same index')).toBeInTheDocument();
+    expect(screen.getByText('Invite teammates to the same project')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Get started' }));
 

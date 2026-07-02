@@ -53,12 +53,12 @@ function buildSteps(projectName?: string | null): OnboardingStep[] {
       title: 'Construction document intelligence',
       subtitle: 'Search, review, and collaborate on project files — powered by AI.',
       description:
-        'ContractorAI indexes drawings, specs, RFIs, submittals, and meeting minutes from your OneDrive so your team can find answers fast without digging through folders.',
+        'ContractorAI brings in drawings, specs, RFIs, submittals, and meeting minutes from your project folder so your team can find answers fast without digging through folders.',
       icon: Building2,
       highlights: [
-        { icon: Sparkles, text: 'Semantic search across your entire project corpus' },
-        { icon: FileSearch, text: 'Source citations link straight to the original document' },
-        { icon: Cloud, text: 'Files stay in Microsoft OneDrive — we only read and index' },
+        { icon: Sparkles, text: 'Search across all your project files' },
+        { icon: FileSearch, text: 'Every answer links back to the original document' },
+        { icon: Cloud, text: 'Files stay in Microsoft OneDrive — we only read them to make them searchable' },
       ],
     },
     {
@@ -67,14 +67,14 @@ function buildSteps(projectName?: string | null): OnboardingStep[] {
       title: 'Link your project folder',
       subtitle: `Select a OneDrive folder like ${projectRef} to get started.`,
       description:
-        'From the dashboard, connect Microsoft OneDrive and choose your project folder. ContractorAI syncs supported files and builds a searchable index your whole team can use.',
+        'From the dashboard, connect Microsoft OneDrive and choose your project folder. ContractorAI syncs supported files and makes them searchable for your whole team.',
       icon: Cloud,
       highlights: [
         { icon: Cloud, text: 'One-click Microsoft sign-in and OneDrive connection' },
         { icon: Building2, text: 'Browse folders or paste a folder URL to set up a project' },
-        { icon: Sparkles, text: 'Indexing runs in the background — check progress on the dashboard' },
+        { icon: Sparkles, text: 'Processing runs in the background — check progress on the dashboard' },
       ],
-      tip: 'Already on a shared demo? Your team may see pre-indexed projects like MLJ-017 — just select one and open the workspace.',
+      tip: 'Already on a shared demo? Your team may see projects already set up, like MLJ-017 — just select one and open the workspace.',
     },
     {
       id: 'role',
@@ -90,44 +90,44 @@ function buildSteps(projectName?: string | null): OnboardingStep[] {
       id: 'chat',
       stepLabel: 'AI chat',
       title: 'Chat with your documents',
-      subtitle: 'Ask questions in plain English — get cited answers.',
+      subtitle: 'Ask questions in plain English — get answers with sources.',
       description:
-        'Open the workspace and use the AI assistant panel to ask about specs, schedules, RFIs, submittals, or meeting action items. Every answer references the source files.',
+        'Open the workspace and use the AI assistant panel to ask about specs, schedules, RFIs, submittals, or meeting action items. Every answer shows where it came from in your project files.',
       icon: MessageSquareText,
       highlights: [
-        { icon: MessageSquareText, text: '"What is the concrete strength for Level 3?" — instant retrieval' },
-        { icon: FileSearch, text: 'Tap a citation to jump to the exact page in the viewer' },
+        { icon: MessageSquareText, text: '"What is the concrete strength for Level 3?" — answers in seconds' },
+        { icon: FileSearch, text: 'Tap a source link to jump to the exact page in the viewer' },
         { icon: Sparkles, text: 'Follow-up questions keep context across the conversation' },
       ],
     },
     {
       id: 'viewer',
       stepLabel: 'PDF review',
-      title: 'Review plans with markups & citations',
+      title: 'Review plans with markups & sources',
       subtitle: 'A three-panel workspace built for construction docs.',
       description:
-        'Browse project files on the left, open PDFs in the center viewer, and chat on the right. Add markup annotations, zoom and pan drawings, and follow citation links from chat.',
+        'Browse project files on the left, open PDFs in the center viewer, and chat on the right. Add markup annotations, zoom and pan drawings, and follow source links from chat.',
       icon: Highlighter,
       highlights: [
-        { icon: FileSearch, text: 'Files rail — filter and open any indexed document' },
+        { icon: FileSearch, text: 'Files rail — filter and open any project document' },
         { icon: Highlighter, text: 'Markup toolbar for review comments and punch-style notes' },
-        { icon: ArrowRight, text: 'Citations from chat open the PDF at the right page automatically' },
+        { icon: ArrowRight, text: 'Source links from chat open the PDF at the right page automatically' },
       ],
     },
     {
       id: 'team',
       stepLabel: 'Your team',
-      title: 'Invite teammates to the same index',
-      subtitle: 'Everyone signs in with Microsoft and shares one project database.',
+      title: 'Invite teammates to the same project',
+      subtitle: 'Everyone signs in with Microsoft and works from the same project files.',
       description:
-        'Teammates authenticate with their Microsoft account and connect to the shared project index. No duplicate uploads — everyone searches the same corpus and sees consistent AI answers.',
+        'Teammates sign in with their Microsoft account and connect to the same project. No duplicate uploads — everyone searches the same documents and sees consistent AI answers.',
       icon: Users,
       highlights: [
-        { icon: Users, text: 'Share the demo URL — teammates sign in with Microsoft OAuth' },
-        { icon: Cloud, text: 'Shared Neon database keeps projects and indexes in sync' },
-        { icon: Building2, text: 'Each user connects their own OneDrive for file sync' },
+        { icon: Users, text: 'Share the demo URL — teammates sign in with Microsoft' },
+        { icon: Cloud, text: 'Everyone sees the same projects and up-to-date files' },
+        { icon: Building2, text: 'Each user connects their own OneDrive to access project folders' },
       ],
-      tip: 'For demos, Kyle can provision access to the shared MLJ-017 index so new users skip manual setup.',
+      tip: 'For demos, Kyle can provision access to the shared MLJ-017 project so new users skip manual setup.',
     },
   ];
 }

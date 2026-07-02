@@ -153,6 +153,21 @@ interface ChatSendResponse {
 
 const PROJECT_STATUS_POLL_INTERVAL_MS = 4000;
 
+function formatFileSearchStatus(status: FileInventoryItem['indexStatus']): string {
+  switch (status) {
+    case 'indexed':
+      return 'Ready to search';
+    case 'processing':
+      return 'Processing';
+    case 'pending':
+      return 'Waiting';
+    case 'failed':
+      return 'Failed';
+    default:
+      return status;
+  }
+}
+
 export default function Home() {
   const { isAuthenticated, user, hydrate, logout, isLoading, error } = useAuthStore();
   const router = useRouter();
@@ -855,7 +870,7 @@ export default function Home() {
     setChatSources([]);
     setChatRouteSummary(null);
     setSyncProgress(null);
-    setSyncStatusMessage('Updating project folder, clearing old index, and starting a fresh sync...');
+    setSyncStatusMessage('Updating project folder, clearing old files, and starting a fresh sync...');
     setIsSyncing(true);
 
     try {
@@ -1134,7 +1149,7 @@ export default function Home() {
                   Connect Microsoft OneDrive
                 </h2>
                 <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '32px', lineHeight: '1.7' }}>
-                  Connect your OneDrive account to browse and select your project folder. Your files stay in OneDrive. We only read and index them to power AI search.
+                  Connect your OneDrive account to browse and select your project folder. Your files stay in OneDrive. We only read them to make them searchable for AI answers.
                 </p>
                 <button type="button" onClick={handleStartOneDriveConnect} style={sty.btnPrimary}>
                   Connect OneDrive
@@ -1278,14 +1293,14 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Sync & Index */}
+              {/* Sync & search readiness */}
               <div style={sty.card}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: 0 }}>Sync & Index</h3>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: 0 }}>File Sync</h3>
                 </div>
                 <div style={{ marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                    <span style={{ fontSize: '12px', color: '#6b7280' }}>Indexing progress</span>
+                    <span style={{ fontSize: '12px', color: '#6b7280' }}>Search readiness</span>
                     <span style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>
                       {indexingProgress ? `${indexingProgress.completionPercent}%` : '--'}
                     </span>
@@ -1298,7 +1313,7 @@ export default function Home() {
                   </div>
                   {indexingProgress ? (
                     <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '5px' }}>
-                      {indexingProgress.indexed} indexed | {indexingProgress.pending} pending | {indexingProgress.failed} failed
+                      {indexingProgress.indexed} ready to search | {indexingProgress.pending} waiting | {indexingProgress.failed} failed
                     </p>
                   ) : null}
                 </div>
@@ -1393,7 +1408,7 @@ export default function Home() {
                           cursor: !selectedProjectId || !selectedMainFolderId ? 'not-allowed' : 'pointer',
                         }}
                       >
-                        {isUpdatingMainFolder ? 'Applying...' : 'Apply & Re-index'}
+                        {isUpdatingMainFolder ? 'Applying...' : 'Apply & refresh files'}
                       </button>
                     </>
                   ) : null}
@@ -1468,7 +1483,7 @@ export default function Home() {
                           background: file.indexStatus === 'indexed' ? '#dcfce7' : file.indexStatus === 'failed' ? '#fef2f2' : '#fef9c3',
                           color: file.indexStatus === 'indexed' ? '#166534' : file.indexStatus === 'failed' ? '#b91c1c' : '#92400e',
                         }}>
-                          {file.indexStatus}
+                          {formatFileSearchStatus(file.indexStatus)}
                         </span>
                       </div>
                     );

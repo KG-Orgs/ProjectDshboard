@@ -18,7 +18,7 @@ describe('Login page', () => {
       '/api/auth/login?redirectUri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback&prompt=select_account'
     );
     expect(
-      screen.getByText('The backend completes the OAuth exchange and issues the app session.')
+      screen.getByText('Secure sign-in using your Microsoft account.')
     ).toBeInTheDocument();
   });
 
