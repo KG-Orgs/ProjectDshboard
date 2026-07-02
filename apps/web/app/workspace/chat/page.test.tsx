@@ -146,6 +146,7 @@ describe("Workspace chat interactions", () => {
     render(<ChatWorkspacePage />);
 
     expect(screen.queryByPlaceholderText("Search in document")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /tour/i })).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Files" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Chat" }).length).toBeGreaterThan(0);
     expect(screen.queryByPlaceholderText("Ask about drawings, specs, RFIs...")).not.toBeInTheDocument();

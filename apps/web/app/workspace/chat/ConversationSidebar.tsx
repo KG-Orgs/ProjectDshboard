@@ -34,6 +34,8 @@ interface Props {
   onSessionSelect: (sessionId: string) => void;
   /** Called when user clicks "New Chat" — parent resets messages. */
   onNewChat: () => Promise<string | null>;
+  /** Optional override for delete (e.g. confirm dialog). Defaults to store delete. */
+  onDeleteSession?: (sessionId: string) => void | Promise<void>;
   /** The session currently rendering in the chat panel. */
   activeSessionId: string | null;
 }
@@ -44,6 +46,7 @@ export default function ConversationSidebar({
   userInitials = 'U',
   onSessionSelect,
   onNewChat,
+  onDeleteSession,
   activeSessionId,
 }: Props) {
   const {
@@ -79,6 +82,8 @@ export default function ConversationSidebar({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  const handleDelete = onDeleteSession ?? deleteSession;
 
   const projectSessions = projectId
     ? sessions.filter((s) => s.projectId === projectId)
@@ -214,7 +219,7 @@ export default function ConversationSidebar({
             onSelect={handleSelect}
             onRename={renameSession}
             onPin={pinSession}
-            onDelete={deleteSession}
+            onDelete={(id) => void handleDelete(id)}
           />
         </div>
 

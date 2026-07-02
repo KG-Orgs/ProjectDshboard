@@ -9,15 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Bot,
-  ChevronDown,
-  ChevronRight,
-  File,
-  FileImage,
-  FileSpreadsheet,
   FileText,
-  Folder,
-  FolderOpen,
-  HelpCircle,
   PanelLeft,
   PanelRightClose,
   Plus,
@@ -27,8 +19,8 @@ import {
   X,
 } from 'lucide-react';
 import { useAuthStore } from '@contractor/shared';
-import OnboardingModal from '../../../components/OnboardingModal';
-import { shouldAutoShowOnboarding } from '../../../lib/onboarding';
+import ConversationSidebar from './ConversationSidebar';
+import FileTree, { type WsFile } from './FileTree';
 import { useConversationStore } from './useConversationStore';
 import './workspace.css';
 
@@ -318,91 +310,6 @@ function CodeBlock({ code }: { code: string }) {
   );
 }
 
-// --- File explorer types & helpers -------------------------------------------
-
-interface WsFile {
-  id: string;
-  fileName: string;
-  filePath: string;
-  indexStatus: string;
-}
-
-interface FolderNode {
-  path: string;
-  name: string;
-  files: WsFile[];
-}
-
-function getFileIcon(fileName: string): ReactNode {
-  const ext = fileName.toLowerCase().split('.').pop() ?? '';
-  const iconClass = 'ws-file-icon';
-  if (ext === 'pdf') return <FileText className={iconClass} aria-hidden />;
-  if (['doc', 'docx'].includes(ext)) return <FileText className={iconClass} aria-hidden />;
-  if (['xls', 'xlsx', 'csv'].includes(ext)) return <FileSpreadsheet className={iconClass} aria-hidden />;
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return <FileImage className={iconClass} aria-hidden />;
-  return <File className={iconClass} aria-hidden />;
-}
-
-function buildFolderTree(files: WsFile[]): FolderNode[] {
-  const map = new Map<string, WsFile[]>();
-  for (const file of files) {
-    const parts = file.filePath.replace(/\\/g, '/').split('/');
-    parts.pop();
-    const folder = parts.filter(Boolean).join('/') || 'Project Files';
-    if (!map.has(folder)) map.set(folder, []);
-    map.get(folder)!.push(file);
-  }
-  return Array.from(map.entries()).map(([path, nodeFiles]) => ({
-    path,
-    name: path.split('/').filter(Boolean).pop() ?? path,
-    files: nodeFiles,
-  }));
-}
-
-interface FolderSectionProps {
-  folder: FolderNode;
-  isExpanded: boolean;
-  activeFileId: string | undefined;
-  onToggle: () => void;
-  onFileClick: (file: WsFile) => void;
-}
-
-function FolderSection({ folder, isExpanded, activeFileId, onToggle, onFileClick }: FolderSectionProps) {
-  return (
-    <div>
-      <button type="button" className="folder-header-btn" onClick={onToggle} aria-expanded={isExpanded} aria-label={`${folder.name}, ${folder.files.length} files`}>
-        <span className={`folder-chevron ${isExpanded ? 'open' : ''}`}>
-          {isExpanded ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
-        </span>
-        {isExpanded ? <FolderOpen size={14} className="ws-folder-icon" aria-hidden /> : <Folder size={14} className="ws-folder-icon" aria-hidden />}
-        <span className="file-name-text">{folder.name}</span>
-        <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#9ca3af', flexShrink: 0, paddingLeft: '4px' }}>
-          {folder.files.length}
-        </span>
-      </button>
-      {isExpanded ? (
-        <div>
-          {folder.files.map((file) => (
-            <button
-              key={file.id}
-              type="button"
-              className={`file-row-btn ${activeFileId === file.id ? 'active' : ''}`}
-              onClick={() => onFileClick(file)}
-              title={file.fileName}
-            >
-              <span className="ws-file-icon-wrap">{getFileIcon(file.fileName)}</span>
-              <span className="file-name-text">{file.fileName}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-
-
-
 function ChatWorkspacePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -435,6 +342,8 @@ function ChatWorkspacePageContent() {
     createSession: storeCreateSession,
     setActiveSession: storeSetActiveSession,
     fetchSessions: storeFetchSessions,
+    deleteSession: storeDeleteSession,
+    activeSessionId: storeActiveSessionId,
   } = useConversationStore();
 
   const [fileSearch, setFileSearch] = useState('');
@@ -455,13 +364,12 @@ function ChatWorkspacePageContent() {
 
   // -- Panel widths (px) ------------------------------------------------------
   const [leftPanelWidth, setLeftPanelWidth] = useState(220);
-  const [rightPanelWidth, setRightPanelWidth] = useState(340);
+  const [rightPanelWidth, setRightPanelWidth] = useState(560);
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(true);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [isDraggingRight, setIsDraggingRight] = useState(false);
   const [projectDisplayName, setProjectDisplayName] = useState<string>('');
-  const [productTourOpen, setProductTourOpen] = useState(false);
 
   const panelRootRef = useRef<HTMLDivElement | null>(null);
   const promptInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -471,12 +379,6 @@ function ChatWorkspacePageContent() {
   useEffect(() => {
     projectDisplayNameRef.current = projectDisplayName;
   }, [projectDisplayName]);
-
-  useEffect(() => {
-    if (shouldAutoShowOnboarding(user)) {
-      setProductTourOpen(true);
-    }
-  }, [user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -935,6 +837,31 @@ function ChatWorkspacePageContent() {
     }
   }, [projectId, storeCreateSession, storeSetActiveSession]);
 
+  const handleSessionSelect = useCallback(
+    (sessionId: string) => {
+      void loadSessionHistory(sessionId);
+    },
+    [loadSessionHistory]
+  );
+
+  const handleSessionDelete = useCallback(
+    async (sessionId: string) => {
+      if (!window.confirm('Delete this conversation? This cannot be undone.')) {
+        return;
+      }
+
+      await storeDeleteSession(sessionId);
+
+      if (chatSessionId === sessionId) {
+        setChatSessionId(null);
+        storeSetActiveSession(null);
+        setMessages([]);
+        setChatError(null);
+      }
+    },
+    [chatSessionId, storeDeleteSession, storeSetActiveSession]
+  );
+
   const streamAssistantMessage = useCallback(async (fullText: string, references: ChatReference[], suggestions?: string[]) => {
     setMessages((current) => [
       ...current,
@@ -1114,11 +1041,14 @@ function ChatWorkspacePageContent() {
     return () => { cancelled = true; };
   }, [projectId]);
 
-  const folderTree = useMemo(() => {
-    const filtered = fileSearch.trim()
-      ? wsFiles.filter((f) => f.fileName.toLowerCase().includes(fileSearch.toLowerCase()))
-      : wsFiles;
-    return buildFolderTree(filtered);
+  const explorerFiles = useMemo(() => {
+    const query = fileSearch.trim().toLowerCase();
+    if (!query) return wsFiles;
+    return wsFiles.filter(
+      (file) =>
+        file.fileName.toLowerCase().includes(query) ||
+        file.filePath.toLowerCase().includes(query)
+    );
   }, [wsFiles, fileSearch]);
 
   const handleExplorerFileClick = useCallback(
@@ -1410,15 +1340,6 @@ function ChatWorkspacePageContent() {
         <div style={{ flex: 1 }} />
         <button
           type="button"
-          className="ws-topbar-btn ws-topbar-btn-icon"
-          onClick={() => setProductTourOpen(true)}
-          title="Product tour"
-        >
-          <HelpCircle size={15} aria-hidden />
-          <span>Tour</span>
-        </button>
-        <button
-          type="button"
           className={`ws-panel-toggle ${leftPanelCollapsed ? '' : 'active'}`}
           onClick={() => setLeftPanelCollapsed((c) => !c)}
           title={leftPanelCollapsed ? 'Show project files' : 'Hide project files'}
@@ -1484,17 +1405,14 @@ function ChatWorkspacePageContent() {
           <div className="file-explorer-body">
             {wsFilesLoading ? (
               <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af' }}>Loading project files...</div>
-            ) : folderTree.length > 0 ? (
-              folderTree.map((folder) => (
-                <FolderSection
-                  key={folder.path}
-                  folder={folder}
-                  isExpanded={expandedFolders.has(folder.path)}
-                  activeFileId={activeDoc?.fileId}
-                  onToggle={() => toggleFolder(folder.path)}
-                  onFileClick={handleExplorerFileClick}
-                />
-              ))
+            ) : explorerFiles.length > 0 ? (
+              <FileTree
+                files={explorerFiles}
+                expandedFolders={expandedFolders}
+                activeFileId={activeDoc?.fileId}
+                onToggleFolder={toggleFolder}
+                onFileClick={handleExplorerFileClick}
+              />
             ) : (
               <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af', lineHeight: '1.6' }}>
                 {fileSearch.trim()
@@ -1580,7 +1498,16 @@ function ChatWorkspacePageContent() {
               <span>Chat</span>
             </button>
           ) : (
-            <>
+            <div className="chat-panel-layout">
+          <ConversationSidebar
+            projectId={projectId}
+            projectName={projectDisplayName || undefined}
+            userInitials={userInitials}
+            activeSessionId={chatSessionId ?? storeActiveSessionId}
+            onSessionSelect={handleSessionSelect}
+            onNewChat={handleSidebarNewChat}
+            onDeleteSession={handleSessionDelete}
+          />
           <div className="ws-panel-body chat-panel-body">
           <div className="chat-panel-toolbar">
             <span className="chat-panel-toolbar-label">
@@ -1665,17 +1592,11 @@ function ChatWorkspacePageContent() {
             </form>
           </div>
           </div>
-            </>
+            </div>
           )}
         </section>
 
       </div>
-
-      <OnboardingModal
-        open={productTourOpen}
-        onOpenChange={setProductTourOpen}
-        projectName={projectDisplayName || undefined}
-      />
     </div>
   );
 }

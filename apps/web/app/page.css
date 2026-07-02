@@ -481,6 +481,352 @@
   }
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ─── Dashboard (post-login home) ───────────────────────────── */
+.dash-root {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #111827;
+}
+
+.dash-header {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e5e7eb;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.dash-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-brand-mark {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.dash-brand-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.dash-project-label {
+  font-size: 14px;
+  color: #64748b;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.dash-main {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 44px 28px 56px;
+}
+
+.dash-hero {
+  margin-bottom: 36px;
+}
+
+.dash-hero h1 {
+  font-size: 30px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.dash-hero p {
+  color: #64748b;
+  font-size: 15px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.dash-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px 24px;
+  border: 1px solid #e8edf3;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.dash-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.dash-workspace-card {
+  background: linear-gradient(145deg, #0078d4 0%, #005a9e 100%);
+  border-radius: 14px;
+  padding: 26px 24px;
+  color: #fff;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  box-shadow: 0 12px 28px rgba(0, 120, 212, 0.28);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.dash-workspace-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(0, 120, 212, 0.32);
+}
+
+.dash-workspace-card:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+.dash-workspace-project {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-workspace-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.dash-workspace-copy {
+  font-size: 13px;
+  opacity: 0.9;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.dash-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.dash-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.dash-badge-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.dash-badge-warning {
+  background: #fef9c3;
+  color: #92400e;
+}
+
+.dash-muted {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 4px;
+}
+
+.dash-progress-track {
+  height: 7px;
+  background: #e8edf3;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.dash-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0078d4 0%, #005a9e 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.dash-progress-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.dash-section {
+  margin-bottom: 28px;
+}
+
+.dash-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 20px;
+}
+
+.dash-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dash-project-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1.5px solid #e5e7eb;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dash-project-btn:hover {
+  border-color: #cbd5e1;
+  background: #fff;
+}
+
+.dash-project-btn-active {
+  border-color: #0078d4;
+  background: #eff6ff;
+}
+
+.dash-project-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.dash-file-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e8edf3;
+}
+
+.dash-file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-file-path {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-btn-primary {
+  background: #0078d4;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dash-btn-primary:hover {
+  background: #006cbe;
+}
+
+.dash-btn-secondary {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #334155;
+}
+
+.dash-btn-secondary:hover {
+  background: #e8edf3;
+}
+
+.dash-signin-card {
+  text-align: center;
+  padding: 64px 28px;
+}
+
+.dash-signin-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.dash-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #dbeafe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
+  flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
   .phase2-grid {
     grid-template-columns: 1fr;
