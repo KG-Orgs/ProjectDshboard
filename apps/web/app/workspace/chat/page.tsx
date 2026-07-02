@@ -17,6 +17,7 @@ import {
   FileText,
   Folder,
   FolderOpen,
+  HelpCircle,
   PanelLeft,
   PanelRightClose,
   Plus,
@@ -26,6 +27,8 @@ import {
   X,
 } from 'lucide-react';
 import { useAuthStore } from '@contractor/shared';
+import OnboardingModal from '../../../components/OnboardingModal';
+import { shouldAutoShowOnboarding } from '../../../lib/onboarding';
 import { useConversationStore } from './useConversationStore';
 import './workspace.css';
 
@@ -458,6 +461,7 @@ function ChatWorkspacePageContent() {
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [isDraggingRight, setIsDraggingRight] = useState(false);
   const [projectDisplayName, setProjectDisplayName] = useState<string>('');
+  const [productTourOpen, setProductTourOpen] = useState(false);
 
   const panelRootRef = useRef<HTMLDivElement | null>(null);
   const promptInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -467,6 +471,12 @@ function ChatWorkspacePageContent() {
   useEffect(() => {
     projectDisplayNameRef.current = projectDisplayName;
   }, [projectDisplayName]);
+
+  useEffect(() => {
+    if (shouldAutoShowOnboarding()) {
+      setProductTourOpen(true);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -1400,6 +1410,15 @@ function ChatWorkspacePageContent() {
         <div style={{ flex: 1 }} />
         <button
           type="button"
+          className="ws-topbar-btn ws-topbar-btn-icon"
+          onClick={() => setProductTourOpen(true)}
+          title="Product tour"
+        >
+          <HelpCircle size={15} aria-hidden />
+          <span>Tour</span>
+        </button>
+        <button
+          type="button"
           className={`ws-panel-toggle ${leftPanelCollapsed ? '' : 'active'}`}
           onClick={() => setLeftPanelCollapsed((c) => !c)}
           title={leftPanelCollapsed ? 'Show project files' : 'Hide project files'}
@@ -1651,6 +1670,12 @@ function ChatWorkspacePageContent() {
         </section>
 
       </div>
+
+      <OnboardingModal
+        open={productTourOpen}
+        onOpenChange={setProductTourOpen}
+        projectName={projectDisplayName || undefined}
+      />
     </div>
   );
 }

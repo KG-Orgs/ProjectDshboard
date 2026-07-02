@@ -4,6 +4,8 @@ import { useAuthStore } from '@contractor/shared';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import OnboardingModal from '../components/OnboardingModal';
+import { shouldAutoShowOnboarding } from '../lib/onboarding';
 import './page.css';
 
 interface HomeProject {
@@ -160,6 +162,7 @@ export default function Home() {
       : new URLSearchParams(window.location.search).get('onedriveMessage');
   const [onboardingLoading, setOnboardingLoading] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
+  const [productTourOpen, setProductTourOpen] = useState(false);
   const [oneDriveStatus, setOneDriveStatus] = useState<OneDriveStatus | null>(null);
   const [projects, setProjects] = useState<HomeProject[]>([]);
   const [projectName, setProjectName] = useState('');
@@ -982,6 +985,13 @@ export default function Home() {
   const onboardingStep = needsOneDrive ? 1 : needsProject ? 2 : needsRole ? 3 : 0;
   const isOnboarding = onboardingStep > 0;
 
+  useEffect(() => {
+    if (!isAuthenticated || isLoading || onboardingLoading || isOnboarding) return;
+    if (shouldAutoShowOnboarding()) {
+      setProductTourOpen(true);
+    }
+  }, [isAuthenticated, isLoading, onboardingLoading, isOnboarding]);
+
   const ROLE_CHIPS = [
     'Project Manager', 'Project Engineer', 'Superintendent', 'Field Engineer',
     'Scheduler', 'Cost Engineer', 'QC Manager', 'Safety Manager', 'Document Control',
@@ -1037,6 +1047,15 @@ export default function Home() {
           </>
         ) : null}
         <div style={{ flex: 1 }} />
+        {!isOnboarding ? (
+          <button
+            type="button"
+            onClick={() => setProductTourOpen(true)}
+            style={{ ...sty.btnSecondary, fontSize: '12px', padding: '7px 12px' }}
+          >
+            Take tour
+          </button>
+        ) : null}
         {!isOnboarding && selectedProjectId ? (
           <button type="button" onClick={handleOpenAiChat} style={sty.btnPrimary}>
             Open Workspace
@@ -1541,6 +1560,12 @@ export default function Home() {
         ) : null}
 
       </main>
+
+      <OnboardingModal
+        open={productTourOpen}
+        onOpenChange={setProductTourOpen}
+        projectName={activeProject?.name}
+      />
     </div>
   );
 }

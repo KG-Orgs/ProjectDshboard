@@ -219,6 +219,22 @@ OAuth flow:
 
 ---
 
+## Product tour (first-time onboarding)
+
+New users see a **5-step product tour** after sign-in (dashboard) or on first workspace visit. It covers:
+
+1. What ContractorAI does (construction document intelligence)
+2. Connecting a OneDrive project folder (e.g. MLJ-017)
+3. Chatting with indexed documents
+4. PDF viewer, markups, and citation jumps
+5. Inviting teammates via shared Microsoft sign-in and Neon DB
+
+- **Skip** or **Get started** sets `localStorage.onboarding_completed = true` so the tour does not auto-show again.
+- **Take tour** on the dashboard header or **Tour** in the workspace top bar reopens it anytime.
+- To reset for testing: `localStorage.removeItem('onboarding_completed')` in the browser console.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Fix |

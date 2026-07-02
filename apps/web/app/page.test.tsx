@@ -13,6 +13,7 @@ vi.mock('@contractor/shared', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
+    prefetch: vi.fn(),
   }),
 }));
 
@@ -26,6 +27,8 @@ vi.mock('next/link', () => ({
 
 describe('Home page', () => {
   beforeEach(() => {
+    window.localStorage.clear();
+    window.localStorage.setItem('onboarding_completed', 'true');
     mockUseAuthStore.mockReset();
     mockPush.mockReset();
   });
