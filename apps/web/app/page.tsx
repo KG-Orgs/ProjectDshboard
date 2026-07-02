@@ -204,12 +204,6 @@ export default function Home() {
   const projectFilesInFlightRef = useRef(false);
   const indexingProgressInFlightRef = useRef(false);
   const syncProgressInFlightRef = useRef(false);
-  const [userRole, setUserRole] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return window.localStorage.getItem('contractor-ai-user-role') ?? '';
-    }
-    return '';
-  });
 
   // Restore the last successful app session from persisted auth state.
   useEffect(() => {
@@ -969,20 +963,10 @@ export default function Home() {
     }
   }, [loadOnboardingData, oneDriveFolders, selectedMainFolderId, handleRunManualSync]);
 
-  const handleSaveRole = (role: string) => {
-    const value = role.trim() || 'Team Member';
-    setUserRole(value);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('contractor-ai-user-role', value);
-    }
-    handleOpenAiChat();
-  };
-
   const activeProject = projects.find((p) => p.id === selectedProjectId) ?? null;
   const needsOneDrive = !onboardingLoading && oneDriveStatus !== null && !oneDriveStatus.connected;
   const needsProject = !onboardingLoading && oneDriveStatus?.connected === true && projects.length === 0;
-  const needsRole = !onboardingLoading && oneDriveStatus?.connected === true && projects.length > 0 && !userRole;
-  const onboardingStep = needsOneDrive ? 1 : needsProject ? 2 : needsRole ? 3 : 0;
+  const onboardingStep = needsOneDrive ? 1 : needsProject ? 2 : 0;
   const isOnboarding = onboardingStep > 0;
 
   useEffect(() => {
@@ -991,11 +975,6 @@ export default function Home() {
       setProductTourOpen(true);
     }
   }, [isAuthenticated, isLoading, onboardingLoading, isOnboarding, user]);
-
-  const ROLE_CHIPS = [
-    'Project Manager', 'Project Engineer', 'Superintendent', 'Field Engineer',
-    'Scheduler', 'Cost Engineer', 'QC Manager', 'Safety Manager', 'Document Control',
-  ];
 
   const sty = {
     card: {
@@ -1125,9 +1104,8 @@ export default function Home() {
               {[
                 { n: 1, label: 'Connect OneDrive' },
                 { n: 2, label: 'Select Folder' },
-                { n: 3, label: 'Your Role' },
               ].map((step, i) => (
-                <div key={step.n} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? 1 : 0 }}>
+                <div key={step.n} style={{ display: 'flex', alignItems: 'center', flex: i < 1 ? 1 : 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     <div style={{
                       width: '28px', height: '28px', borderRadius: '50%',
@@ -1144,7 +1122,7 @@ export default function Home() {
                       whiteSpace: 'nowrap',
                     }}>{step.label}</span>
                   </div>
-                  {i < 2 ? <div style={{ flex: 1, height: '1px', background: '#e5e7eb', margin: '0 8px' }} /> : null}
+                  {i < 1 ? <div style={{ flex: 1, height: '1px', background: '#e5e7eb', margin: '0 8px' }} /> : null}
                 </div>
               ))}
             </div>
@@ -1217,50 +1195,6 @@ export default function Home() {
                 {oneDriveFolderError ? (
                   <p style={{ marginTop: '12px', fontSize: '13px', color: '#d83b01' }}>{oneDriveFolderError}</p>
                 ) : null}
-              </div>
-            ) : null}
-
-            {/* Step 3: Role */}
-            {onboardingStep === 3 ? (
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '10px' }}>
-                  What is your role on this project?
-                </h2>
-                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '20px', lineHeight: '1.7' }}>
-                  This helps tailor your AI assistant. You can type any role.
-                </p>
-                <input
-                  type="text"
-                  value={userRole}
-                  onChange={(e) => setUserRole(e.target.value)}
-                  placeholder="e.g. Project Engineer, Superintendent..."
-                  style={{ ...sty.input, marginBottom: '16px' }}
-                />
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '28px' }}>
-                  {ROLE_CHIPS.map((role) => (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => setUserRole(role)}
-                      style={{
-                        padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer',
-                        border: `1px solid ${userRole === role ? '#0078d4' : '#e5e7eb'}`,
-                        background: userRole === role ? '#dbeafe' : '#f9fafb',
-                        color: userRole === role ? '#1d4ed8' : '#374151',
-                        fontWeight: userRole === role ? 600 : 400,
-                      }}
-                    >
-                      {role}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleSaveRole(userRole)}
-                  style={sty.btnPrimary}
-                >
-                  Enter Project Workspace &rarr;
-                </button>
               </div>
             ) : null}
 

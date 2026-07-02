@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   Cloud,
   FileSearch,
+  HardHat,
   Highlighter,
   MessageSquareText,
   Sparkles,
@@ -17,6 +18,11 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { useAuthStore } from '@contractor/shared';
 import { completeOnboarding } from '../lib/onboarding';
+import {
+  persistUserJobRole,
+  readStoredUserJobRole,
+  USER_JOB_ROLE_OPTIONS,
+} from '../lib/user-role';
 import './onboarding.css';
 
 export interface OnboardingModalProps {
@@ -34,6 +40,7 @@ interface OnboardingStep {
   icon: LucideIcon;
   highlights: Array<{ icon: LucideIcon; text: string }>;
   tip?: string;
+  interactive?: 'role';
 }
 
 function buildSteps(projectName?: string | null): OnboardingStep[] {
@@ -68,6 +75,16 @@ function buildSteps(projectName?: string | null): OnboardingStep[] {
         { icon: Sparkles, text: 'Indexing runs in the background — check progress on the dashboard' },
       ],
       tip: 'Already on a shared demo? Your team may see pre-indexed projects like MLJ-017 — just select one and open the workspace.',
+    },
+    {
+      id: 'role',
+      stepLabel: 'Your role',
+      title: 'What is your role on this project?',
+      subtitle: 'This helps tailor your AI assistant. You can type any role.',
+      description: '',
+      icon: HardHat,
+      highlights: [],
+      interactive: 'role',
     },
     {
       id: 'chat',
@@ -136,11 +153,17 @@ export default function OnboardingModal({ open, onOpenChange, projectName }: Onb
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+  const [userJobRole, setUserJobRole] = useState(() => readStoredUserJobRole());
 
   const step = steps[stepIndex];
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === steps.length - 1;
   const StepIcon = step.icon;
+
+  const resolvedJobRole = useMemo(() => {
+    const trimmed = userJobRole.trim();
+    return trimmed || 'Team Member';
+  }, [userJobRole]);
 
   const closeAndPersist = useCallback(async () => {
     if (isSaving) {
@@ -149,7 +172,8 @@ export default function OnboardingModal({ open, onOpenChange, projectName }: Onb
 
     setIsSaving(true);
     try {
-      const updatedUser = await completeOnboarding();
+      const savedRole = persistUserJobRole(userJobRole);
+      const updatedUser = await completeOnboarding(savedRole);
       setAuth(updatedUser);
       onOpenChange(false);
       setStepIndex(0);
@@ -159,7 +183,7 @@ export default function OnboardingModal({ open, onOpenChange, projectName }: Onb
     } finally {
       setIsSaving(false);
     }
-  }, [isSaving, onOpenChange, setAuth]);
+  }, [isSaving, onOpenChange, setAuth, userJobRole]);
 
   const handleSkip = useCallback(() => {
     void closeAndPersist();
@@ -273,22 +297,60 @@ export default function OnboardingModal({ open, onOpenChange, projectName }: Onb
                   exit="exit"
                   transition={{ duration: 0.22, ease: 'easeOut' }}
                 >
-                  <p className="onboarding-modal__description">{step.description}</p>
-                  <ul className="onboarding-modal__highlights">
-                    {step.highlights.map((highlight) => {
-                      const HighlightIcon = highlight.icon;
-                      return (
-                        <li key={highlight.text} className="onboarding-modal__highlight">
-                          <HighlightIcon
-                            size={16}
-                            className="onboarding-modal__highlight-icon"
-                            aria-hidden
-                          />
-                          <span>{highlight.text}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  {step.description ? (
+                    <p className="onboarding-modal__description">{step.description}</p>
+                  ) : null}
+                  {step.interactive === 'role' ? (
+                    <div className="onboarding-modal__role">
+                      <label className="onboarding-modal__role-label" htmlFor="onboarding-job-role">
+                        Your role
+                      </label>
+                      <input
+                        id="onboarding-job-role"
+                        type="text"
+                        className="onboarding-modal__role-input"
+                        value={userJobRole}
+                        onChange={(event) => setUserJobRole(event.target.value)}
+                        placeholder="e.g. Project Engineer, Superintendent..."
+                      />
+                      <div className="onboarding-modal__role-chips">
+                        {USER_JOB_ROLE_OPTIONS.map((role) => (
+                          <button
+                            key={role}
+                            type="button"
+                            className={[
+                              'onboarding-modal__role-chip',
+                              userJobRole === role ? 'selected' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                            onClick={() => setUserJobRole(role)}
+                          >
+                            {role}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="onboarding-modal__role-hint">
+                        Selected: {resolvedJobRole}
+                      </p>
+                    </div>
+                  ) : (
+                    <ul className="onboarding-modal__highlights">
+                      {step.highlights.map((highlight) => {
+                        const HighlightIcon = highlight.icon;
+                        return (
+                          <li key={highlight.text} className="onboarding-modal__highlight">
+                            <HighlightIcon
+                              size={16}
+                              className="onboarding-modal__highlight-icon"
+                              aria-hidden
+                            />
+                            <span>{highlight.text}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                   {step.tip ? <p className="onboarding-modal__tip">{step.tip}</p> : null}
                 </motion.div>
               </AnimatePresence>

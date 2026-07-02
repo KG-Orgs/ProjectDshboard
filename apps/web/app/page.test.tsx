@@ -25,12 +25,6 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-const TEST_USER_ROLE = 'Project Manager';
-
-function seedOnboardedUser() {
-  window.localStorage.setItem('contractor-ai-user-role', TEST_USER_ROLE);
-}
-
 describe('Home page', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -63,7 +57,6 @@ describe('Home page', () => {
   });
 
   it('loads and renders OneDrive-connected onboarding data when signed in', async () => {
-    seedOnboardedUser();
     const logout = vi.fn();
     const hydrate = vi.fn();
     mockUseAuthStore.mockReturnValue({
@@ -320,7 +313,6 @@ describe('Home page', () => {
   });
 
   it('runs manual sync for the selected project', async () => {
-    seedOnboardedUser();
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
@@ -459,7 +451,6 @@ describe('Home page', () => {
   });
 
   it('opens OneDrive in a new tab from the feature tile', async () => {
-    seedOnboardedUser();
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
@@ -552,7 +543,6 @@ describe('Home page', () => {
   });
 
   it('starts sync automatically when selecting a project folder', async () => {
-    seedOnboardedUser();
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,

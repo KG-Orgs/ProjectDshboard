@@ -234,7 +234,11 @@ const handleAuthMe = asyncHandler(async (req, res) => {
 });
 
 const handleAuthOnboardingComplete = asyncHandler(async (req, res) => {
-  const response = await authService.completeOnboarding(req.user);
+  const jobRole =
+    typeof (req.body as { jobRole?: unknown }).jobRole === "string"
+      ? (req.body as { jobRole: string }).jobRole.trim()
+      : undefined;
+  const response = await authService.completeOnboarding(req.user, jobRole);
   res.json(response);
 });
 

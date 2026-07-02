@@ -33,12 +33,14 @@ const completedUser = {
   email: 'jane@contractor.ai',
   name: 'Jane Contractor',
   role: 'member' as const,
+  jobRole: 'Project Manager',
   onboardingCompleted: true,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
 };
 
 describe('OnboardingModal', () => {
   beforeEach(() => {
+    window.localStorage.clear();
     mockSetAuth.mockReset();
     vi.stubGlobal(
       'fetch',
@@ -76,6 +78,10 @@ describe('OnboardingModal', () => {
     expect(screen.getByText('Link your project folder')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('What is your role on this project?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Superintendent' }));
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByText('Chat with your documents')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Next' }));
@@ -90,6 +96,7 @@ describe('OnboardingModal', () => {
       expect(fetch).toHaveBeenCalledWith('/api/auth/onboarding-complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobRole: 'Superintendent' }),
       });
     });
     expect(mockSetAuth).toHaveBeenCalledWith(completedUser);
@@ -108,6 +115,7 @@ describe('OnboardingModal', () => {
       expect(fetch).toHaveBeenCalledWith('/api/auth/onboarding-complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobRole: 'Team Member' }),
       });
     });
     expect(mockSetAuth).toHaveBeenCalledWith(completedUser);

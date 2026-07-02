@@ -10,12 +10,14 @@ function getBackendBaseUrl(): string {
 export async function POST(request: NextRequest) {
   try {
     const sessionToken = request.cookies.get(APP_SESSION_COOKIE)?.value;
+    const body = await request.json().catch(() => ({}));
     const response = await fetch(`${getBackendBaseUrl()}/api/auth/onboarding-complete`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
       },
+      body: JSON.stringify(body),
       cache: 'no-store',
     });
 

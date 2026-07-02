@@ -98,6 +98,7 @@ export const users = pgTable(
     role: text("role", { enum: ["super", "admin", "pm", "member"] })
       .default("member")
       .notNull(),
+    jobRole: text("job_role"),
     onboardingCompletedAt: timestamp("onboarding_completed_at", {
       withTimezone: true,
     }),
