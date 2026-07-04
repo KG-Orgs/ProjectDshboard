@@ -52,6 +52,10 @@ vi.mock("framer-motion", () => {
   };
 });
 
+vi.mock("./ConstructionPdfViewer", () => ({
+  default: () => null,
+}));
+
 describe("Workspace chat interactions", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -281,6 +285,205 @@ describe("Workspace chat interactions", () => {
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText("Filter files...")).toBeInTheDocument();
+    });
+  });
+
+  it("shows project-level suggested prompts when no file is open", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+
+        if (url.endsWith("/api/projects") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ projects: [{ id: "project-321", name: "North Tower" }] }),
+          });
+        }
+        if (url.includes("/api/projects/project-321/files") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ files: [] }),
+          });
+        }
+        if (url.endsWith("/api/chat/sessions") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ sessions: [] }),
+          });
+        }
+
+        return Promise.reject(new Error(`Unexpected request: ${url} (${method})`));
+      })
+    );
+
+    const user = userEvent.setup();
+    render(<ChatWorkspacePage />);
+    await user.click(screen.getAllByRole("button", { name: "Chat" })[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "View Open Issues Matrix" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Review Latest Schedule Update" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "View Latest Cost Report" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Create a Submittal Cover Page" })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: "Summarize This File" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ask Questions About This File" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Make Edits to This File" })).not.toBeInTheDocument();
+  });
+
+  it("switches to file-specific prompts when a document is opened via AI response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+
+        if (url.endsWith("/api/projects") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ projects: [{ id: "project-321", name: "North Tower" }] }),
+          });
+        }
+        if (url.includes("/api/projects/project-321/files") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              files: [{ id: "file-123", fileName: "spec.pdf", filePath: "spec.pdf", indexStatus: "indexed" }],
+            }),
+          });
+        }
+        if (url.endsWith("/api/chat/sessions") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              sessions: [{ id: "session-1", projectId: "project-321", createdAt: "2026-05-05T10:00:00.000Z" }],
+            }),
+          });
+        }
+        if (url.includes("/api/chat/sessions/session-1/messages") && method === "GET") {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ messages: [] }) });
+        }
+        if (url.includes("/api/chat/sessions/session-1/message") && method === "POST") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              content: "Here is what I found.",
+              sources: [
+                { fileId: "file-123", fileName: "spec.pdf", relevance: 0.95, suggestedPages: [1], bestPage: 1, pageOrigin: "exact" },
+              ],
+            }),
+          });
+        }
+
+        return Promise.reject(new Error(`Unexpected request: ${url} (${method})`));
+      })
+    );
+
+    const user = userEvent.setup();
+    render(<ChatWorkspacePage />);
+    await user.click(screen.getAllByRole("button", { name: "Chat" })[0]);
+
+    // Project prompts are visible before any file opens
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "View Open Issues Matrix" })).toBeInTheDocument();
+    });
+
+    // Send a message; AI response includes a source which auto-opens the file
+    const promptBox = screen.getByPlaceholderText("Ask about drawings, specs, RFIs...");
+    await user.type(promptBox, "Summarize the specs");
+    await user.click(screen.getByRole("button", { name: "Send message" }));
+
+    // File-specific prompts should replace the project prompts
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Summarize This File" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Ask Questions About This File" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Make Edits to This File" })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: "View Open Issues Matrix" })).not.toBeInTheDocument();
+  });
+
+  it("reverts to project prompts when the active file tab is closed", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+
+        if (url.endsWith("/api/projects") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ projects: [{ id: "project-321", name: "North Tower" }] }),
+          });
+        }
+        if (url.includes("/api/projects/project-321/files") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              files: [{ id: "file-123", fileName: "spec.pdf", filePath: "spec.pdf", indexStatus: "indexed" }],
+            }),
+          });
+        }
+        if (url.endsWith("/api/chat/sessions") && method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              sessions: [{ id: "session-1", projectId: "project-321", createdAt: "2026-05-05T10:00:00.000Z" }],
+            }),
+          });
+        }
+        if (url.includes("/api/chat/sessions/session-1/messages") && method === "GET") {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ messages: [] }) });
+        }
+        if (url.includes("/api/chat/sessions/session-1/message") && method === "POST") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              content: "Here is what I found.",
+              sources: [
+                { fileId: "file-123", fileName: "spec.pdf", relevance: 0.95, suggestedPages: [1], bestPage: 1, pageOrigin: "exact" },
+              ],
+            }),
+          });
+        }
+
+        return Promise.reject(new Error(`Unexpected request: ${url} (${method})`));
+      })
+    );
+
+    const user = userEvent.setup();
+    render(<ChatWorkspacePage />);
+    await user.click(screen.getAllByRole("button", { name: "Chat" })[0]);
+
+    // Send a message to open a file
+    const promptBox = screen.getByPlaceholderText("Ask about drawings, specs, RFIs...");
+    await user.type(promptBox, "Summarize the specs");
+    await user.click(screen.getByRole("button", { name: "Send message" }));
+
+    // Wait for file-specific prompts to appear
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Summarize This File" })).toBeInTheDocument();
+    });
+
+    // Close the open file tab
+    await user.click(screen.getByRole("button", { name: "Close spec.pdf" }));
+
+    // Project prompts should be restored
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "View Open Issues Matrix" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Summarize This File" })).not.toBeInTheDocument();
     });
   });
 });

@@ -55,6 +55,17 @@ interface ChatMessage {
   references?: ChatReference[];
   suggestions?: string[];
   isStreaming?: boolean;
+  agentActions?: AgentAction[];
+}
+
+/** Locally-typed agent action — mirrors @contractor/shared AgentAction */
+interface AgentAction {
+  id: string;
+  tool: string;
+  fileId: string;
+  params: Record<string, unknown>;
+  description: string;
+  applied?: boolean;
 }
 
 interface ChatSessionRecord {
@@ -87,6 +98,7 @@ interface SendChatMessageResponse {
   sources?: ChatSource[];
   suggestions?: string[];
   autoOpenFileName?: string;
+  agentActions?: AgentAction[];
 }
 
 interface ProjectFilesListResponse {
@@ -175,11 +187,24 @@ const DOC_LIBRARY: WorkspaceDoc[] = [
   },
 ];
 
-const SUGGESTED_PROMPTS = [
-  'Open structural-report.pdf and summarize page 12',
-  'Compare cost-tracker.xlsx with contract-scope.docx for overruns',
-  'List unresolved risks in site-notes.txt',
-  'Open crane-inspection.jpg and draft a safety observation',
+interface SuggestedPrompt {
+  label: string;
+  message: string;
+}
+
+// Shown when no file is open in the document viewer
+const NO_FILE_PROMPTS: SuggestedPrompt[] = [
+  { label: 'View Open Issues Matrix', message: 'View Open Issues Matrix' },
+  { label: 'Review Latest Schedule Update', message: 'Review Latest Schedule Update' },
+  { label: 'View Latest Cost Report', message: 'View Latest Cost Report' },
+  { label: 'Create a Submittal Cover Page', message: 'Create a Submittal Cover Page' },
+];
+
+// Shown when a file is open in the document viewer
+const FILE_OPEN_PROMPTS: SuggestedPrompt[] = [
+  { label: 'Summarize This File', message: 'Summarize this file' },
+  { label: 'Ask Questions About This File', message: 'I would like to ask questions about this file' },
+  { label: 'Make Edits to This File', message: 'I would like to make edits to this file' },
 ];
 
 function uid(prefix: string): string {
@@ -430,6 +455,8 @@ function ChatWorkspacePageContent() {
     () => openDocs.find((doc) => doc.id === activeDocId) ?? null,
     [openDocs, activeDocId]
   );
+
+  const contextualPrompts = activeDoc ? FILE_OPEN_PROMPTS : NO_FILE_PROMPTS;
 
   const openDoc = useCallback((doc: WorkspaceDoc) => {
     const existingMatch = openDocs.find(
@@ -861,7 +888,7 @@ function ChatWorkspacePageContent() {
     [chatSessionId, storeDeleteSession, storeSetActiveSession]
   );
 
-  const streamAssistantMessage = useCallback(async (fullText: string, references: ChatReference[], suggestions?: string[]) => {
+  const streamAssistantMessage = useCallback(async (fullText: string, references: ChatReference[], suggestions?: string[], agentActions?: AgentAction[]) => {
     setMessages((current) => [
       ...current,
       {
@@ -870,6 +897,7 @@ function ChatWorkspacePageContent() {
         content: fullText,
         references,
         suggestions,
+        agentActions,
         isStreaming: false,
       },
     ]);
@@ -965,7 +993,7 @@ function ChatWorkspacePageContent() {
 
       // Show the answer immediately; don't block on PDF preview resolution.
       setIsTyping(false);
-      await streamAssistantMessage(responseText, references, payload.suggestions);
+      await streamAssistantMessage(responseText, references, payload.suggestions, payload.agentActions);
 
       const primaryBestPage = references[0]?.bestPage ?? references[0]?.suggestedPages?.[0];
       const shouldAutoOpen = wantsOpen || (!activeDoc && references.length > 0);
@@ -1243,6 +1271,46 @@ function ChatWorkspacePageContent() {
     },
   }), []);
 
+  const applyAgentAction = useCallback(async (action: AgentAction, messageId: string) => {
+    if (!projectId) return;
+    try {
+      let url: string;
+      if (action.tool === 'add_pdf_markup' || action.tool === 'update_pdf_markup') {
+        url = `/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(action.fileId)}/markups`;
+      } else if (action.tool === 'edit_excel_cells') {
+        url = `/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(action.fileId)}/excel-edit`;
+      } else {
+        return;
+      }
+      const method = action.tool === 'update_pdf_markup' ? 'PATCH' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(action.params),
+      });
+      if (!res.ok) return;
+      // Mark the action as applied in message state
+      setMessages((curr) =>
+        curr.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                agentActions: m.agentActions?.map((a) =>
+                  a.id === action.id ? { ...a, applied: true } : a
+                ),
+              }
+            : m
+        )
+      );
+      // Tell any open PDF viewer to re-fetch its markups
+      window.dispatchEvent(
+        new CustomEvent('pdf-markups-updated', { detail: { fileId: action.fileId } })
+      );
+    } catch {
+      // Silently ignore — the user can retry by clicking Apply again
+    }
+  }, [projectId]);
+
   const renderedChatMessages = useMemo(() => messages.map((message) => {
     const isAssistant = message.role === 'assistant';
     return (
@@ -1311,13 +1379,35 @@ function ChatWorkspacePageContent() {
             </div>
           ) : null}
 
+          {!message.isStreaming && message.agentActions?.length ? (
+            <div className="agent-actions">
+              <p className="agent-actions-label">Proposed action</p>
+              {message.agentActions.map((action) => (
+                <div key={action.id} className="agent-action-chip">
+                  <span className="agent-action-description">{action.description}</span>
+                  {action.applied ? (
+                    <span className="agent-action-applied">Applied ✓</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="agent-action-btn agent-action-btn--apply"
+                      onClick={() => void applyAgentAction(action, message.id)}
+                    >
+                      Apply
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : null}
+
           {message.isStreaming ? (
             <span className="chat-streaming-dot" aria-label="Streaming response" />
           ) : null}
         </div>
       </motion.div>
     );
-  }), [handleSendPrompt, markdownComponents, messages, openOrCreateDoc]);
+  }), [applyAgentAction, handleSendPrompt, markdownComponents, messages, openOrCreateDoc]);
 
   return (
     <div className="workspace-root">
@@ -1536,20 +1626,18 @@ function ChatWorkspacePageContent() {
 
           {/* Input */}
           <div className="chat-input-area">
-            {messages.length === 0 ? (
-              <div className="chat-suggested-prompts">
-                {SUGGESTED_PROMPTS.slice(0, 2).map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    className="ws-chip"
-                    onClick={() => void handleSendPrompt(prompt)}
-                  >
-                    {prompt.length > 42 ? `${prompt.slice(0, 42)}...` : prompt}
-                  </button>
-                ))}
-              </div>
-            ) : null}
+            <div className="chat-suggested-prompts">
+              {contextualPrompts.map((prompt) => (
+                <button
+                  key={prompt.label}
+                  type="button"
+                  className="ws-chip"
+                  onClick={() => void handleSendPrompt(prompt.message)}
+                >
+                  {prompt.label}
+                </button>
+              ))}
+            </div>
             <form
               onSubmit={(e: FormEvent) => { e.preventDefault(); void handleSendPrompt(); }}
               className="chat-input-box"
