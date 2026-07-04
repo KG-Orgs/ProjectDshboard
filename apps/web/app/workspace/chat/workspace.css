@@ -576,6 +576,68 @@
   padding-top: 10px;
 }
 
+/* --------------------------------
+   AI agent action confirmation UI
+   -------------------------------- */
+.agent-actions {
+  margin-top: 10px;
+  border-top: 1px solid #e0e7ff;
+  padding-top: 10px;
+}
+
+.agent-actions-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6366f1;
+  margin-bottom: 6px;
+}
+
+.agent-action-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f5f3ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+}
+
+.agent-action-description {
+  flex: 1;
+  font-size: 12px;
+  color: #3730a3;
+  line-height: 1.4;
+}
+
+.agent-action-btn {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.agent-action-btn--apply {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.agent-action-btn--apply:hover {
+  background: #4338ca;
+}
+
+.agent-action-applied {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
 .chat-suggestions-label {
   font-size: 10px;
   text-transform: uppercase;

@@ -1063,6 +1063,18 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     void loadMarkups();
   }, [loadMarkups]);
 
+  // Re-fetch markups when the AI agent applies an action from the chat panel
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ev = e as CustomEvent<{ fileId?: string }>;
+      if (!ev.detail?.fileId || ev.detail.fileId === fileId) {
+        void loadMarkups();
+      }
+    };
+    window.addEventListener('pdf-markups-updated', handler);
+    return () => window.removeEventListener('pdf-markups-updated', handler);
+  }, [fileId, loadMarkups]);
+
   useEffect(() => {
     if (initialPage == null) return;
     navScrollPageRef.current = initialPage;

@@ -74,6 +74,7 @@ export type {
   UpdateProjectFeatureResponse,
   FeaturesRegistryResponse,
   ErrorResponse,
+  AgentAction,
 } from "./types/api";
 
 // ================================

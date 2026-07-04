@@ -103,8 +103,20 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.13)(@types/node@20.19.39)(jiti@1.21.7)(jsdom@26.1.0(canvas@3.2.3))(lightningcss@1.27.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
 
+  packages/ai-actions:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.39
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
   packages/backend:
     dependencies:
+      '@contractor/ai-actions':
+        specifier: workspace:*
+        version: link:../ai-actions
       '@contractor/shared':
         specifier: workspace:*
         version: link:../shared

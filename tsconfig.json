@@ -24,6 +24,12 @@
       ],
       "@contractor/shared/*": [
         "packages/shared/src/*"
+      ],
+      "@contractor/ai-actions": [
+        "packages/ai-actions/src/index.ts"
+      ],
+      "@contractor/ai-actions/*": [
+        "packages/ai-actions/src/*"
       ]
     }
   },

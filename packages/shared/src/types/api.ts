@@ -313,6 +313,25 @@ export interface InterpretationFeedbackEvent {
   note?: string;
 }
 
+// ================================
+// AGENT ACTIONS
+// ================================
+
+/**
+ * A write action proposed by the AI agent. Actions are proposals only —
+ * they are never executed automatically. The user must confirm in the UI.
+ */
+export interface AgentAction {
+  /** Client-generated UUID for tracking apply/dismiss state */
+  id: string;
+  tool: string;
+  /** ID of the file this action targets */
+  fileId: string;
+  params: Record<string, unknown>;
+  /** Human-readable description shown in the confirmation chip */
+  description: string;
+}
+
 export interface SendChatMessageRequest {
   sessionId: UUID;
   message: string;
@@ -377,6 +396,8 @@ export interface SendChatMessageResponse {
       totalMs: number;
     };
   };
+  /** AI-proposed write actions awaiting user confirmation */
+  agentActions?: AgentAction[];
   createdAt: Date;
 }
 

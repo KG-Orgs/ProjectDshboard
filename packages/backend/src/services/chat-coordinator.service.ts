@@ -1,4 +1,6 @@
 import type { ChatHistoryTurn, ChatInterpretation, OpenDocContext, SendChatMessageResponse, UUID } from "@contractor/shared";
+import { buildActionAddendum, extractAgentActions } from "@contractor/ai-actions";
+import type { AgentAction } from "@contractor/ai-actions";
 import { createHash } from "node:crypto";
 import { getEnv } from "../config/env";
 import { logger } from "../lib/logger";
@@ -107,6 +109,8 @@ interface CoordinatorResult {
   cacheHit: boolean;
   suggestions?: string[];
   autoOpenFileName?: string;
+  /** AI-proposed write actions awaiting user confirmation in the frontend */
+  agentActions?: AgentAction[];
 }
 
 interface IndexedProjectSnapshot {
@@ -3563,14 +3567,15 @@ async function answerFromDocumentDetail(
 
   const domains = classifyQueryDomains(rawQuery);
   const agentStartedAt = Date.now();
-  const content = await callSingleAgent(
+  const { text: content, actions: agentActions } = await callSingleAgent(
     rawQuery,
     domains,
     activeNodes,
     undefined,
     history,
     openDocs,
-    selectedFileName
+    selectedFileName,
+    detail.fileId
   );
   const agentMs = Date.now() - agentStartedAt;
 
@@ -3690,6 +3695,7 @@ async function answerFromDocumentDetail(
       enforceSelectedFileScope: Boolean(selectedFileName),
     }),
     autoOpenFileName: detail.fileName,
+    agentActions: agentActions.length > 0 ? agentActions : undefined,
   };
 }
 
@@ -4773,8 +4779,9 @@ async function callSingleAgent(
   snapshot?: IndexedProjectSnapshot,
   history?: ChatHistoryTurn[],
   openDocs?: OpenDocContext[],
-  activeDocFileName?: string
-): Promise<string> {
+  activeDocFileName?: string,
+  activeDocFileId?: string
+): Promise<{ text: string; actions: AgentAction[] }> {
   const userPrompt = buildUserPrompt(query, domains, nodes, snapshot, openDocs, activeDocFileName);
 
   const historyMessages: ChatLlmMessage[] = (history ?? [])
@@ -4784,9 +4791,16 @@ async function callSingleAgent(
   // Depth mode: factual/spec/extraction queries get a fuller prompt + higher
   // output budget so multi-item answers aren't compressed into header bullets.
   const depthMode = isFactualIntent(query);
-  const systemPrompt = depthMode
+  const baseSystemPrompt = depthMode
     ? `${STATIC_SYSTEM_PROMPT}\n${DEPTH_MODE_ADDENDUM}`
     : STATIC_SYSTEM_PROMPT;
+  // When a document is open, append the action-proposal addendum so the LLM
+  // knows it can suggest write actions. This works across all LLM providers
+  // because it uses structured output (fenced blocks) rather than native
+  // function-calling (which has incompatible wire formats per provider).
+  const systemPrompt = activeDocFileId
+    ? `${baseSystemPrompt}\n\n${buildActionAddendum(activeDocFileId)}`
+    : baseSystemPrompt;
   const maxTokens = depthMode ? AGENT_DEPTH_OUTPUT_TOKENS : AGENT_MAX_OUTPUT_TOKENS;
 
   const completion = await callChatLlm(
@@ -4798,15 +4812,18 @@ async function callSingleAgent(
     { temperature: 0.2, maxTokens }
   );
   if (completion) {
-    return completion;
+    return extractAgentActions(completion);
   }
 
   if (nodes.length === 0) {
-    return [
-      "I could not find enough indexed graph context to answer confidently.",
-      `Current index completion is ${snapshot?.indexingPercent ?? 0}%.`,
-      "Please sync/index the project documents or point me to the relevant file/log (RFI, submittal, daily report, schedule, or spec section).",
-    ].join(" ");
+    return {
+      text: [
+        "I could not find enough indexed graph context to answer confidently.",
+        `Current index completion is ${snapshot?.indexingPercent ?? 0}%.`,
+        "Please sync/index the project documents or point me to the relevant file/log (RFI, submittal, daily report, schedule, or spec section).",
+      ].join(" "),
+      actions: [],
+    };
   }
 
   const queryTokens = tokenizeQuery(query);
@@ -4861,15 +4878,18 @@ async function callSingleAgent(
     return `- ${alias}${page}: ${excerpt}`;
   });
 
-  return [
-    `Based on indexed project context, this is the strongest evidence for: \"${query.trim()}\".`,
-    `Routed focus: ${domains.join(", ")}.`,
-    `Top files: ${topAliases.join(", ")}.`,
-    "Evidence snippets:",
-    ...evidence,
-    "I can draft this as an owner notice, RFI, or meeting-minute action list if needed.",
-    "I can flag contract exposure, but this is not legal advice.",
-  ].join("\n");
+  return {
+    text: [
+      `Based on indexed project context, this is the strongest evidence for: \"${query.trim()}\".`,
+      `Routed focus: ${domains.join(", ")}.`,
+      `Top files: ${topAliases.join(", ")}.`,
+      "Evidence snippets:",
+      ...evidence,
+      "I can draft this as an owner notice, RFI, or meeting-minute action list if needed.",
+      "I can flag contract exposure, but this is not legal advice.",
+    ].join("\n"),
+    actions: [],
+  };
 }
 
 /**
@@ -5600,7 +5620,7 @@ export const chatCoordinatorService = {
     };
 
     const agentStartedAt = Date.now();
-    const content = await callSingleAgent(rawQuery, domains, graphNodes, contextSnapshot, history, openDocs, activeDocFileName);
+    const { text: content, actions: agentActions } = await callSingleAgent(rawQuery, domains, graphNodes, contextSnapshot, history, openDocs, activeDocFileName, activeDocFileId);
     const agentMs = Date.now() - agentStartedAt;
     const strictQueryTokens = filterHighFrequencyTokens(tokenizeQuery(rawQuery), graphNodes);
     const citations = buildValidatedCitations(graphNodes, sources, {
@@ -5711,6 +5731,7 @@ export const chatCoordinatorService = {
       cacheHit: false,
       suggestions,
       autoOpenFileName,
+      agentActions: agentActions.length > 0 ? agentActions : undefined,
     };
   },
 };

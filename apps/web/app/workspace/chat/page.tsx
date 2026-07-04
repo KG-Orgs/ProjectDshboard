@@ -1275,14 +1275,25 @@ function ChatWorkspacePageContent() {
     if (!projectId) return;
     try {
       let url: string;
-      if (action.tool === 'add_pdf_markup' || action.tool === 'update_pdf_markup') {
-        url = `/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(action.fileId)}/markups`;
+      let method = 'POST';
+      const base = `/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(action.fileId)}`;
+      if (action.tool === 'add_pdf_markup') {
+        url = `${base}/markups`;
+      } else if (action.tool === 'update_pdf_markup') {
+        const markupId = (action.params as { markupId?: string }).markupId;
+        if (!markupId) return;
+        url = `${base}/markups/${encodeURIComponent(markupId)}`;
+        method = 'PATCH';
+      } else if (action.tool === 'delete_pdf_markup') {
+        const markupId = (action.params as { markupId?: string }).markupId;
+        if (!markupId) return;
+        url = `${base}/markups/${encodeURIComponent(markupId)}`;
+        method = 'DELETE';
       } else if (action.tool === 'edit_excel_cells') {
-        url = `/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(action.fileId)}/excel-edit`;
+        url = `${base}/excel-edit`;
       } else {
         return;
       }
-      const method = action.tool === 'update_pdf_markup' ? 'PATCH' : 'POST';
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },

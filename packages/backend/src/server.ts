@@ -5,6 +5,7 @@
 
 import { randomUUID } from "node:crypto";
 import path from "node:path";
+import { writeFile as fsWriteFile } from "node:fs/promises";
 import express, { type Express, Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import Papa from "papaparse";
@@ -36,6 +37,7 @@ import {
   authService,
   chatService,
   documentRelationshipService,
+  excelEditorService,
   featureService,
   healthService,
   indexingService,
@@ -759,6 +761,97 @@ async function createApp(): Promise<Express> {
     res.setHeader("Content-Disposition", `attachment; filename=\"${file.fileName.replace(/\"/g, "")}-markups.csv\"`);
     res.send(csv);
   }));
+  // --------------------------------
+  // AI-proposed Excel cell edits
+  // Only local-corpus files are supported; OneDrive files are read-only
+  // until the OAuth scope is upgraded to Files.ReadWrite.
+  // TODO (OneDrive write): call onedriveService.uploadFileContent() here
+  //   after the scope upgrade and re-auth migration are complete.
+  // --------------------------------
+  app.post("/api/projects/:id/files/:fileId/excel-edit", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
+    const projectId = toUuid(req.params.id);
+    const fileId = toUuid(req.params.fileId);
+
+    await projectService.getProjectOrThrow(projectId, req.orgId);
+    const file = await projectService.getProjectFileById(projectId, fileId);
+    if (!file) {
+      res.status(404).json({ error: "file_not_found", message: "Project file not found" });
+      return;
+    }
+
+    if (!isLocalCorpusItemId(file.onedriveItemId)) {
+      res.status(400).json({
+        error: "onedrive_file_readonly",
+        message: "Excel edits are only supported for local-corpus files. OneDrive files are read-only until write scope is enabled.",
+      });
+      return;
+    }
+
+    const body = req.body as { sheetName?: unknown; edits?: unknown };
+    if (typeof body.sheetName !== "string" || !body.sheetName.trim()) {
+      res.status(400).json({ error: "invalid_request", message: "sheetName is required" });
+      return;
+    }
+    if (!Array.isArray(body.edits) || body.edits.length === 0) {
+      res.status(400).json({ error: "invalid_request", message: "edits must be a non-empty array" });
+      return;
+    }
+    if (body.edits.length > 500) {
+      res.status(400).json({ error: "invalid_request", message: "edits must not exceed 500 cells per request" });
+      return;
+    }
+
+    const env = getEnv();
+    const db = getDbIfInitialized();
+
+    const [fileRow] = db
+      ? await db.select({ deepLinkUrl: fileRecords.deepLinkUrl }).from(fileRecords)
+          .where(and(eq(fileRecords.projectId, projectId), eq(fileRecords.id, fileId))).limit(1)
+      : [];
+
+    const absolutePath = resolveLocalCorpusAbsolutePath({
+      onedriveItemId: file.onedriveItemId,
+      filePath: file.filePath,
+      deepLinkUrl: fileRow?.deepLinkUrl,
+      corpusParent: env.localCorpusParent,
+    });
+
+    if (!absolutePath) {
+      res.status(400).json({ error: "local_corpus_not_configured", message: "LOCAL_CORPUS_PARENT is not configured." });
+      return;
+    }
+
+    const fileBuffer = readLocalCorpusFile(absolutePath);
+
+    // Validate sheet exists before attempting edits
+    const sheetNames = excelEditorService.getSheetNames(fileBuffer);
+    if (!sheetNames.includes(body.sheetName)) {
+      res.status(404).json({
+        error: "sheet_not_found",
+        message: `Sheet "${body.sheetName}" not found. Available: ${sheetNames.join(", ")}`,
+      });
+      return;
+    }
+
+    const edits = (body.edits as Array<{ cell?: unknown; value?: unknown }>)
+      .filter((e) => typeof e.cell === "string" && (typeof e.value === "string" || typeof e.value === "number"))
+      .map((e) => ({ cell: e.cell as string, value: e.value as string | number }));
+
+    const modifiedBuffer = excelEditorService.applyExcelEdits(fileBuffer, body.sheetName, edits);
+    await fsWriteFile(absolutePath, modifiedBuffer);
+
+    // Mark file as pending re-index so next sync picks up the changes
+    if (db) {
+      await db.update(fileRecords)
+        .set({ indexStatus: "pending", lastIndexed: null, updatedAt: new Date() })
+        .where(and(eq(fileRecords.projectId, projectId), eq(fileRecords.id, fileId)));
+    }
+
+    logger.info("excel-edit.applied", { projectId, fileId, sheetName: body.sheetName, editCount: edits.length, user: req.user?.name });
+
+    res.json({ success: true, editsApplied: edits.length });
+  }));
+
   app.get("/api/projects/:id/indexing/progress", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
     await projectService.getProjectOrThrow(projectId, req.orgId);

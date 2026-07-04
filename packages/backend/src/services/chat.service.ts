@@ -144,6 +144,7 @@ export const chatService = {
       suggestions: coordinatorReply.suggestions,
       autoOpenFileName: coordinatorReply.autoOpenFileName,
       coordinator: coordinatorReply.coordinator,
+      agentActions: coordinatorReply.agentActions,
       createdAt: now,
     };
 

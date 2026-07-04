@@ -41,6 +41,7 @@
     "grant:org-access": "tsx ./scripts/grant-org-access.ts"
   },
   "dependencies": {
+    "@contractor/ai-actions": "workspace:*",
     "@contractor/shared": "workspace:*",
     "bullmq": "^5.0.0",
     "dotenv": "^16.4.0",

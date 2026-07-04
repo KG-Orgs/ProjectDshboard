@@ -14,4 +14,5 @@ export { projectService } from "./project.service";
 export { pdfMarkupService } from "./pdf-markup.service";
 export { retrievalService } from "./retrieval.service";
 export { syncService } from "./sync.service";
+export { excelEditorService } from "./excel-editor.service";
 
