@@ -6,6 +6,22 @@ This file defines how the assistant routes user requests to specialized capabili
 
 ---
 
+## Standing Domain Context
+
+Before responding to any user message, load `context/project_domain_context.md`.
+
+It defines:
+- Document identifier types (QWP, RFI, DRFI, SWP, GEN, PRDC, NCR, CO, etc.) and how users will reference them
+- Document approval status codes (APP, NET, AAN, R&R, VOID, etc.) and the authority hierarchy
+- CSI MasterFormat divisions and common section numbers
+- Project roles and parties (Owner, CM, GC, A/E, QM, etc.)
+- Construction abbreviations (NTP, GMP, TIA, LOE, CPM, BABA, etc.)
+- Common question patterns from PMs and GCs
+- File naming conventions for contract A37806
+- Spec vs. drawing disambiguation guidance
+
+---
+
 ## Capability Routing
 
 When a user message is received, identify the intent and route to the matching capability below. Load the capability's rules and workflow files before responding.
