@@ -1415,7 +1415,7 @@ export default function Home() {
               ) : null}
             </div>
 
-            <ProjectMembersPanel projectId={selectedProjectId} />
+            <ProjectMembersPanel projectId={selectedProjectId ?? null} />
 
             {/* Project Files */}
             {projectFilesTotal > 0 ? (

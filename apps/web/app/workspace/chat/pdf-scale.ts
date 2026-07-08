@@ -136,7 +136,7 @@ export function formatScaleIndicator(scale: DocumentScale): string {
 /** Build scale from a persisted calibrate markup (fallback when localStorage is empty). */
 export function scaleFromCalibrateMarkup(
   coordinates: Record<string, unknown>,
-  measurement: { calibration?: { realValue?: number; unit?: string }; unit?: string } | undefined,
+  measurement: { calibration?: { realValue?: number; unit?: string }; unit?: string; value?: number } | undefined,
   pageWidth: number,
   pageHeight: number,
 ): DocumentScale | null {

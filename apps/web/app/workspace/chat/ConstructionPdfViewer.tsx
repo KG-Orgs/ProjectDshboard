@@ -1340,7 +1340,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     void runSearch(snippet);
   }, [citationRequest, fileId, runSearch]);
 
-  const pagePointFromEvent = (event: ReactMouseEvent<HTMLDivElement>, host?: HTMLElement | null): Point | null => {
+  const pagePointFromEvent = (event: ReactMouseEvent<HTMLElement>, host?: HTMLElement | null): Point | null => {
     const el = host ?? pageHostRef.current ?? (event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
     if (!el) return null;
     const rect = el.getBoundingClientRect();
@@ -1348,7 +1348,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     return { x: clamp((event.clientX - rect.left) / rect.width, 0, 1), y: clamp((event.clientY - rect.top) / rect.height, 0, 1) };
   };
 
-  const pageHostFromEvent = (event: ReactMouseEvent<HTMLDivElement>): HTMLElement | null => {
+  const pageHostFromEvent = (event: ReactMouseEvent<HTMLElement>): HTMLElement | null => {
     const pageContainer = (event.target as HTMLElement).closest('[data-page]');
     if (pageContainer instanceof HTMLElement) return pageContainer;
     const layer = (event.target as HTMLElement).closest('[data-markup-layer]');
@@ -2452,7 +2452,8 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
             key={`${url}-${documentRetryKey}`}
             file={url}
             loading={documentLoading}
-            error={renderDocumentError}
+            // react-pdf NodeOrRenderer typing is narrower than runtime API
+            error={renderDocumentError as never}
             onLoadProgress={({ loaded, total }) => {
               if (total > 0) {
                 setLoadProgress(Math.min(100, Math.round((loaded / total) * 100)));

@@ -4,7 +4,7 @@ import {
   getBackendBaseUrl,
   getSessionToken,
   toProxyJsonResponse,
-} from '../../../_lib/proxy';
+} from '../../../../_lib/proxy';
 
 export const dynamic = 'force-dynamic';
 
