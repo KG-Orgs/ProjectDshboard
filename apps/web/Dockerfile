@@ -11,8 +11,9 @@ RUN pnpm install --frozen-lockfile --filter @contractor/web...
 
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules        ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/node_modules              ./node_modules
+COPY --from=deps /app/apps/web/node_modules     ./apps/web/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
@@ -20,7 +21,7 @@ ARG NEXT_PUBLIC_APP_NAME=ContractorAI
 # Render injects NEXT_PUBLIC_* at build time; ARG defaults apply when unset.
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME}
-RUN pnpm --filter @contractor/shared build 2>/dev/null || true
+RUN pnpm --filter @contractor/shared build
 RUN pnpm --filter @contractor/web build
 
 FROM node:20-alpine AS runner
