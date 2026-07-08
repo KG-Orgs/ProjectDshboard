@@ -17,7 +17,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/backend/node_modules ./packages/backend/node_modules
 COPY --from=deps /app/packages/shared/node_modules  ./packages/shared/node_modules
 COPY . .
-RUN pnpm --filter @contractor/shared build 2>/dev/null || true
+RUN pnpm --filter @contractor/shared build
 RUN pnpm --filter @contractor/backend build
 
 # ── Production image ──────────────────────────────────────────
