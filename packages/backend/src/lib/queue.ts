@@ -8,6 +8,7 @@ import {
 } from "bullmq";
 import type { UUID } from "@contractor/shared";
 import { getEnv } from "../config/env";
+import type { RequestUserContext } from "../services/service-types";
 import { logger } from "./logger";
 
 export const INDEXING_QUEUE_POLICY = {
@@ -25,14 +26,7 @@ export interface IndexingJobPayload {
   projectId: UUID;
   idempotencyKey: string;
   requestedAt: string;
-  requester?: {
-    id: string;
-    email: string;
-    name: string;
-    orgId: string;
-    orgName: string;
-    role: "super" | "admin" | "pm" | "member";
-  };
+  requester?: RequestUserContext;
 }
 
 export interface EnqueueIndexingJobResult {

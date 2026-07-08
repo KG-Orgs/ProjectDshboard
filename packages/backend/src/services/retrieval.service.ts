@@ -1156,7 +1156,7 @@ async function rankChunksWithinFile(
       sourceType: row.sourceType as "content" | "summary" | "metadata_stub",
       pageNumber: row.pageNumber ?? undefined,
       sectionLabel: row.sectionLabel ?? undefined,
-      metadata: row.metadata ?? undefined,
+      metadata: row.metadata ? (row.metadata as Record<string, unknown>) : undefined,
       confidence: row.confidence ?? undefined,
     }))
     .filter((chunk) => chunk.relevance > 0)

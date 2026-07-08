@@ -58,6 +58,7 @@ import {
 import { toMarkupExportRows } from "./services/markup-export.utils";
 import { toUuid } from "./services/service-types";
 import type { ProjectAccessContext } from "./services/project-access.service";
+import type { RequestUserContext } from "./services/service-types";
 
 // Load environment variables from both package and workspace root locations.
 const dotenvCandidates = [
@@ -79,14 +80,7 @@ declare global {
   namespace Express {
     interface Request {
       requestId?: string;
-      user?: {
-        id: string;
-        email: string;
-        name: string;
-        orgId: string;
-        orgName: string;
-        role: "super" | "admin" | "pm" | "member";
-      };
+      user?: RequestUserContext;
       orgId?: string;
     }
   }
