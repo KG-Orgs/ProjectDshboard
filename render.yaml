@@ -5,6 +5,8 @@
 #   1. Set sync: false secrets in the dashboard (DATABASE_URL, OAuth, AI keys)
 #   2. Deploy blueprint
 #   3. Add Azure redirect URI: https://<web-service>.onrender.com/auth/callback
+#
+# plan: free — $0 but services spin down after ~15 min idle (cold start on next request).
 
 services:
   - type: web
@@ -12,7 +14,7 @@ services:
     runtime: docker
     dockerfilePath: ./packages/backend/Dockerfile
     dockerContext: .
-    plan: starter
+    plan: free
     healthCheckPath: /health/api
     envVars:
       - key: NODE_ENV
@@ -59,7 +61,7 @@ services:
     runtime: docker
     dockerfilePath: ./apps/web/Dockerfile
     dockerContext: .
-    plan: starter
+    plan: free
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
