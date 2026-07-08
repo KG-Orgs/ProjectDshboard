@@ -15,6 +15,9 @@ import { initializeDb, getDbIfInitialized, fileRecords } from "./db";
 import type {
   AuthLoginRequest,
   ChatIntentLabel,
+  AddProjectMemberRequest,
+  AddPlatformOrgUserRequest,
+  CreatePlatformOrganizationRequest,
   CreateChatSessionRequest,
   CreateProjectRequest,
   OneDriveConnectRequest,
@@ -24,6 +27,7 @@ import type {
   UpdateProjectFolderRequest,
   UpdateProjectFeatureRequest,
 } from "@contractor/shared";
+import { isOrgPowerUser } from "@contractor/shared";
 import { getEnv, hasMicrosoftOAuthConfig } from "./config/env";
 import { AppError, asyncHandler, isAppError } from "./lib/errors";
 import { logger } from "./lib/logger";
@@ -44,12 +48,16 @@ import {
   onedriveService,
   pdfMarkupService,
   projectService,
+  projectAccessService,
+  platformAdminService,
+  assertPlatformOperator,
   retrievalService,
   startIndexingWorker,
   syncService,
 } from "./services";
 import { toMarkupExportRows } from "./services/markup-export.utils";
 import { toUuid } from "./services/service-types";
+import type { ProjectAccessContext } from "./services/project-access.service";
 
 // Load environment variables from both package and workspace root locations.
 const dotenvCandidates = [
@@ -128,6 +136,33 @@ function requireAuthenticatedRequest(
   }
 
   next();
+}
+
+function requirePlatformOperator(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void {
+  if (!req.user) {
+    next(new AppError(401, "unauthorized", "Unauthorized"));
+    return;
+  }
+
+  try {
+    assertPlatformOperator(req.user.email);
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+function projectAccessFromRequest(req: Request): ProjectAccessContext {
+  return {
+    userId: toUuid(req.user!.id),
+    orgId: toUuid(req.orgId!),
+    orgRole: req.user!.role,
+    userEmail: req.user!.email,
+  };
 }
 
 const ALLOWED_CHAT_INTENTS = new Set<ChatIntentLabel>([
@@ -268,19 +303,88 @@ const handleOneDriveSync = asyncHandler(async (req, res) => {
 });
 
 const handleGetProjects = asyncHandler(async (req, res) => {
-  res.json(await projectService.listProjects(req.orgId));
+  res.json(
+    await projectService.listProjects(req.orgId, projectAccessFromRequest(req))
+  );
 });
 
 const handleCreateProject = asyncHandler(async (req, res) => {
+  if (!isOrgPowerUser(req.user?.role)) {
+    throw new AppError(
+      403,
+      "forbidden",
+      "Only org operators can create projects. Ask your administrator for access."
+    );
+  }
+
   const response = await projectService.createProject(
     req.body as CreateProjectRequest,
-    req.orgId
+    req.orgId,
+    toUuid(req.user!.id)
   );
   res.json(response);
 });
 
+const handleGetProjectMembers = asyncHandler(async (req, res) => {
+  res.json(
+    await projectAccessService.listMembers(
+      toUuid(req.params.id),
+      projectAccessFromRequest(req)
+    )
+  );
+});
+
+const handleAddProjectMember = asyncHandler(async (req, res) => {
+  const body = req.body as AddProjectMemberRequest;
+  res.json(
+    await projectAccessService.addMember(
+      toUuid(req.params.id),
+      body.email,
+      body.projectRole ?? "member",
+      projectAccessFromRequest(req),
+      { promoteToOrgAdmin: body.promoteToOrgAdmin === true }
+    )
+  );
+});
+
+const handleRemoveProjectMember = asyncHandler(async (req, res) => {
+  await projectAccessService.removeMember(
+    toUuid(req.params.id),
+    toUuid(req.params.userId),
+    projectAccessFromRequest(req)
+  );
+  res.status(204).send();
+});
+
+const handleListPlatformOrganizations = asyncHandler(async (_req, res) => {
+  res.json(await platformAdminService.listOrganizations());
+});
+
+const handleCreatePlatformOrganization = asyncHandler(async (req, res) => {
+  const body = req.body as CreatePlatformOrganizationRequest;
+  res.json(await platformAdminService.createOrganization(body.name, body.onedriveTenantId));
+});
+
+const handleListPlatformOrgUsers = asyncHandler(async (req, res) => {
+  res.json(await platformAdminService.listOrganizationUsers(toUuid(req.params.orgId)));
+});
+
+const handleAddPlatformOrgUser = asyncHandler(async (req, res) => {
+  const body = req.body as AddPlatformOrgUserRequest;
+  res.json(
+    await platformAdminService.addUserToOrganization(toUuid(req.params.orgId), body.email, {
+      name: body.name,
+      role: body.role,
+    })
+  );
+});
+
 const handleCreateChatSession = asyncHandler(async (req, res) => {
   const body = req.body as CreateChatSessionRequest;
+  await projectAccessService.assertCanAccessProject(
+    body.projectId,
+    projectAccessFromRequest(req)
+  );
   res.json(await chatService.createSession(body.projectId, req.user));
 });
 
@@ -443,6 +547,31 @@ async function createApp(): Promise<Express> {
     handleAuthOnboardingComplete
   );
 
+  app.get(
+    "/api/platform/organizations",
+    requireAuthenticatedRequest,
+    requirePlatformOperator,
+    handleListPlatformOrganizations
+  );
+  app.post(
+    "/api/platform/organizations",
+    requireAuthenticatedRequest,
+    requirePlatformOperator,
+    handleCreatePlatformOrganization
+  );
+  app.get(
+    "/api/platform/organizations/:orgId/users",
+    requireAuthenticatedRequest,
+    requirePlatformOperator,
+    handleListPlatformOrgUsers
+  );
+  app.post(
+    "/api/platform/organizations/:orgId/users",
+    requireAuthenticatedRequest,
+    requirePlatformOperator,
+    handleAddPlatformOrgUser
+  );
+
   // OneDrive
   app.get(
     "/api/onedrive/connect/start",
@@ -460,9 +589,24 @@ async function createApp(): Promise<Express> {
   // Projects
   app.get("/api/projects", requireAuthenticatedRequest, handleGetProjects);
   app.post("/api/projects", requireAuthenticatedRequest, handleCreateProject);
+  app.get(
+    "/api/projects/:id/members",
+    requireAuthenticatedRequest,
+    handleGetProjectMembers
+  );
+  app.post(
+    "/api/projects/:id/members",
+    requireAuthenticatedRequest,
+    handleAddProjectMember
+  );
+  app.delete(
+    "/api/projects/:id/members/:userId",
+    requireAuthenticatedRequest,
+    handleRemoveProjectMember
+  );
   app.patch("/api/projects/:id", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectAccessService.assertCanManageMembers(projectId, projectAccessFromRequest(req));
 
     const body = req.body as UpdateProjectFolderRequest;
     const nextFolderId = body.onedriveFolderId?.trim();
@@ -521,7 +665,7 @@ async function createApp(): Promise<Express> {
       : undefined;
 
     const projectId = toUuid(req.params.id);
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
 
     const response = await projectService.listProjectFiles(projectId, {
       page,
@@ -536,7 +680,7 @@ async function createApp(): Promise<Express> {
     const projectId = toUuid(req.params.id);
     const fileId = toUuid(req.params.fileId);
 
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
 
     const file = await projectService.getProjectFileById(projectId, fileId);
     if (!file) {
@@ -618,7 +762,7 @@ async function createApp(): Promise<Express> {
       ? Math.floor(Number(pageNumberRaw))
       : undefined;
 
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const file = await projectService.getProjectFileById(projectId, fileId);
     if (!file) {
       res.status(404).json({ error: "file_not_found", message: "Project file not found" });
@@ -632,7 +776,7 @@ async function createApp(): Promise<Express> {
     const projectId = toUuid(req.params.id);
     const fileId = toUuid(req.params.fileId);
 
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const file = await projectService.getProjectFileById(projectId, fileId);
     if (!file) {
       res.status(404).json({ error: "file_not_found", message: "Project file not found" });
@@ -673,7 +817,7 @@ async function createApp(): Promise<Express> {
     const fileId = toUuid(req.params.fileId);
     const markupId = toUuid(req.params.markupId);
 
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const file = await projectService.getProjectFileById(projectId, fileId);
     if (!file) {
       res.status(404).json({ error: "file_not_found", message: "Project file not found" });
@@ -714,7 +858,7 @@ async function createApp(): Promise<Express> {
     const fileId = toUuid(req.params.fileId);
     const markupId = toUuid(req.params.markupId);
 
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const file = await projectService.getProjectFileById(projectId, fileId);
     if (!file) {
       res.status(404).json({ error: "file_not_found", message: "Project file not found" });
@@ -734,7 +878,7 @@ async function createApp(): Promise<Express> {
     const fileId = toUuid(req.params.fileId);
     const format = typeof req.query.format === "string" ? req.query.format.toLowerCase() : "csv";
 
-    const project = await projectService.getProjectOrThrow(projectId, req.orgId);
+    const project = await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const file = await projectService.getProjectFileById(projectId, fileId);
     if (!file) {
       res.status(404).json({ error: "file_not_found", message: "Project file not found" });
@@ -772,7 +916,7 @@ async function createApp(): Promise<Express> {
     const projectId = toUuid(req.params.id);
     const fileId = toUuid(req.params.fileId);
 
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const file = await projectService.getProjectFileById(projectId, fileId);
     if (!file) {
       res.status(404).json({ error: "file_not_found", message: "Project file not found" });
@@ -854,22 +998,22 @@ async function createApp(): Promise<Express> {
 
   app.get("/api/projects/:id/indexing/progress", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     res.json(await indexingService.getProjectIndexingProgress(projectId));
   }));
   app.get("/api/projects/:id/sync/progress", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     res.json(syncService.getProjectSyncProgress(projectId));
   }));
   app.get("/api/projects/:id/chunks", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     res.json({ chunks: await projectService.listProjectChunks(projectId) });
   }));
   app.get("/api/projects/:id/retrieval/preview", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const query = typeof req.query.q === "string" ? req.query.q : "";
 
     const topK = typeof req.query.topK === "string" ? Number(req.query.topK) : undefined;
@@ -900,7 +1044,7 @@ async function createApp(): Promise<Express> {
   // Body: { query, topK?, minRelevance?, category?, tags?, includeChunks? }
   app.post("/api/projects/:id/search", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const body = req.body as {
       query?: string;
       topK?: number;
@@ -927,14 +1071,14 @@ async function createApp(): Promise<Express> {
   // Project context snapshot: GET /api/projects/:id/context
   app.get("/api/projects/:id/context", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     res.json(await retrievalService.getProjectContext(projectId));
   }));
 
   // Suggestions: GET /api/projects/:id/suggestions?q=optional_current_query
   app.get("/api/projects/:id/suggestions", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const currentQuery = typeof req.query.q === "string" ? req.query.q : undefined;
     res.json({ suggestions: await retrievalService.getSuggestions(projectId, currentQuery) });
   }));
@@ -949,7 +1093,7 @@ async function createApp(): Promise<Express> {
       res.status(400).json({ error: "projectId query param is required" });
       return;
     }
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const doc = await retrievalService.getDocumentDetail(fileId, projectId);
     if (!doc) {
       res.status(404).json({ error: "document_not_found" });
@@ -961,7 +1105,7 @@ async function createApp(): Promise<Express> {
   // Document relationships: POST /api/projects/:id/relationships/build
   app.post("/api/projects/:id/relationships/build", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
-    await projectService.getProjectOrThrow(projectId, req.orgId);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
     const result = await documentRelationshipService.buildRelationships(projectId);
     res.json(result);
   }));

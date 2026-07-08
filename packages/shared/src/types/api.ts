@@ -13,6 +13,8 @@ import type {
   OneDriveStatus,
   ProjectFeature,
   Feature,
+  UserRole,
+  ProjectMemberRole,
 } from "./entities";
 
 // ================================
@@ -46,6 +48,10 @@ export interface AuthMeResponse {
   organization: {
     id: UUID;
     name: string;
+  };
+  capabilities?: {
+    isPlatformOperator: boolean;
+    inviteOnlyAuth: boolean;
   };
 }
 
@@ -109,6 +115,80 @@ export interface OneDriveBrowseResponse {
 
 export interface ProjectListResponse {
   projects: Project[];
+}
+
+export interface ProjectMember {
+  userId: UUID;
+  email: string;
+  name: string;
+  orgRole: UserRole;
+  projectRole: ProjectMemberRole;
+  createdAt: Date;
+}
+
+export interface ProjectMembersResponse {
+  projectId: UUID;
+  members: ProjectMember[];
+  currentUserProjectRole?: ProjectMemberRole;
+  canManageMembers: boolean;
+  canPromoteOrgAdmin?: boolean;
+}
+
+export interface AddProjectMemberRequest {
+  email: string;
+  projectRole?: ProjectMemberRole;
+  /** Org power users only: also grant org admin when onboarding a project lead. */
+  promoteToOrgAdmin?: boolean;
+}
+
+export interface AddProjectMemberResponse {
+  member: ProjectMember;
+}
+
+export interface PlatformOrganization {
+  id: UUID;
+  name: string;
+  onedriveTenantId?: string;
+  createdAt: Date;
+}
+
+export interface PlatformOrganizationsResponse {
+  organizations: PlatformOrganization[];
+}
+
+export interface CreatePlatformOrganizationRequest {
+  name: string;
+  onedriveTenantId?: string;
+}
+
+export interface CreatePlatformOrganizationResponse {
+  organization: PlatformOrganization;
+}
+
+export interface PlatformOrgUser {
+  id: UUID;
+  email: string;
+  name: string;
+  role: UserRole;
+  createdAt: Date;
+}
+
+export interface PlatformOrgUsersResponse {
+  users: PlatformOrgUser[];
+}
+
+export interface AddPlatformOrgUserRequest {
+  email: string;
+  name?: string;
+  role?: UserRole;
+}
+
+export interface AddPlatformOrgUserResponse {
+  user: PlatformOrgUser & { orgId: UUID };
+  organization: {
+    id: UUID;
+    name: string;
+  };
 }
 
 export interface CreateProjectRequest {

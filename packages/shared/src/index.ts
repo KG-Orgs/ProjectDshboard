@@ -16,6 +16,7 @@ export const API_VERSION = "v1";
 export type {
   UUID,
   UserRole,
+  ProjectMemberRole,
   DocumentCategory,
   IndexStatus,
   ProcessingMode,
@@ -49,6 +50,18 @@ export type {
   OneDriveBrowseItem,
   OneDriveBrowseResponse,
   ProjectListResponse,
+  ProjectMember,
+  ProjectMembersResponse,
+  AddProjectMemberRequest,
+  AddProjectMemberResponse,
+  PlatformOrganization,
+  PlatformOrganizationsResponse,
+  CreatePlatformOrganizationRequest,
+  CreatePlatformOrganizationResponse,
+  PlatformOrgUser,
+  PlatformOrgUsersResponse,
+  AddPlatformOrgUserRequest,
+  AddPlatformOrgUserResponse,
   CreateProjectRequest,
   CreateProjectResponse,
   UpdateProjectFolderRequest,
@@ -76,6 +89,16 @@ export type {
   ErrorResponse,
   AgentAction,
 } from "./types/api";
+
+// ================================
+// AUTH HELPERS
+// ================================
+export { isOrgPowerUser } from "./auth/roles";
+export {
+  isPlatformOperatorEmail,
+  isInviteOnlyAuth,
+  parsePlatformOperatorEmails,
+} from "./auth/platform";
 
 // ================================
 // API CLIENT

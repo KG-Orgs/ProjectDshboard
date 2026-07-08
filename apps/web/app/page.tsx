@@ -1,10 +1,11 @@
 ﻿'use client';
 
-import { useAuthStore } from '@contractor/shared';
+import { useAuthStore, isOrgPowerUser } from '@contractor/shared';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import OnboardingModal from '../components/OnboardingModal';
+import ProjectMembersPanel from '../components/ProjectMembersPanel';
 import { shouldAutoShowOnboarding } from '../lib/onboarding';
 import './page.css';
 
@@ -12,6 +13,7 @@ interface HomeProject {
   id: string;
   name: string;
   onedriveFolderId?: string;
+  projectRole?: 'admin' | 'member';
 }
 
 interface OneDriveBrowseItem {
@@ -169,7 +171,7 @@ function formatFileSearchStatus(status: FileInventoryItem['indexStatus']): strin
 }
 
 export default function Home() {
-  const { isAuthenticated, user, hydrate, logout, isLoading, error } = useAuthStore();
+  const { isAuthenticated, user, capabilities, hydrate, logout, isLoading, error } = useAuthStore();
   const router = useRouter();
   const oneDriveMessageFromUrl =
     typeof window === 'undefined'
@@ -979,10 +981,17 @@ export default function Home() {
   }, [loadOnboardingData, oneDriveFolders, selectedMainFolderId, handleRunManualSync]);
 
   const activeProject = projects.find((p) => p.id === selectedProjectId) ?? null;
+  const isPowerUser = isOrgPowerUser(user?.role);
   const needsOneDrive = !onboardingLoading && oneDriveStatus !== null && !oneDriveStatus.connected;
-  const needsProject = !onboardingLoading && oneDriveStatus?.connected === true && projects.length === 0;
+  const needsProject =
+    isPowerUser &&
+    !onboardingLoading &&
+    oneDriveStatus?.connected === true &&
+    projects.length === 0;
+  const awaitingProjectAccess =
+    !isPowerUser && !onboardingLoading && oneDriveStatus?.connected === true && projects.length === 0;
   const onboardingStep = needsOneDrive ? 1 : needsProject ? 2 : 0;
-  const isOnboarding = onboardingStep > 0;
+  const isOnboarding = onboardingStep > 0 || awaitingProjectAccess;
 
   useEffect(() => {
     if (!isAuthenticated || isLoading || onboardingLoading || isOnboarding) return;
@@ -1039,6 +1048,11 @@ export default function Home() {
           >
             Take tour
           </button>
+        ) : null}
+        {capabilities?.isPlatformOperator ? (
+          <Link href="/admin" className="dash-btn-secondary" style={{ fontSize: '12px', padding: '7px 12px', textDecoration: 'none' }}>
+            Platform Admin
+          </Link>
         ) : null}
         {!isOnboarding && selectedProjectId ? (
           <button type="button" onClick={handleOpenAiChat} className="dash-btn-primary">
@@ -1193,6 +1207,17 @@ export default function Home() {
                 {oneDriveFolderError ? (
                   <p style={{ marginTop: '12px', fontSize: '13px', color: '#d83b01' }}>{oneDriveFolderError}</p>
                 ) : null}
+              </div>
+            ) : null}
+
+            {awaitingProjectAccess ? (
+              <div style={{ ...sty.card, padding: '40px', maxWidth: '580px', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '10px' }}>
+                  Waiting for project access
+                </h2>
+                <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.7' }}>
+                  Your account is connected, but no projects have been assigned yet. Ask your organization operator to add you to a project.
+                </p>
               </div>
             ) : null}
 
@@ -1363,7 +1388,8 @@ export default function Home() {
                 ) : null}
               </div>
 
-              {/* Add project */}
+              {/* Add project — org operators only */}
+              {isPowerUser ? (
               <details>
                 <summary style={{ fontSize: '13px', color: '#6b7280', cursor: 'pointer', fontWeight: 500, userSelect: 'none' }}>
                   + Add another project
@@ -1386,7 +1412,10 @@ export default function Home() {
                   </button>
                 </form>
               </details>
+              ) : null}
             </div>
+
+            <ProjectMembersPanel projectId={selectedProjectId} />
 
             {/* Project Files */}
             {projectFilesTotal > 0 ? (

@@ -48,6 +48,7 @@ export interface AppEnv {
   retrievalRerankEnabled: boolean;
   retrievalRerankTopN: number;
   retrievalRerankProvider: string;
+  platformOperatorEmails: string[];
 }
 
 let cachedEnv: AppEnv | null = null;
@@ -191,6 +192,10 @@ export function getEnv(): AppEnv {
     retrievalRerankEnabled: parseBooleanFlag(process.env.RETRIEVAL_RERANK_ENABLED, false),
     retrievalRerankTopN: Number.isNaN(retrievalRerankTopN) || retrievalRerankTopN < 1 ? 20 : retrievalRerankTopN,
     retrievalRerankProvider: process.env.RETRIEVAL_RERANK_PROVIDER ?? "none",
+    platformOperatorEmails: (process.env.PLATFORM_OPERATOR_EMAILS ?? "")
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
   };
 
   return cachedEnv;

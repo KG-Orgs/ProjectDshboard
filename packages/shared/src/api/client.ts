@@ -15,6 +15,10 @@ import type {
   OneDriveSyncResponse,
   OneDriveBrowseResponse,
   ProjectListResponse,
+  ProjectMember,
+  ProjectMembersResponse,
+  AddProjectMemberRequest,
+  AddProjectMemberResponse,
   CreateProjectRequest,
   CreateProjectResponse,
   UpdateProjectFolderRequest,
@@ -212,6 +216,23 @@ export class ApiClient {
 
   async getProject(projectId: UUID): Promise<ProjectDetailsResponse> {
     return this.request<ProjectDetailsResponse>("GET", `/api/projects/${projectId}`);
+  }
+
+  async getProjectMembers(projectId: UUID): Promise<ProjectMembersResponse> {
+    return this.request<ProjectMembersResponse>("GET", `/api/projects/${projectId}/members`);
+  }
+
+  async addProjectMember(
+    projectId: UUID,
+    req: AddProjectMemberRequest
+  ): Promise<AddProjectMemberResponse> {
+    return this.request<AddProjectMemberResponse>("POST", `/api/projects/${projectId}/members`, {
+      body: req,
+    });
+  }
+
+  async removeProjectMember(projectId: UUID, userId: UUID): Promise<void> {
+    await this.request<void>("DELETE", `/api/projects/${projectId}/members/${userId}`);
   }
 
   async getProjectFiles(req: ProjectFilesRequest): Promise<ProjectFilesResponse> {

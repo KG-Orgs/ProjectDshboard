@@ -14,11 +14,17 @@ import {
   fileChunks,
   fileRecords,
   getDbIfInitialized,
+  projectMembers,
   projects,
   syncRuns,
 } from "../db";
 import { AppError } from "../lib/errors";
 import { toUuid } from "./service-types";
+import {
+  isOrgWideProjectAdmin,
+  projectAccessService,
+  type ProjectAccessContext,
+} from "./project-access.service";
 
 const projectsByOrg = new Map<string, CreateProjectResponse["project"][]>();
 const filesByProject = new Map<string, FileRecord[]>();
@@ -179,12 +185,63 @@ function getProjectsForOrg(orgId: string): CreateProjectResponse["project"][] {
 }
 
 export const projectService = {
-  async listProjects(orgId?: string): Promise<ProjectListResponse> {
+  async listProjects(
+    orgId?: string,
+    access?: ProjectAccessContext
+  ): Promise<ProjectListResponse> {
     if (!orgId) {
       return { projects: [] };
     }
 
     const db = getDbIfInitialized();
+    if (db && access) {
+      if (isOrgWideProjectAdmin(access.orgRole)) {
+        const records = await db
+          .select()
+          .from(projects)
+          .where(eq(projects.orgId, toUuid(orgId)))
+          .orderBy(desc(projects.createdAt));
+
+        const memberships = await db
+          .select({
+            projectId: projectMembers.projectId,
+            role: projectMembers.role,
+          })
+          .from(projectMembers)
+          .where(eq(projectMembers.userId, access.userId));
+
+        const roleByProject = new Map(
+          memberships.map((row) => [row.projectId, row.role as "admin" | "member"])
+        );
+
+        return {
+          projects: records.map((record) => ({
+            ...toProjectResponseProject(record),
+            projectRole: roleByProject.get(record.id) ?? "admin",
+          })),
+        };
+      }
+
+      const rows = await db
+        .select({
+          project: projects,
+          projectRole: projectMembers.role,
+        })
+        .from(projectMembers)
+        .innerJoin(projects, eq(projects.id, projectMembers.projectId))
+        .where(
+          and(eq(projectMembers.userId, access.userId), eq(projects.orgId, toUuid(orgId)))
+        )
+        .orderBy(desc(projects.createdAt));
+
+      return {
+        projects: rows.map((row) => ({
+          ...toProjectResponseProject(row.project),
+          projectRole: row.projectRole as "admin" | "member",
+        })),
+      };
+    }
+
     if (db) {
       const records = await db
         .select()
@@ -202,7 +259,8 @@ export const projectService = {
 
   async createProject(
     request: CreateProjectRequest,
-    orgId?: string
+    orgId?: string,
+    creatorUserId?: UUID
   ): Promise<CreateProjectResponse> {
     const resolvedOrgId = orgId ?? "org-123";
     const db = getDbIfInitialized();
@@ -219,6 +277,10 @@ export const projectService = {
           createdAt: new Date(),
         })
         .returning();
+
+      if (creatorUserId) {
+        await projectAccessService.addCreatorAsAdmin(toUuid(record.id), creatorUserId);
+      }
 
       return { project: toProjectResponseProject(record) };
     }
@@ -356,7 +418,11 @@ export const projectService = {
     };
   },
 
-  async getProjectOrThrow(projectId: UUID, orgId?: string): Promise<CreateProjectResponse["project"]> {
+  async getProjectOrThrow(
+    projectId: UUID,
+    orgId?: string,
+    access?: ProjectAccessContext
+  ): Promise<CreateProjectResponse["project"]> {
     const db = getDbIfInitialized();
     if (db) {
       const [record] = await db
@@ -371,6 +437,14 @@ export const projectService = {
 
       if (orgId && record.orgId !== toUuid(orgId)) {
         throw new AppError(403, "forbidden", "Project does not belong to current organization");
+      }
+
+      if (access) {
+        const projectRole = await projectAccessService.assertCanAccessProject(projectId, access);
+        return {
+          ...toProjectResponseProject(record),
+          projectRole,
+        };
       }
 
       return toProjectResponseProject(record);

@@ -26,6 +26,7 @@ import {
   primaryKey,
   index,
   customType,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -199,6 +200,36 @@ export const projects = pgTable(
   },
   (table) => ({
     orgIdIdx: index("idx_projects_org").on(table.orgId),
+  })
+);
+
+// ================================
+// PROJECT MEMBERS (per-project access)
+// ================================
+
+export const projectMembers = pgTable(
+  "project_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    role: text("role", { enum: ["admin", "member"] }).notNull(),
+    invitedBy: uuid("invited_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    projectUserIdx: index("idx_project_members_project").on(table.projectId),
+    userIdx: index("idx_project_members_user").on(table.userId),
+    projectUserUnique: uniqueIndex("uq_project_members_project_user").on(
+      table.projectId,
+      table.userId
+    ),
   })
 );
 
@@ -707,6 +738,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   chatSessions: many(chatSessions),
   authSessions: many(authSessions),
   onedriveConnections: many(onedriveConnections),
+  projectMemberships: many(projectMembers),
 }));
 
 export const authSessionsRelations = relations(authSessions, ({ one }) => ({
@@ -735,11 +767,27 @@ export const projectsRelations = relations(
       references: [organizations.id],
     }),
     fileRecords: many(fileRecords),
+    members: many(projectMembers),
     syncRuns: many(syncRuns),
     chatSessions: many(chatSessions),
     features: many(projectFeatures),
   })
 );
+
+export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectMembers.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectMembers.userId],
+    references: [users.id],
+  }),
+  inviter: one(users, {
+    fields: [projectMembers.invitedBy],
+    references: [users.id],
+  }),
+}));
 
 export const fileRecordsRelations = relations(fileRecords, ({ one }) => ({
   project: one(projects, {

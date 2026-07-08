@@ -7,6 +7,9 @@ export type UUID = string & { readonly __brand: "UUID" };
 
 export type UserRole = "super" | "admin" | "pm" | "member";
 
+/** Per-project access role (distinct from org-level UserRole). */
+export type ProjectMemberRole = "admin" | "member";
+
 /** Full set of construction document categories */
 export type DocumentCategory =
   | "drawing"
@@ -63,6 +66,8 @@ export interface Project {
   onedriveFolderId?: string;
   status: "active" | "archived";
   createdAt: Date;
+  /** Present when listing projects for the current user. */
+  projectRole?: ProjectMemberRole;
 }
 
 /**

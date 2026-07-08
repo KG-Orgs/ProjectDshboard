@@ -65,6 +65,7 @@ In the Render dashboard, for **contractorai-api**:
 | `MICROSOFT_CLIENT_SECRET` | Azure app secret |
 | `OAUTH_REDIRECT_URI` | `https://contractorai-web.onrender.com/auth/callback` |
 | `GEMINI_API_KEY` | Gemini key (or use `OPENAI_API_KEY`) |
+| `PLATFORM_OPERATOR_EMAILS` | `kyle.xu4@gmail.com` (invite-only sign-in; only you can provision orgs) |
 
 `API_BASE_URL` and `WEB_ORIGIN` are wired from service hosts in `render.yaml`. After the first deploy, confirm:
 
@@ -140,6 +141,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 | `API_BASE_URL` | API | Public API URL |
 | `WEB_ORIGIN` | API | Public web URL (CORS) |
 | `GEMINI_API_KEY` or `OPENAI_API_KEY` | API | Chat / RAG |
+| `PLATFORM_OPERATOR_EMAILS` | API | **Required for locked-down deploy.** Your email only, e.g. `kyle.xu4@gmail.com` |
 | `BACKEND_API_URL` | Web | Internal or public API URL |
 | `NEXT_PUBLIC_API_URL` | Web | Public API URL (build-time arg for Docker) |
 
@@ -152,9 +154,41 @@ Demo users need **no env vars**. They only need:
 
 ---
 
-## Adding demo users
+## Platform operator (invite-only production)
 
-Projects are scoped by **organization**. Users in the same org see the same projects and indexed files.
+When `PLATFORM_OPERATOR_EMAILS` is set on the API service:
+
+- **Only listed emails** can sign in without a prior invite (your platform operator account).
+- **Everyone else** must be added to an organization **before** their first Microsoft sign-in.
+- **Only platform operators** can use **Platform Admin** (`/admin`) to create organizations and add users.
+
+### Deploy workflow (Kyle)
+
+1. Deploy to Render with `PLATFORM_OPERATOR_EMAILS=kyle.xu4@gmail.com`.
+2. Apply DB migration `packages/backend/drizzle/0020_project_members.sql` to Neon if not already applied.
+3. Sign in at the deployed web URL.
+4. Open **Platform Admin** → create a customer organization → add users by email with role `admin` or `member`.
+5. Those users sign in with Microsoft; they only see projects they are assigned to on the dashboard.
+
+Org admins (not platform operators) can create projects and manage **project** members. Only you can create orgs and assign users to orgs.
+
+### CLI fallback (bootstrap)
+
+```bash
+cd packages/backend
+pnpm grant:org-access -- --email user@example.com --project-id <uuid> --role admin
+pnpm grant:project-access -- --email user@example.com --role admin
+```
+
+---
+
+## Adding demo users (legacy CLI)
+
+Projects are scoped by **organization**. Users in the same org see projects they are assigned to (`project_members`).
+
+### Preferred: Platform Admin UI
+
+Use `/admin` after setting `PLATFORM_OPERATOR_EMAILS`.
 
 ### Personal Microsoft accounts (e.g. `@gmail.com` via Microsoft)
 
@@ -241,7 +275,8 @@ New users see a **5-step product tour** after sign-in (dashboard) or on first wo
 |---------|-----|
 | Redirect URI mismatch | Azure URI must exactly match `OAUTH_REDIRECT_URI` and deployed web URL + `/auth/callback` |
 | Backend unreachable on login | Check `BACKEND_API_URL` on web service; API health at `/health/api` |
-| Empty projects after login | Run `grant:org-access` for the user's email |
+| Empty projects after login | User needs org + project membership via Platform Admin or `grant:org-access` |
+| Access not granted on sign-in | Add user in Platform Admin before first login when `PLATFORM_OPERATOR_EMAILS` is set |
 | CORS errors | Set `WEB_ORIGIN` to the web URL on the API service |
 | 503 on `/health` | Check `DATABASE_URL`; Neon IP allowlist if enabled |
 

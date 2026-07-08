@@ -3,13 +3,14 @@
  * Stores authenticated user state for the web MVP.
  */
 
-import type { AuthLoginRequest } from "../types/api";
+import type { AuthLoginRequest, AuthMeResponse } from "../types/api";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "../types/entities";
 
 export interface AuthState {
   user: User | null;
+  capabilities: AuthMeResponse["capabilities"] | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -40,6 +41,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      capabilities: null,
       isAuthenticated: false,
       isLoading: true,
       error: null,
@@ -88,7 +90,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const meResponse = await fetchJson<{ user: User }>("/api/auth/me", {
+          const meResponse = await fetchJson<AuthMeResponse>("/api/auth/me", {
             method: "GET",
           });
 
@@ -96,6 +98,7 @@ export const useAuthStore = create<AuthState>()(
             if (meResponse.status === 401) {
               set({
                 user: null,
+                capabilities: null,
                 isAuthenticated: false,
                 isLoading: false,
                 error: null,
@@ -108,6 +111,7 @@ export const useAuthStore = create<AuthState>()(
 
           set({
             user: meResponse.data.user,
+            capabilities: meResponse.data.capabilities ?? null,
             isAuthenticated: true,
             isLoading: false,
             error: null,
@@ -115,6 +119,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           set({
             user: null,
+            capabilities: null,
             isAuthenticated: false,
             isLoading: false,
             error: error instanceof Error ? error.message : "Session expired. Sign in again.",
@@ -138,6 +143,7 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           isAuthenticated: false,
+          capabilities: null,
           error: null,
         });
       },

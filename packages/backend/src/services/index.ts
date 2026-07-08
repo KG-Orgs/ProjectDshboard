@@ -11,6 +11,8 @@ export { startIndexingWorker } from "./indexing-runtime.service";
 export { interpretationService } from "./interpretation.service";
 export { onedriveService } from "./onedrive.service";
 export { projectService } from "./project.service";
+export { projectAccessService } from "./project-access.service";
+export { platformAdminService, isPlatformOperator, assertPlatformOperator } from "./platform-admin.service";
 export { pdfMarkupService } from "./pdf-markup.service";
 export { retrievalService } from "./retrieval.service";
 export { syncService } from "./sync.service";

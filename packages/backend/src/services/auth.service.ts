@@ -22,6 +22,10 @@ import {
   users,
 } from "../db";
 import { AppError } from "../lib/errors";
+import {
+  isInviteOnlyAuthEnabled,
+  isPlatformOperator,
+} from "./platform-admin.service";
 import type { RequestUserContext } from "./service-types";
 import { toUuid } from "./service-types";
 
@@ -133,11 +137,63 @@ function createSession(
   return session;
 }
 
+async function resolveLoginSession(session: AuthSession): Promise<void> {
+  const db = getDbIfInitialized();
+  if (!db) {
+    return;
+  }
+
+  const email = session.user.email.trim().toLowerCase();
+  const [existing] = await db
+    .select({
+      id: users.id,
+      orgId: users.orgId,
+      role: users.role,
+      name: users.name,
+    })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (existing) {
+    session.user.id = toUuid(existing.id);
+    session.user.orgId = toUuid(existing.orgId);
+    session.user.role = existing.role;
+    session.user.name = session.user.name || existing.name;
+    session.organization.id = existing.orgId;
+
+    const [org] = await db
+      .select({ name: organizations.name })
+      .from(organizations)
+      .where(eq(organizations.id, existing.orgId))
+      .limit(1);
+
+    if (org) {
+      session.organization.name = org.name;
+    }
+    return;
+  }
+
+  if (isInviteOnlyAuthEnabled() && !isPlatformOperator(email)) {
+    throw new AppError(
+      403,
+      "access_not_granted",
+      "Your account has not been invited yet. Contact the platform administrator."
+    );
+  }
+
+  if (isPlatformOperator(email)) {
+    session.user.role = "super";
+  }
+}
+
 async function persistSession(session: AuthSession): Promise<void> {
   const db = getDbIfInitialized();
   if (!db) {
     return;
   }
+
+  await resolveLoginSession(session);
 
   await db
     .insert(organizations)
@@ -508,6 +564,9 @@ export const authService = {
     try {
       await persistSession(session);
     } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
       const details = error instanceof Error ? error.message : undefined;
       throw new AppError(
         500,
@@ -608,6 +667,10 @@ export const authService = {
       organization: {
         id: toUuid(user.orgId),
         name: user.orgName,
+      },
+      capabilities: {
+        isPlatformOperator: isPlatformOperator(user.email),
+        inviteOnlyAuth: isInviteOnlyAuthEnabled(),
       },
     };
   },
