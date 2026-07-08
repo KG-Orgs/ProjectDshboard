@@ -36,5 +36,8 @@ COPY --from=builder /app/apps/web/public           ./apps/web/public
 
 USER nextjs
 EXPOSE 3000
+# Render/Docker inject HOSTNAME as the container id, which Next.js tries to bind to
+# and crashes with ENOTFOUND. Force listen on all interfaces.
+ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 CMD ["node", "apps/web/server.js"]
