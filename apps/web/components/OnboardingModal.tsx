@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { useAuthStore } from '@contractor/shared';
+import { useAuthStore, type AuthState } from '@contractor/shared';
 import { completeOnboarding } from '../lib/onboarding';
 import {
   persistUserJobRole,
@@ -148,7 +148,7 @@ const stepVariants = {
 };
 
 export default function OnboardingModal({ open, onOpenChange, projectName }: OnboardingModalProps) {
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setAuth = useAuthStore((state: AuthState) => state.setAuth);
   const steps = useMemo(() => buildSteps(projectName), [projectName]);
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState(1);
