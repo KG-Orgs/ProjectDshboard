@@ -16,6 +16,7 @@ services:
     dockerContext: .
     plan: free
     healthCheckPath: /health/api
+    dockerCommand: node packages/backend/dist/backend/src/server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -29,12 +30,12 @@ services:
         fromService:
           type: web
           name: contractorai-api
-          property: host
+          envVarKey: RENDER_EXTERNAL_URL
       - key: WEB_ORIGIN
         fromService:
           type: web
           name: contractorai-web
-          property: host
+          envVarKey: RENDER_EXTERNAL_URL
       - key: MICROSOFT_CLIENT_ID
         sync: false
       - key: MICROSOFT_CLIENT_SECRET
@@ -63,6 +64,7 @@ services:
     dockerContext: .
     plan: free
     healthCheckPath: /
+    dockerCommand: node apps/web/server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -70,11 +72,11 @@ services:
         fromService:
           type: web
           name: contractorai-api
-          property: host
+          envVarKey: RENDER_EXTERNAL_URL
       - key: NEXT_PUBLIC_API_URL
         fromService:
           type: web
           name: contractorai-api
-          property: host
+          envVarKey: RENDER_EXTERNAL_URL
       - key: NEXT_PUBLIC_APP_NAME
         value: ContractorAI

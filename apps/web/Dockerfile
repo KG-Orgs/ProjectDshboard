@@ -17,8 +17,10 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
 ARG NEXT_PUBLIC_APP_NAME=ContractorAI
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
+# Render injects NEXT_PUBLIC_* at build time; ARG defaults apply when unset.
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME}
+RUN pnpm --filter @contractor/shared build 2>/dev/null || true
 RUN pnpm --filter @contractor/web build
 
 FROM node:20-alpine AS runner

@@ -32,5 +32,8 @@ COPY --from=builder /app/packages/shared                ./packages/shared
 COPY --from=builder /app/node_modules                   ./node_modules
 COPY --from=builder /app/packages/backend/drizzle       ./packages/backend/drizzle
 
+# Compat symlink: Render dashboard start commands often use dist/server.js.
+RUN ln -sf backend/src/server.js packages/backend/dist/server.js
+
 EXPOSE 3001
 CMD ["node", "packages/backend/dist/backend/src/server.js"]
