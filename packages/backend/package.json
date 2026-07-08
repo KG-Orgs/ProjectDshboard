@@ -2,11 +2,11 @@
   "name": "@contractor/backend",
   "version": "0.0.1",
   "description": "ContractorAI Backend API (Node.js + Express)",
-  "main": "dist/server.js",
+  "main": "dist/backend/src/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/backend/src/server.js",
     "db:migrate": "drizzle-kit push:pg --config ./drizzle.config.ts",
     "db:apply-migrations": "bash ./scripts/apply-sql-migrations.sh",
     "db:migrate-to-cloud": "bash ./scripts/migrate-db-to-cloud.sh",

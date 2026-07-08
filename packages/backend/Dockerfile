@@ -33,4 +33,4 @@ COPY --from=builder /app/node_modules                   ./node_modules
 COPY --from=builder /app/packages/backend/drizzle       ./packages/backend/drizzle
 
 EXPOSE 3001
-CMD ["node", "packages/backend/dist/server.js"]
+CMD ["node", "packages/backend/dist/backend/src/server.js"]
