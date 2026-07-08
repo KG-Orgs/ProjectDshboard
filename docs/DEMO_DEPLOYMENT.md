@@ -72,11 +72,27 @@ In the Render dashboard, for **contractorai-api**:
 - `API_BASE_URL` = `https://contractorai-api.onrender.com`
 - `WEB_ORIGIN` = `https://contractorai-web.onrender.com`
 
-### 3. Deploy
+### 3. Database migrations
+
+Apply SQL migrations against Neon **before** first deploy (or after pulling schema changes):
+
+```bash
+cd packages/backend
+# Existing Neon DB (schema already present): baseline once, then apply new files only
+pnpm db:apply-migrations -- --baseline
+pnpm db:apply-migrations
+
+# Fresh empty database: apply all migrations in order
+pnpm db:apply-migrations
+```
+
+Uses `DATABASE_URL` from repo-root `.env`. Tracks applied files in `schema_sql_migrations`. Requires `psql`.
+
+### 4. Deploy
 
 Click **Apply**. First build takes ~5–10 minutes (Docker images for web + API).
 
-### 4. Verify health
+### 5. Verify health
 
 ```bash
 curl https://contractorai-api.onrender.com/health/api
@@ -165,7 +181,7 @@ When `PLATFORM_OPERATOR_EMAILS` is set on the API service:
 ### Deploy workflow (Kyle)
 
 1. Deploy to Render with `PLATFORM_OPERATOR_EMAILS=kyle.xu4@gmail.com`.
-2. Apply DB migration `packages/backend/drizzle/0020_project_members.sql` to Neon if not already applied.
+2. Run `pnpm db:apply-migrations` against Neon (use `--baseline` once if the DB already has the schema).
 3. Sign in at the deployed web URL.
 4. Open **Platform Admin** → create a customer organization → add users by email with role `admin` or `member`.
 5. Those users sign in with Microsoft; they only see projects they are assigned to on the dashboard.
