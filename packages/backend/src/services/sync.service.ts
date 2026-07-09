@@ -434,16 +434,24 @@ export const syncService = {
         finishedAt,
       });
 
-      await projectService.recordSyncRun(projectId, {
-        files: [],
-        scannedFileCount: 0,
-        supportedFileCount: 0,
-        unsupportedFileCount: 0,
-        status: "failed",
-        errorMessage: failureMessage,
-        startedAt,
-        finishedAt,
-      });
+      // Wrap in its own try/catch — a DB error here must not re-surface the
+      // original sync error (which could be AppError(502)) to the HTTP layer.
+      try {
+        await projectService.recordSyncRun(projectId, {
+          files: [],
+          scannedFileCount: 0,
+          supportedFileCount: 0,
+          unsupportedFileCount: 0,
+          status: "failed",
+          errorMessage: failureMessage,
+          startedAt,
+          finishedAt,
+        });
+      } catch (recordError) {
+        // Log but do not rethrow — sync result is already captured in memory.
+        const { logger } = await import("../lib/logger");
+        logger.error("sync.recordSyncRun.failed", recordError instanceof Error ? recordError : new Error(String(recordError)), { projectId });
+      }
 
       return {
         syncStarted: false,

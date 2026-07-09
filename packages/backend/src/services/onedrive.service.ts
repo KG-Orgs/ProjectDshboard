@@ -25,8 +25,8 @@ import { eq } from "drizzle-orm";
 const ONEDRIVE_SCOPES = ["offline_access", "Files.Read"] as const;
 const STATE_TTL_MS = 1000 * 60 * 10;
 const GRAPH_RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
-const GRAPH_MAX_ATTEMPTS = 4;
-const GRAPH_BASE_DELAY_MS = 600;
+const GRAPH_MAX_ATTEMPTS = 6;
+const GRAPH_BASE_DELAY_MS = 800;
 
 interface OneDriveConnection {
   id?: string;
