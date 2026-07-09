@@ -65,7 +65,7 @@ In the Render dashboard, for **contractorai-api**:
 | `MICROSOFT_CLIENT_SECRET` | Azure app secret |
 | `OAUTH_REDIRECT_URI` | `https://contractorai-web.onrender.com/auth/callback` |
 | `GEMINI_API_KEY` | Gemini key (or use `OPENAI_API_KEY`) |
-| `PLATFORM_OPERATOR_EMAILS` | `kyle.xu4@gmail.com` (invite-only sign-in; only you can provision orgs) |
+| `PLATFORM_OPERATOR_EMAILS` | `kyle.xu4@gmail.com` (invite-only sign-in; platform operators can use `/admin`). Add `,georgegao1997@gmail.com` only if George needs Platform Admin too. |
 
 `API_BASE_URL` and `WEB_ORIGIN` are wired from service hosts in `render.yaml`. After the first deploy, confirm:
 
@@ -157,16 +157,18 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 | `API_BASE_URL` | API | Public API URL |
 | `WEB_ORIGIN` | API | Public web URL (CORS) |
 | `GEMINI_API_KEY` or `OPENAI_API_KEY` | API | Chat / RAG |
-| `PLATFORM_OPERATOR_EMAILS` | API | **Required for locked-down deploy.** Your email only, e.g. `kyle.xu4@gmail.com` |
+| `PLATFORM_OPERATOR_EMAILS` | API | **Required for locked-down deploy.** Comma-separated platform operators, e.g. `kyle.xu4@gmail.com` or `kyle.xu4@gmail.com,georgegao1997@gmail.com` |
 | `BACKEND_API_URL` | Web | Internal or public API URL |
 | `NEXT_PUBLIC_API_URL` | Web | Public API URL (build-time arg for Docker) |
 
 ### Demo users (George, etc.)
 
-Demo users need **no env vars**. They only need:
+Demo users need **no env vars** unless they should use Platform Admin (`/admin`). They only need:
 
 1. The demo URL
 2. A Microsoft account Kyle has granted org access (see below)
+
+**George (`georgegao1997@gmail.com`)** is provisioned as **org admin** on the shared `gmail.com` org and **project admin** on MLJ-017. He can sign in, create projects, and manage project members. To also let him provision orgs via `/admin`, add his email to `PLATFORM_OPERATOR_EMAILS` on Render (see above).
 
 ---
 
@@ -216,7 +218,8 @@ After the user signs in once (or if you know their email), run from a machine wi
 
 ```bash
 cd packages/backend
-pnpm grant:org-access -- --email georgegao1997@gmail.com
+pnpm grant:org-access -- --email georgegao1997@gmail.com --role admin
+pnpm grant:project-access -- --email georgegao1997@gmail.com --role admin
 ```
 
 Options:
@@ -224,6 +227,9 @@ Options:
 ```bash
 # Default: grant access to MLJ-017 project org
 pnpm grant:org-access -- --email user@example.com
+
+# Org admin (create projects, manage project members)
+pnpm grant:org-access -- --email user@example.com --role admin
 
 # Specific project
 pnpm grant:org-access -- --email user@example.com --project-id 731cfd5d-e647-4551-89e7-0a3cc4915115
