@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getPublicOrigin, publicUrl } from '../../../lib/request-origin';
 
 const APP_SESSION_COOKIE = 'app_session';
 export const dynamic = 'force-dynamic';
@@ -8,7 +9,7 @@ function getBackendBaseUrl(): string {
 }
 
 function buildLoginErrorRedirect(request: NextRequest, error: string, message: string): URL {
-  const url = new URL('/login', request.url);
+  const url = publicUrl(request, '/login');
   url.searchParams.set('error', error);
   url.searchParams.set('message', message);
   return url;
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const redirectUri = `${request.nextUrl.origin}/auth/callback`;
+  const redirectUri = `${getPublicOrigin(request)}/auth/callback`;
 
   try {
     const response = await fetch(`${getBackendBaseUrl()}/api/auth/login`, {
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const nextResponse = NextResponse.redirect(new URL('/', request.url), 302);
+    const nextResponse = NextResponse.redirect(publicUrl(request, '/'), 302);
     nextResponse.cookies.set(APP_SESSION_COOKIE, data.accessToken, {
       httpOnly: true,
       sameSite: 'lax',

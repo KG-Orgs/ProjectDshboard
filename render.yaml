@@ -82,3 +82,13 @@ services:
           envVarKey: RENDER_EXTERNAL_URL
       - key: NEXT_PUBLIC_APP_NAME
         value: ContractorAI
+      - key: NEXT_PUBLIC_APP_URL
+        fromService:
+          type: web
+          name: contractorai-web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: WEB_ORIGIN
+        fromService:
+          type: web
+          name: contractorai-web
+          envVarKey: RENDER_EXTERNAL_URL

@@ -128,6 +128,11 @@ export function getEnv(): AppEnv {
     process.env.DEEPSEEK_CHAT_ENDPOINT ??
     "https://api.openai.com/v1/chat/completions";
 
+  const webOrigin = (process.env.WEB_ORIGIN ?? process.env.CORS_ORIGIN ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)[0];
+
   cachedEnv = {
     nodeEnv,
     port,
@@ -138,7 +143,8 @@ export function getEnv(): AppEnv {
     microsoftClientSecret: process.env.MICROSOFT_CLIENT_SECRET,
     microsoftTenantId: process.env.MICROSOFT_TENANT_ID,
     oauthRedirectUri:
-      process.env.OAUTH_REDIRECT_URI ?? "http://localhost:3000/auth/callback",
+      process.env.OAUTH_REDIRECT_URI ??
+      (webOrigin ? `${webOrigin.replace(/\/+$/, "")}/auth/callback` : "http://localhost:3000/auth/callback"),
     webOrigins: (process.env.WEB_ORIGIN ?? process.env.CORS_ORIGIN ?? "")
       .split(",")
       .map((origin) => origin.trim())

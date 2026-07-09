@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { publicUrl } from '../../../../lib/request-origin';
 
 const APP_SESSION_COOKIE = 'app_session';
 export const dynamic = 'force-dynamic';
@@ -8,7 +9,7 @@ function getBackendBaseUrl(): string {
 }
 
 function buildLoginErrorRedirect(request: NextRequest, error: string, message: string): URL {
-  const url = new URL('/login', request.url);
+  const url = publicUrl(request, '/login');
   url.searchParams.set('error', error);
   url.searchParams.set('message', message);
   return url;

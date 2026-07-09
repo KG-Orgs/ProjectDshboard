@@ -5,6 +5,7 @@ import { GET, POST } from './route';
 describe('GET /api/auth/login', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it('redirects to Microsoft authorization URL when backend returns 302', async () => {
@@ -60,6 +61,34 @@ describe('GET /api/auth/login', () => {
     expect(location).toContain('/login');
     expect(location).toContain('error=oauth_not_configured');
     expect(location).toContain('message=Microsoft+OAuth+is+not+configured');
+  });
+
+  it('redirects to public login URL when request uses bind address', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://contractorai-web.onrender.com');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        status: 503,
+        headers: {
+          get: () => null,
+        },
+        json: async () => ({
+          error: 'oauth_not_configured',
+          message: 'Microsoft OAuth is not configured',
+        }),
+      })
+    );
+
+    const request = new NextRequest('https://0.0.0.0:10000/api/auth/login', {
+      method: 'GET',
+    });
+
+    const response = await GET(request);
+    const location = response.headers.get('location') ?? '';
+
+    expect(response.status).toBe(302);
+    expect(location).toContain('https://contractorai-web.onrender.com/login');
+    expect(location).not.toContain('0.0.0.0');
   });
 });
 

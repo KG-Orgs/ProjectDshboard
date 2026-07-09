@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getPublicOrigin, publicUrl } from '../../../lib/request-origin';
 
 const APP_SESSION_COOKIE = 'app_session';
 export const dynamic = 'force-dynamic';
@@ -8,7 +9,7 @@ function getBackendBaseUrl(): string {
 }
 
 function buildDashboardRedirect(request: NextRequest, error: string, message: string): URL {
-  const url = new URL('/', request.url);
+  const url = publicUrl(request, '/');
   url.searchParams.set('onedriveError', error);
   url.searchParams.set('onedriveMessage', message);
   return url;
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const redirectUri = `${request.nextUrl.origin}/onedrive/callback`;
+  const redirectUri = `${getPublicOrigin(request)}/onedrive/callback`;
 
   try {
     const response = await fetch(`${getBackendBaseUrl()}/api/onedrive/connect`, {
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.redirect(new URL('/', request.url), 302);
+    return NextResponse.redirect(publicUrl(request, '/'), 302);
   } catch (error) {
     console.error('OneDrive callback exchange error:', error);
     return NextResponse.redirect(
