@@ -1,5 +1,5 @@
 ﻿import { randomUUID } from "node:crypto";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import type {
   CreateProjectRequest,
   CreateProjectResponse,
@@ -170,6 +170,101 @@ function toFileRecord(record: {
     extractedFields: record.extractedFields as Record<string, string | undefined> | undefined,
     priorityScore: record.priorityScore ?? undefined,
   };
+}
+
+type ProjectFilesQuery = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  category?: string;
+  tags?: string[];
+};
+
+function normalizeProjectFilesQuery(query: ProjectFilesQuery): {
+  page: number;
+  pageSize: number;
+  search?: string;
+  category?: string;
+  tags?: string[];
+} {
+  const page = Number.isFinite(query.page) && (query.page ?? 1) > 0 ? Number(query.page) : 1;
+  const pageSize =
+    Number.isFinite(query.pageSize) && (query.pageSize ?? 50) > 0
+      ? Math.min(Number(query.pageSize), 200)
+      : 50;
+  const search = query.search?.trim();
+  const category = query.category?.trim();
+  const tags = query.tags?.map((tag) => tag.trim()).filter(Boolean);
+
+  return {
+    page,
+    pageSize,
+    search: search || undefined,
+    category: category || undefined,
+    tags: tags && tags.length > 0 ? tags : undefined,
+  };
+}
+
+function buildProjectFilesWhere(
+  projectId: UUID,
+  query: ReturnType<typeof normalizeProjectFilesQuery>
+): SQL {
+  const conditions: SQL[] = [eq(fileRecords.projectId, projectId)];
+
+  if (query.search) {
+    const pattern = `%${query.search.replace(/[%_\\]/g, "\\$&")}%`;
+    conditions.push(
+      or(
+        ilike(fileRecords.fileName, pattern),
+        ilike(fileRecords.filePath, pattern)
+      )!
+    );
+  }
+
+  if (query.category) {
+    conditions.push(eq(fileRecords.docCategory, query.category));
+  }
+
+  if (query.tags) {
+    conditions.push(
+      sql`${fileRecords.tags} && ARRAY[${sql.join(
+        query.tags.map((tag) => sql`${tag}`),
+        sql`, `
+      )}]::text[]`
+    );
+  }
+
+  return and(...conditions)!;
+}
+
+function filterInMemoryProjectFiles(
+  records: FileRecord[],
+  query: ReturnType<typeof normalizeProjectFilesQuery>
+): FileRecord[] {
+  const normalizedSearch = query.search?.toLowerCase();
+
+  return records.filter((file) => {
+    if (normalizedSearch) {
+      const haystack = `${file.fileName} ${file.filePath}`.toLowerCase();
+      if (!haystack.includes(normalizedSearch)) {
+        return false;
+      }
+    }
+
+    if (query.category && file.docCategory !== query.category) {
+      return false;
+    }
+
+    if (query.tags && query.tags.length > 0) {
+      const tags = file.tags ?? [];
+      const hasAnyTag = query.tags.some((tag) => tags.includes(tag));
+      if (!hasAnyTag) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 }
 
 function getProjectsForOrg(orgId: string): CreateProjectResponse["project"][] {
@@ -1059,97 +1154,43 @@ export const projectService = {
 
   async listProjectFiles(
     projectId: UUID,
-    query: {
-      page?: number;
-      pageSize?: number;
-      search?: string;
-      category?: string;
-      tags?: string[];
-    }
+    query: ProjectFilesQuery
   ): Promise<ProjectFilesResponse> {
+    const normalizedQuery = normalizeProjectFilesQuery(query);
+    const { page, pageSize } = normalizedQuery;
+    const startIndex = (page - 1) * pageSize;
+
     const db = getDbIfInitialized();
     if (db) {
+      const whereClause = buildProjectFilesWhere(projectId, normalizedQuery);
+
+      const [countRow] = await db
+        .select({ total: sql<number>`count(*)::int` })
+        .from(fileRecords)
+        .where(whereClause);
+
       const records = await db
         .select()
         .from(fileRecords)
-        .where(eq(fileRecords.projectId, projectId));
+        .where(whereClause)
+        .orderBy(asc(fileRecords.filePath), asc(fileRecords.fileName))
+        .limit(pageSize)
+        .offset(startIndex);
 
-      const allFiles = records.map(toFileRecord);
-      const page = Number.isFinite(query.page) && (query.page ?? 1) > 0 ? Number(query.page) : 1;
-      const pageSize =
-        Number.isFinite(query.pageSize) && (query.pageSize ?? 50) > 0
-          ? Math.min(Number(query.pageSize), 200)
-          : 50;
-      const normalizedSearch = query.search?.trim().toLowerCase();
-
-      const filtered = allFiles.filter((file) => {
-        if (normalizedSearch) {
-          const haystack = `${file.fileName} ${file.filePath}`.toLowerCase();
-          if (!haystack.includes(normalizedSearch)) {
-            return false;
-          }
-        }
-
-        if (query.category && file.docCategory !== query.category) {
-          return false;
-        }
-
-        if (query.tags && query.tags.length > 0) {
-          const tags = file.tags ?? [];
-          const hasAnyTag = query.tags.some((tag) => tags.includes(tag));
-          if (!hasAnyTag) {
-            return false;
-          }
-        }
-
-        return true;
-      });
-
-      const startIndex = (page - 1) * pageSize;
-      const files = filtered.slice(startIndex, startIndex + pageSize);
+      const files = records.map(toFileRecord);
+      const total = countRow?.total ?? 0;
 
       return {
         files,
-        total: filtered.length,
+        total,
         page,
         pageSize,
-        hasMore: startIndex + files.length < filtered.length,
+        hasMore: startIndex + files.length < total,
       };
     }
 
-    const page = Number.isFinite(query.page) && (query.page ?? 1) > 0 ? Number(query.page) : 1;
-    const pageSize =
-      Number.isFinite(query.pageSize) && (query.pageSize ?? 50) > 0
-        ? Math.min(Number(query.pageSize), 200)
-        : 50;
-
-    const normalizedSearch = query.search?.trim().toLowerCase();
     const records = filesByProject.get(projectId) ?? [];
-
-    const filtered = records.filter((file) => {
-      if (normalizedSearch) {
-        const haystack = `${file.fileName} ${file.filePath}`.toLowerCase();
-        if (!haystack.includes(normalizedSearch)) {
-          return false;
-        }
-      }
-
-      if (query.category && file.docCategory !== query.category) {
-        return false;
-      }
-
-      if (query.tags && query.tags.length > 0) {
-        const tags = file.tags ?? [];
-        const hasAnyTag = query.tags.some((tag) => tags.includes(tag));
-        if (!hasAnyTag) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    const startIndex = (page - 1) * pageSize;
+    const filtered = filterInMemoryProjectFiles(records, normalizedQuery);
     const files = filtered.slice(startIndex, startIndex + pageSize);
 
     return {
