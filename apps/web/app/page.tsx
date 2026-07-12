@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useAuthStore, isOrgPowerUser } from '@contractor/shared';
 import Link from 'next/link';
@@ -1077,9 +1077,11 @@ export default function Home() {
               : `Welcome back, ${user?.name?.split(' ')[0] || 'there'}`}
           </h1>
           <p>
-            {isLoading
+            {isLoading && isAuthenticated
               ? 'Restoring your session...'
-              : isOnboarding
+              : isLoading
+                ? 'Loading...'
+                : isOnboarding
                 ? "Let's get your project set up. It only takes a minute."
                 : activeProject
                   ? `Project: ${activeProject.name}`

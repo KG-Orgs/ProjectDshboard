@@ -90,12 +90,17 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
 
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15_000);
           const meResponse = await fetchJson<AuthMeResponse>("/api/auth/me", {
             method: "GET",
+            signal: controller.signal,
           });
+          clearTimeout(timeoutId);
 
           if (!meResponse.ok || !meResponse.data?.user) {
             if (meResponse.status === 401) {
+              await useAuthStore.persist.clearStorage();
               set({
                 user: null,
                 capabilities: null,
@@ -117,12 +122,18 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
         } catch (error) {
+          const message =
+            error instanceof Error && error.name === "AbortError"
+              ? "Session restore timed out. Sign in again."
+              : error instanceof Error
+                ? error.message
+                : "Session expired. Sign in again.";
           set({
             user: null,
             capabilities: null,
             isAuthenticated: false,
             isLoading: false,
-            error: error instanceof Error ? error.message : "Session expired. Sign in again.",
+            error: message,
           });
         }
       },

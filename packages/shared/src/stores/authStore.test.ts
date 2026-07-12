@@ -61,6 +61,7 @@ describe('useAuthStore', () => {
     });
     expect(fetch).toHaveBeenCalledWith('/api/auth/me', {
       method: 'GET',
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -100,6 +101,7 @@ describe('useAuthStore', () => {
     expect(useAuthStore.getState()).toMatchObject({
       isAuthenticated: false,
       user: null,
+      isLoading: false,
       error: null,
     });
   });
