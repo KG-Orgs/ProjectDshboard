@@ -12,7 +12,7 @@
  */
 
 import type { ChatInterpretation, SendChatMessageResponse, UUID } from "@contractor/shared";
-import { eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { getEnv } from "../config/env";
 import { embeddingsService } from "./embeddings.service";
 import { featureService } from "./feature.service";
@@ -1509,90 +1509,220 @@ export const retrievalService = {
       return cached.value;
     }
 
-    const filesResponse = await projectService.listProjectFiles(projectId, { page: 1, pageSize: 2000 });
-    const files = filesResponse.files;
+    const db = getDbIfInitialized();
+    let snapshot: ProjectContextSnapshot;
 
-    const total = files.length;
-    const indexed = files.filter((f) => f.indexStatus === "indexed").length;
-    const pending = files.filter((f) => f.indexStatus === "pending" || f.indexStatus === "processing").length;
-    const failed  = files.filter((f) => f.indexStatus === "failed").length;
+    if (db) {
+      const [counts] = await db
+        .select({
+          total: sql<number>`count(*)::int`,
+          indexed: sql<number>`count(*) filter (where ${fileRecords.indexStatus} = 'indexed')::int`,
+          pending: sql<number>`count(*) filter (where ${fileRecords.indexStatus} in ('pending', 'processing'))::int`,
+          failed: sql<number>`count(*) filter (where ${fileRecords.indexStatus} = 'failed')::int`,
+        })
+        .from(fileRecords)
+        .where(eq(fileRecords.projectId, projectId));
 
-    const categoryBreakdown: Record<string, number> = {};
-    for (const f of files.filter((f) => f.indexStatus === "indexed")) {
-      const cat = f.docCategory ?? "unknown";
-      categoryBreakdown[cat] = (categoryBreakdown[cat] ?? 0) + 1;
-    }
+      const categoryRows = await db
+        .select({
+          category: fileRecords.docCategory,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(fileRecords)
+        .where(
+          and(eq(fileRecords.projectId, projectId), eq(fileRecords.indexStatus, "indexed"))
+        )
+        .groupBy(fileRecords.docCategory);
 
-    // Open RFIs (indexed RFI files, not marked approved)
-    const openRfis = files
-      .filter((f) => f.docCategory === "rfi" && f.indexStatus === "indexed")
-      .slice(0, 20)
-      .map((f) => ({
-        fileId: f.id,
-        fileName: f.fileName,
-        rfiNumber: (f.extractedFields as Record<string, string> | undefined)?.rfiNumber,
-        summary: f.summary,
-      }));
+      const categoryBreakdown: Record<string, number> = {};
+      for (const row of categoryRows) {
+        const cat = row.category ?? "unknown";
+        categoryBreakdown[cat] = row.count;
+      }
 
-    // Pending submittals
-    const pendingSubmittals = files
-      .filter((f) => f.docCategory === "submittal" && f.indexStatus === "indexed")
-      .slice(0, 20)
-      .map((f) => {
-        const ef = f.extractedFields as Record<string, string> | undefined;
-        return {
+      const rfiRecords = await db
+        .select()
+        .from(fileRecords)
+        .where(
+          and(
+            eq(fileRecords.projectId, projectId),
+            eq(fileRecords.docCategory, "rfi"),
+            eq(fileRecords.indexStatus, "indexed")
+          )
+        )
+        .limit(20);
+
+      const submittalRecords = await db
+        .select()
+        .from(fileRecords)
+        .where(
+          and(
+            eq(fileRecords.projectId, projectId),
+            eq(fileRecords.docCategory, "submittal"),
+            eq(fileRecords.indexStatus, "indexed")
+          )
+        )
+        .limit(20);
+
+      const changeOrderRecords = await db
+        .select()
+        .from(fileRecords)
+        .where(
+          and(
+            eq(fileRecords.projectId, projectId),
+            eq(fileRecords.docCategory, "change_order"),
+            eq(fileRecords.indexStatus, "indexed")
+          )
+        )
+        .orderBy(desc(fileRecords.updatedAt))
+        .limit(10);
+
+      const recentlyModifiedRecords = await db
+        .select()
+        .from(fileRecords)
+        .where(
+          and(eq(fileRecords.projectId, projectId), sql`${fileRecords.lastSynced} is not null`)
+        )
+        .orderBy(desc(fileRecords.lastSynced))
+        .limit(10);
+
+      const specSectionRows = await db
+        .select({
+          specSection: fileRecords.specSection,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(fileRecords)
+        .where(
+          and(eq(fileRecords.projectId, projectId), sql`${fileRecords.specSection} is not null`)
+        )
+        .groupBy(fileRecords.specSection)
+        .orderBy(desc(sql`count(*)`))
+        .limit(10);
+
+      const total = counts?.total ?? 0;
+      const indexed = counts?.indexed ?? 0;
+      const pending = counts?.pending ?? 0;
+      const failed = counts?.failed ?? 0;
+
+      snapshot = {
+        projectId,
+        generatedAt: new Date(),
+        totalFiles: total,
+        indexedFiles: indexed,
+        pendingFiles: pending,
+        failedFiles: failed,
+        indexingPercent: total === 0 ? 0 : Math.round((indexed / total) * 100),
+        openRfis: rfiRecords.map((f) => ({
           fileId: f.id,
           fileName: f.fileName,
-          submittalNumber: ef?.submittalNumber ?? ef?.submittarNumber,
-          status: ef?.approvalStatus,
-        };
+          rfiNumber: (f.extractedFields as Record<string, string> | undefined)?.rfiNumber,
+          summary: f.summary ?? undefined,
+        })),
+        pendingSubmittals: submittalRecords.map((f) => {
+          const ef = f.extractedFields as Record<string, string> | undefined;
+          return {
+            fileId: f.id,
+            fileName: f.fileName,
+            submittalNumber: ef?.submittalNumber ?? ef?.submittarNumber,
+            status: ef?.approvalStatus,
+          };
+        }),
+        recentChangeOrders: changeOrderRecords.map((f) => ({
+          fileId: f.id,
+          fileName: f.fileName,
+          coNumber: (f.extractedFields as Record<string, string> | undefined)?.changeOrderNumber,
+          summary: f.summary ?? undefined,
+        })),
+        recentlyModifiedFiles: recentlyModifiedRecords.map((f) => ({
+          fileId: f.id,
+          fileName: f.fileName,
+          updatedAt: f.updatedAt,
+        })),
+        categoryBreakdown,
+        topSpecSections: specSectionRows
+          .map((row) => row.specSection)
+          .filter((section): section is string => Boolean(section)),
+      };
+    } else {
+      const filesResponse = await projectService.listProjectFiles(projectId, {
+        page: 1,
+        pageSize: 2000,
       });
+      const files = filesResponse.files;
 
-    // Recent change orders
-    const recentChangeOrders = files
-      .filter((f) => f.docCategory === "change_order" && f.indexStatus === "indexed")
-      .sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0))
-      .slice(0, 10)
-      .map((f) => ({
-        fileId: f.id,
-        fileName: f.fileName,
-        coNumber: (f.extractedFields as Record<string, string> | undefined)?.changeOrderNumber,
-        summary: f.summary,
-      }));
+      const total = filesResponse.total;
+      const indexed = files.filter((f) => f.indexStatus === "indexed").length;
+      const pending = files.filter(
+        (f) => f.indexStatus === "pending" || f.indexStatus === "processing"
+      ).length;
+      const failed = files.filter((f) => f.indexStatus === "failed").length;
 
-    // Recently modified files (last 7 days)
-    const recentlyModifiedFiles = files
-      .filter((f) => f.lastSynced != null)
-      .sort((a, b) => (b.lastSynced?.getTime() ?? 0) - (a.lastSynced?.getTime() ?? 0))
-      .slice(0, 10)
-      .map((f) => ({ fileId: f.id, fileName: f.fileName, updatedAt: f.updatedAt }));
+      const categoryBreakdown: Record<string, number> = {};
+      for (const f of files.filter((f) => f.indexStatus === "indexed")) {
+        const cat = f.docCategory ?? "unknown";
+        categoryBreakdown[cat] = (categoryBreakdown[cat] ?? 0) + 1;
+      }
 
-    // Top spec sections
-    const specSectionCounts = new Map<string, number>();
-    for (const f of files.filter((f) => f.specSection)) {
-      const ss = f.specSection!;
-      specSectionCounts.set(ss, (specSectionCounts.get(ss) ?? 0) + 1);
+      snapshot = {
+        projectId,
+        generatedAt: new Date(),
+        totalFiles: total,
+        indexedFiles: indexed,
+        pendingFiles: pending,
+        failedFiles: failed,
+        indexingPercent: total === 0 ? 0 : Math.round((indexed / total) * 100),
+        openRfis: files
+          .filter((f) => f.docCategory === "rfi" && f.indexStatus === "indexed")
+          .slice(0, 20)
+          .map((f) => ({
+            fileId: f.id,
+            fileName: f.fileName,
+            rfiNumber: (f.extractedFields as Record<string, string> | undefined)?.rfiNumber,
+            summary: f.summary,
+          })),
+        pendingSubmittals: files
+          .filter((f) => f.docCategory === "submittal" && f.indexStatus === "indexed")
+          .slice(0, 20)
+          .map((f) => {
+            const ef = f.extractedFields as Record<string, string> | undefined;
+            return {
+              fileId: f.id,
+              fileName: f.fileName,
+              submittalNumber: ef?.submittalNumber ?? ef?.submittarNumber,
+              status: ef?.approvalStatus,
+            };
+          }),
+        recentChangeOrders: files
+          .filter((f) => f.docCategory === "change_order" && f.indexStatus === "indexed")
+          .sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0))
+          .slice(0, 10)
+          .map((f) => ({
+            fileId: f.id,
+            fileName: f.fileName,
+            coNumber: (f.extractedFields as Record<string, string> | undefined)?.changeOrderNumber,
+            summary: f.summary,
+          })),
+        recentlyModifiedFiles: files
+          .filter((f) => f.lastSynced != null)
+          .sort((a, b) => (b.lastSynced?.getTime() ?? 0) - (a.lastSynced?.getTime() ?? 0))
+          .slice(0, 10)
+          .map((f) => ({ fileId: f.id, fileName: f.fileName, updatedAt: f.updatedAt })),
+        categoryBreakdown,
+        topSpecSections: Array.from(
+          files
+            .filter((f) => f.specSection)
+            .reduce((counts, f) => {
+              const ss = f.specSection!;
+              counts.set(ss, (counts.get(ss) ?? 0) + 1);
+              return counts;
+            }, new Map<string, number>())
+            .entries()
+        )
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([section]) => section),
+      };
     }
-    const topSpecSections = Array.from(specSectionCounts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([s]) => s);
-
-    const snapshot = {
-      projectId,
-      generatedAt: new Date(),
-      totalFiles: total,
-      indexedFiles: indexed,
-      pendingFiles: pending,
-      failedFiles: failed,
-      indexingPercent: total === 0 ? 0 : Math.round((indexed / total) * 100),
-      openRfis,
-      pendingSubmittals,
-      recentChangeOrders,
-      recentlyModifiedFiles,
-      categoryBreakdown,
-      topSpecSections,
-    };
 
     projectContextCache.set(cacheKey, {
       value: snapshot,
@@ -1609,8 +1739,7 @@ export const retrievalService = {
     const db = getDbIfInitialized();
 
     if (!db) {
-      const filesResponse = await projectService.listProjectFiles(projectId, { page: 1, pageSize: 2000 });
-      const file = filesResponse.files.find((f) => f.id === fileId);
+      const file = await projectService.getProjectFileById(projectId, fileId);
       if (!file) return null;
       const chunks = await projectService.listProjectChunks(projectId);
       const fileChunksArr = chunks.filter((c) => c.fileId === fileId);
