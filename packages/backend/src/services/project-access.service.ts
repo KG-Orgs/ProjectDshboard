@@ -342,6 +342,63 @@ export const projectAccessService = {
       );
   },
 
+  /**
+   * Ensures every user in the project's org has a project_members row.
+   * Matches migration 0020 backfill — org admins become project admins, others members.
+   * Safe to call repeatedly (ON CONFLICT DO NOTHING).
+   */
+  async backfillOrgMembersForProject(projectId: UUID): Promise<number> {
+    const db = getDbIfInitialized();
+    if (!db) {
+      return 0;
+    }
+
+    const [project] = await db
+      .select({ orgId: projects.orgId, createdAt: projects.createdAt })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (!project) {
+      throw new AppError(404, "project_not_found", "Project not found");
+    }
+
+    const orgUsers = await db
+      .select({ id: users.id, role: users.role })
+      .from(users)
+      .where(eq(users.orgId, project.orgId));
+
+    if (orgUsers.length === 0) {
+      return 0;
+    }
+
+    let inserted = 0;
+    for (const user of orgUsers) {
+      const projectRole: ProjectMemberRole =
+        user.role === "super" || user.role === "admin" ? "admin" : "member";
+
+      const result = await db
+        .insert(projectMembers)
+        .values({
+          id: toUuid(randomUUID()),
+          projectId,
+          userId: toUuid(user.id),
+          role: projectRole,
+          createdAt: project.createdAt ?? new Date(),
+        })
+        .onConflictDoNothing({
+          target: [projectMembers.projectId, projectMembers.userId],
+        })
+        .returning({ id: projectMembers.id });
+
+      if (result.length > 0) {
+        inserted += 1;
+      }
+    }
+
+    return inserted;
+  },
+
   async grantMembership(
     projectId: UUID,
     userId: UUID,

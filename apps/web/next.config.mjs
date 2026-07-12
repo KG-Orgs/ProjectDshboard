@@ -6,7 +6,7 @@
 const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
-  transpilePackages: ["@contractor/shared"],
+  transpilePackages: ["@contractor/shared", "framer-motion"],
   swcMinify: true,
   experimental: {
     optimizePackageImports: ["@contractor/shared"],

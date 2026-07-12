@@ -41,7 +41,8 @@
     "eval:qwp": "tsx ./scripts/eval-run.ts -- --file ./eval/qwp001-depth-questions.json --report ./eval/qwp001-depth-report.json",
     "link:mlj017-org": "tsx ./scripts/link-mlj017-org.ts",
     "grant:org-access": "tsx ./scripts/grant-org-access.ts",
-    "grant:project-access": "tsx ./scripts/grant-project-access.ts"
+    "grant:project-access": "tsx ./scripts/grant-project-access.ts",
+    "backfill:project-access": "tsx ./scripts/backfill-project-access.ts"
   },
   "dependencies": {
     "@contractor/ai-actions": "workspace:*",

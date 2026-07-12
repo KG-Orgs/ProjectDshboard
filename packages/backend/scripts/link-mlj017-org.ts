@@ -12,6 +12,7 @@ import { config } from "dotenv";
 import { eq } from "drizzle-orm";
 import { getEnv } from "../src/config/env";
 import { initializeDb, organizations, projects } from "../src/db";
+import { projectAccessService } from "../src/services/project-access.service";
 
 const MLJ017_PROJECT_ID = "731cfd5d-e647-4551-89e7-0a3cc4915115";
 
@@ -111,6 +112,11 @@ async function main(): Promise<void> {
     .update(projects)
     .set({ orgId: targetOrgId })
     .where(eq(projects.id, MLJ017_PROJECT_ID));
+
+  const inserted = await projectAccessService.backfillOrgMembersForProject(MLJ017_PROJECT_ID);
+  if (inserted > 0) {
+    console.log(`  backfilled ${inserted} project member row(s) for org users`);
+  }
 
   console.log("MLJ-017 project linked for web chat testing:");
   console.log(`  project: ${project.name}`);
