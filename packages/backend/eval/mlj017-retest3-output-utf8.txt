@@ -1,0 +1,157 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" "C:\\Users\\georg\\ProjectDshboard\\packages\\backend\\eval\\mlj017-retest3-batch-input.json"
+
+[tier2:ask-batch] project: 731cfd5d-e647-4551-89e7-0a3cc4915115
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 7
+
+========================================================================
+[sq01]
+  In CO#15 for the Ave I water service relocation, what is the scope of work and who is performing it?
+========================================================================
+
+--- ANSWER ---
+
+## Myrtle Ave Rebar Mill Certifications
+- (p. 1, 5) Submit Myrtle Ave Rebar Mill Certifications for Architect/Engineer verification of correct product installation on project A37806 ADA Package 6.
+- (p. 2) Leyla Acosta (MLJ Contracting) is the submitter, and Alexander Timber (Tylin.com) is the AE Reviewer.
+- (p. 11) The rebar is #6/19mm A615 Gr 60/AASHTO M31, 20' 0" long, manufactured by Nucor Rebar Fabrication.
+
+--- SOURCES ---
+
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf
+  pages: 6, 8, 11, 1, 2, 4, 5, 7
+
+--- CITATIONS ---
+
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=7 (p. 6) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=9 (p. 8) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=12 (p. 11) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=2 (p. 1) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=3 (p. 2) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=5 (p. 4) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=6 (p. 5) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=8 (p. 7) rel=1.000
+
+--- META --- elapsed=16246ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq65]
+  In J-TRACK-13A-041R00 Material I&T Request for 100-8 6-hole joint bar, what is the inspection item description, what quantity is requested, and what ASTM standard governs the material?
+========================================================================
+
+--- ANSWER ---
+
+## Inspection Item Description
+- (p. 2, 3, 5, 6, 10) The inspection item is a Material I&T Request for a 100-8 (6 Hole) Joint Bar, 36 inches long.
+
+## Quantity Requested
+- (p. 2, 3, 5, 6, 10) The requested quantity is 59 pairs of the 100-8 (6 Hole) Joint Bar.
+
+## ASTM Standard
+- (p. 18) All materials for Section 13A must comply with the New York City Transit AuthorityΓÇÖs Standard Specifications for Track, Infrastructure and Power Distribution Materials.
+
+--- SOURCES ---
+
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf
+  pages: 18, 1, 4, 7, 8, 10, 11, 9
+
+--- CITATIONS ---
+
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf chunk=26 (p. 18) rel=1.000
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf chunk=2 (p. 1) rel=1.000
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf chunk=5 (p. 4) rel=1.000
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf chunk=8 (p. 7) rel=1.000
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf chunk=9 (p. 8) rel=1.000
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf chunk=11 (p. 10) rel=1.000
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf chunk=12 (p. 11) rel=1.000
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf chunk=10 (p. 9) rel=1.000
+
+--- META --- elapsed=10412ms domains=field_ops, documents cacheHit=false
+
+========================================================================
+[sq66]
+  In DRFI-0079 for the Middletown NB Stair Foundation Rebar Interference, what is the rebar and anchor bolt conflict under spec section 05 12 00?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 drfi-0079 - mdt nb stair foundation rebar that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_DRFI-0079 - MDT NB Stair Foundation Rebar Interference.pdf
+
+--- META --- elapsed=895ms domains=documents cacheHit=false
+
+========================================================================
+[sq71]
+  In MYR-002R00 Myrtle Avenue Demo Shield Drawings, what does Section 1 show for the hung shielding system, and what structural steel member sizes and connection details are specified in the enlarged section views?
+========================================================================
+
+--- ANSWER ---
+
+## Section Suggestions
+- I could not verify a single exact section from the current retrieved chunks.
+- Review one of these likely sections: 09.01, 13.33, 2.120, 20.23.08.01, 3.533.
+- If you want exact text, ask: review section <number>.
+
+--- SOURCES ---
+
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf
+
+--- META --- elapsed=5556ms domains=documents cacheHit=false
+
+========================================================================
+[sq73]
+  In RFI-009 for Myrtle Avenue UPS Backup Requirements, what spec section 27 33 01 requirements apply and who submitted this RFI?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 806-rfi-009 - myrtle avenue ups backup requirements that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf
+
+--- META --- elapsed=805ms domains=documents cacheHit=false
+
+========================================================================
+[sq101]
+  In GEN-044R00 List of Competent Persons, which electrical and communications staff from TC Electric are listed with their roles and contact information under spec 01 35 10?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 35 10 gen-044r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-044R00 - FIO - List of Competent Persons.pdf
+
+--- META --- elapsed=788ms domains=documents cacheHit=false
+
+========================================================================
+[sq102]
+  In GEN-044R00 List of Competent Persons under spec 01 35 10, who are the listed heavy civil superintendents and project engineers from MLJ Contracting, with their roles and phone numbers?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 35 10 gen-044r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-044R00 - FIO - List of Competent Persons.pdf
+
+--- META --- elapsed=771ms domains=documents, contracts, field_ops cacheHit=false

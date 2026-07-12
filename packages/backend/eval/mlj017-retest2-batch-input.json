@@ -1,0 +1,20 @@
+{
+  "projectId": "731cfd5d-e647-4551-89e7-0a3cc4915115",
+  "questions": [
+    { "id": "sq01", "query": "In CO#15 for the Ave I water service relocation, what is the scope of work and who is performing it?" },
+    { "id": "sq04", "query": "In the MTACD-MLJTC2-L-0024 sub-contractor approval letter, what subcontractor is approved, what is their contract value, and what scope are they approved to perform?" },
+    { "id": "sq05", "query": "In A37806 Phasing Plan GEN-001R05, what are the major project phases described and their key milestones or constraints?" },
+    { "id": "sq13", "query": "In the MTACD-MLJTC2-L-0017 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?" },
+    { "id": "sq14", "query": "In the MTACD-MLJTC2-L-0028 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?" },
+    { "id": "sq15", "query": "In the MTACD-MLJTC2-L-0049 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?" },
+    { "id": "sq16", "query": "In the MTACD-MLJTC2-L-0083 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?" },
+    { "id": "sq17", "query": "In the MTACD-MLJTC2-L-0093 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?" },
+    { "id": "sq63", "query": "In GEN-006R01 NCR Template & Log, what data does PRO 26-01 require in the NCR Log for tracking nonconforming items?" },
+    { "id": "sq65", "query": "Summarize what is in A-37806_J-TRACK-13A-041R00 Material I&T Request 100-8 (6 Hole) Joint Bar 36 inch (Qty.59 Pairs).pdf" },
+    { "id": "sq66", "query": "In DRFI-0079 for the Middletown NB Stair Foundation Rebar Interference, what is the rebar and anchor bolt conflict under spec section 05 12 00?" },
+    { "id": "sq71", "query": "In drawing MYR-A-444A, what platform level construction details and accessibility upgrade information are shown in the enlarged section views?" },
+    { "id": "sq73", "query": "In RFI-009 for Myrtle Avenue UPS Backup Requirements, what spec section 27 33 01 requirements apply and who submitted this RFI?" },
+    { "id": "sq101", "query": "In GEN-044R00 List of Competent Persons, which electrical and communications staff from TC Electric are listed with their roles and contact information under spec 01 35 10?" },
+    { "id": "sq102", "query": "In GEN-044R00 List of Competent Persons under spec 01 35 10, who are the listed heavy civil superintendents and project engineers from MLJ Contracting, with their roles and phone numbers?" }
+  ]
+}

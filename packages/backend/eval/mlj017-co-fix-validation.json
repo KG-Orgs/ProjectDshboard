@@ -1,0 +1,25 @@
+{
+  "projectId": "731cfd5d-e647-4551-89e7-0a3cc4915115",
+  "questions": [
+    {
+      "id": "fix-01",
+      "query": "What are the contract rates and scope items listed for Island Pavement Cutting Co in their signed subcontract?"
+    },
+    {
+      "id": "fix-02",
+      "query": "What electrical scope of work does TC Electric Co. have under contract for the A-37806 project?"
+    },
+    {
+      "id": "fix-03",
+      "query": "What is the CO for the Burnside Avenue structural steel foundations about, and what work does it cover?"
+    },
+    {
+      "id": "fix-04",
+      "query": "What does CO#15 add to the project scope and what is the contract amount?"
+    },
+    {
+      "id": "fix-05",
+      "query": "What subcontract work categories and unit prices does Island Pavement Cutting Co list in their approved subcontract documents?"
+    }
+  ]
+}

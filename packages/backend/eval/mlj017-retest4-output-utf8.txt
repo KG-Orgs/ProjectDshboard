@@ -1,0 +1,172 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" "C:\\Users\\georg\\ProjectDshboard\\packages\\backend\\eval\\mlj017-retest4-batch-input.json"
+
+[tier2:ask-batch] project: 731cfd5d-e647-4551-89e7-0a3cc4915115
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 6
+
+========================================================================
+[sq01]
+  What does CO#15 specify for the Avenue I water main relocation scope, and which contractor is performing the work?
+========================================================================
+
+--- ANSWER ---
+
+## CO#15 Avenue I Water Main Relocation
+
+- The provided context does not contain information regarding CO#15 or the Avenue I water main relocation scope.
+- The retrieved documents focus on Contracts A-37806 and C-40853 for fire alarm and ADA upgrades at Myrtle Avenue Station.
+- Next step: Please provide documents related to Change Order #15 or the Avenue I water main relocation.
+
+Evidence: a37806 01 30 20 gen-009r00 - fio - (p. 4).
+
+--- SOURCES ---
+
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf
+  pages: 4
+
+--- CITATIONS ---
+
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf chunk=5 (p. 4) rel=1.000
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf chunk=6 (p. 4) rel=1.000
+
+--- META --- elapsed=19542ms domains=contracts, documents cacheHit=false
+
+========================================================================
+[sq66]
+  What structural rebar and anchor bolt interference is documented for the Middletown Avenue NB stair foundation, and what spec section 05 12 00 requirements are in conflict?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 05 12 00 nor-001r00 - orig - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_05 12 00_NOR-001R00 - ORIG - Norwood Ave Anchor Bolt Setting Plan.pdf
+
+--- META --- elapsed=2110ms domains=documents cacheHit=false
+
+========================================================================
+[sq71]
+  In MYR-002R00 Myrtle Avenue Demo Shield Drawings, what construction details and shielding elements are shown in the enlarged section views, and what platform-level steel connections are specified?
+========================================================================
+
+--- ANSWER ---
+
+## Construction Details and Shielding Elements
+- (p. 2) The document specifies that all structural steel work must conform to the American Institute of Steel Construction's Manual of Steel Construction, 14th Edition.
+- (p. 2) All channels must conform to the requirements of ASTM A36.
+- (p. 5, p. 10) The enlarged section views show a C6x13 double channel beam with welded ties, a 1-1/4" plate washer (6"x4") with a double nut, and 4x10 (full) side-by-side platform demo elements.
+- (p. 5) A typical opening detail for existing columns or debris chutes is shown, including a 1-1/2" threaded rod and a No. 6 beam clamp by NPHC at 11'-3" O.C. max.
+- (p. 10) The document specifies (2) - 1/2" diameter carriage bolts for double channel connections.
+
+## Platform-Level Steel Connections
+- (p. 5) Platform-level steel connections include a C6x13 double channel beam with welded ties and a 1-1/4" plate washer (6"x4") with a double nut.
+- (p. 6) The design calculations specify using a 1-1/2" threaded rod and a No. 6 beam clamp for connections.
+- (p. 11, p. 12) Continuous threaded rods (FIG. 755) and swivel hangers (FIG. 744) are specified for hanging pipe support assemblies, with material options including carbon steel (ASTM A36) or stainless steel.
+
+--- SOURCES ---
+
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf
+  pages: 2, 3, 1, 4, 5, 8
+
+--- CITATIONS ---
+
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=4 (p. 2) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=7 (p. 3) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=2 (p. 1) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=5 (p. 2) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=8 (p. 4) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=3 (p. 1) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=9 (p. 5) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=6 (p. 2) rel=1.000
+
+--- META --- elapsed=9103ms domains=documents cacheHit=false
+
+========================================================================
+[sq73]
+  What UPS backup capacity is specified for Myrtle Avenue communications systems in RFI-009, and what spec section 27 33 01 requirements apply?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 806-rfi-009 - myrtle avenue ups backup requirements that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf
+
+--- META --- elapsed=843ms domains=documents cacheHit=false
+
+========================================================================
+[sq101]
+  In PRDC12-012R02 Lead Placard Package for Burnside, what PPE requirements and air monitoring protocols apply to lead paint removal workers?
+========================================================================
+
+--- ANSWER ---
+
+## Section 12.18 Requirements Summary (a37806 prdc12-012r02 - r&r - lead placard package-burnside)
+- Reviewed indexed section evidence from page(s): 33, 34, 35.
+- Key requirements captured from the section:
+
+Evidence: a37806 prdc12-012r02 - r&r - lead placard package-burnside (p. 33, 34, 35).
+
+--- SOURCES ---
+
+- A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burnside.pdf
+  pages: 33, 34, 35
+
+--- CITATIONS ---
+
+- A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burnside.pdf chunk=52 (p. 33) rel=1.000
+- A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burnside.pdf chunk=53 (p. 33) rel=1.000
+- A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burnside.pdf chunk=54 (p. 34) rel=1.000
+- A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burnside.pdf chunk=55 (p. 34) rel=1.000
+- A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burnside.pdf chunk=57 (p. 35) rel=1.000
+- A37806_PRDC12-012R02 - R&R - Lead Placard Package-Burnside.pdf chunk=58 (p. 35) rel=1.000
+
+--- META --- elapsed=1282ms domains=documents cacheHit=false
+
+========================================================================
+[sq102]
+  In PRDC12-019R00 SikaGrout 212 product submittal, what mixing instructions and temperature requirements apply for installing SikaGrout-212 in anchor bolts or base plates?
+========================================================================
+
+--- ANSWER ---
+
+## Section 9.5 Requirements Summary (a37806 prdc12-019r00 - orig - sikagrout 212)
+- Reviewed indexed section evidence from page(s): 16, 17, 18.
+- Key requirements captured from the section:
+- NO OTHER WARRANTIES EXPRESS OR IMPLIED SHALL APPLY INCLUDING ANY WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+### 9.5.2. Warranty
+- KEEP OUT OF REACH OF CHILDREN ΓÇó NOT FOR INTERNAL CONSUMPTION ΓÇó FOR INDUSTRIAL USE ONLY ΓÇó FOR PROFESSIONAL USE ONLY Prior to each use of any product of Sika Corporation, its subsidiaries or affiliates (ΓÇ£SIKAΓÇ¥), the user must always read and follow the warnin...
+- Nothing contained in any SIKA literature or materials relieves the user of the obligation to read and follow the warnings and instructions for each SIKA product as set forth in the current product label, Product Data Sheet and Safety Data Sheet prior to use...
+- SIKA warrants this product for one year from date of installation to be free from manufacturing defects and to meet the technical properties on the current Product Data Sheet if used as directed within the productΓÇÖs shelf life.
+- User determines suitability of product for intended use and assumes all risks.
+- UserΓÇÖs and/or buyerΓÇÖs sole remedy shall be limited to the purchase price or replacement of this product exclusive of any labor costs.
+- NO OTHER WARRANTIES EXPRESS OR IMPLIED SHALL APPLY INCLUDING ANY WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+Evidence: a37806 prdc12-019r00 - orig - sikagrout 212 (p. 16, 17, 18).
+
+--- SOURCES ---
+
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf
+  pages: 16, 17, 18
+
+--- CITATIONS ---
+
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=28 (p. 16) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=29 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=30 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=31 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=32 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=33 (p. 18) rel=1.000
+
+--- META --- elapsed=864ms domains=documents cacheHit=false

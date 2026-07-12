@@ -20,6 +20,7 @@
     "retrieval:eval": "tsx ./scripts/retrieval-eval.ts",
     "tier1:ingest": "tsx ./scripts/tier1-ingest.ts",
     "tier2:index": "tsx ./scripts/tier2-index.ts",
+    "tier2:stream": "tsx ./scripts/tier2-stream-index.ts",
     "tier2:hydrate": "tsx ./scripts/tier2-hydrate.ts",
     "tier2:overnight": "bash ./scripts/tier2-overnight.sh",
     "tier2:supervisor": "bash ./scripts/tier2-supervisor.sh",

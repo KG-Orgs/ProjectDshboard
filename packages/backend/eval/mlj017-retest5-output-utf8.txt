@@ -1,0 +1,155 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" "C:\\Users\\georg\\ProjectDshboard\\packages\\backend\\eval\\mlj017-retest5-batch-input.json"
+
+[tier2:ask-batch] project: 731cfd5d-e647-4551-89e7-0a3cc4915115
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 5
+
+========================================================================
+[sq01]
+  In the A37806 project, what scope of work does the change proposal for Avenue I water service relocation include, and what contractor is identified?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- I need more information to answer your question.
+- The retrieved context only contains details about an IP camera submittal, not a change proposal for Avenue I water service relocation.
+- Please provide the relevant change proposal document or a document that references it.
+
+--- SOURCES ---
+
+- A37806_28 20 00_GEN-004R01 - AAN - i-PRO WV-S35302-F2L IP Camera.pdf
+
+--- META --- elapsed=5820ms domains=contracts cacheHit=false
+
+========================================================================
+[sq66]
+  In RFI-0115 for the Myrtle Avenue Louver Exhaust Face Velocity issue, what exhaust velocity problem is described and what spec section or direction is referenced?
+========================================================================
+
+--- ANSWER ---
+
+## Section 5.8 Requirements Summary (a37806 rfi-0115 - louver exhaust face velocity)
+- Reviewed indexed section evidence from page(s): 1, 2, 3, 4.
+- Key requirements captured from the section:
+- These louvers will use significant interior wall space needed for equipment and conduit, as well as on the exterior walls which causes a large disruption to the exterior finish of the station.
+- Tion to the exterior finish of the station.
+- T.4 is to limit the velocity of exhaust air to occupied areas, and that it is acceptable to size discharge louvers on the exterior walls of the EMRs in accordance with manufacturer specifications and good engineering practice in lieu of the 400 FPM limit.
+
+Evidence: a37806 rfi-0115 - louver exhaust face velocity (p. 1, 2, 3).
+
+--- SOURCES ---
+
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf
+  pages: 1, 2, 3, 4
+
+--- CITATIONS ---
+
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf chunk=2 (p. 1) rel=1.000
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf chunk=3 (p. 1) rel=1.000
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf chunk=4 (p. 2) rel=1.000
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf chunk=5 (p. 3) rel=1.000
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf chunk=7 (p. 4) rel=1.000
+
+--- META --- elapsed=891ms domains=documents cacheHit=false
+
+========================================================================
+[sq73]
+  In RFI-0116 for the Myrtle Avenue PS LAN followup, what telecommunications coordination issue is addressed and what direction was given to the contractor?
+========================================================================
+
+--- ANSWER ---
+
+## Telecommunications Coordination Issue and Direction
+
+- The issue is the required relocation of two PS LAN Access Nodes (AN 097-03 and AN 097-05) and associated fiber optic and power cables at Myrtle Ave. station due to new elevator and stair construction (p. 1, 5).
+- This relocation is complicated because contract W-47032 is currently installing these nodes and cables (p. 5).
+- The contractor (D/B) requested that contract W-47032 perform the relocation to avoid removal, installation, and recommissioning of newly installed cables (p. 5).
+- The direction given was to "Refer to PRDC 7" (p. 5).
+
+--- SOURCES ---
+
+- A37806_RFI_0116 -Followup to RFI 057 Myrtle Ave PS LAN coordination_Complete.pdf
+  pages: 1, 5, 6, 8
+
+--- CITATIONS ---
+
+- A37806_RFI_0116 -Followup to RFI 057 Myrtle Ave PS LAN coordination_Complete.pdf chunk=2 (p. 1) rel=1.000
+- A37806_RFI_0116 -Followup to RFI 057 Myrtle Ave PS LAN coordination_Complete.pdf chunk=8 (p. 5) rel=1.000
+- A37806_RFI_0116 -Followup to RFI 057 Myrtle Ave PS LAN coordination_Complete.pdf chunk=9 (p. 6) rel=1.000
+- A37806_RFI_0116 -Followup to RFI 057 Myrtle Ave PS LAN coordination_Complete.pdf chunk=12 (p. 8) rel=1.000
+
+--- META --- elapsed=6624ms domains=contracts, documents cacheHit=false
+
+========================================================================
+[sq101]
+  In PRDC12-012R02 Lead Placard Package for Burnside, what is the lead paint abatement classification, the project description, and the abatement contractor shown on the cover sheet?
+========================================================================
+
+--- ANSWER ---
+
+## Lead Paint Abatement Classification
+- (p. 18) Lead abatement will involve HEPA vacuuming and using power tools with HEPA-vacuum shroud attachments to remove lead paint from steel surfaces, and demolition of painted materials, all within SSPC Class 3P containment.
+
+## Project Description
+- (p. 1, 2) The project is "Design-Build Services for Accessibility Upgrades - Package 6" for the Burnside Ave Station, involving a Lead Disturbance Placard Package.
+- (p. 171, 172, 173) The project is "Design-Build Services for ADA Upgrades Package 6: Accessibility Upgrades at Five Stations Lead Disturbance Placard Package Burnside Avenue Station."
+
+## Abatement Contractor
+- (p. 171) MLJ Contracting is listed as a contractor for lead disturbance work at Burnside Ave Station.
+- (p. 172) TC Electric is listed as a contractor for lead disturbance work at Burnside Ave Station.
+- (p. 173) J-Track is listed as a contractor for lead disturbance work at Burnside Ave Station.
+
+--- SOURCES ---
+
+- A37806_PRDC12-012R06 - ORIG - Lead Placard Package-Burnside.pdf
+  pages: 7, 2, 18, 69, 74, 79, 171, 172
+
+--- CITATIONS ---
+
+- A37806_PRDC12-012R06 - ORIG - Lead Placard Package-Burnside.pdf chunk=4 (p. 7) rel=1.000
+- A37806_PRDC12-012R06 - ORIG - Lead Placard Package-Burnside.pdf chunk=3 (p. 2) rel=1.000
+- A37806_PRDC12-012R06 - ORIG - Lead Placard Package-Burnside.pdf chunk=16 (p. 18) rel=1.000
+- A37806_PRDC12-012R06 - ORIG - Lead Placard Package-Burnside.pdf chunk=193 (p. 69) rel=1.000
+- A37806_PRDC12-012R06 - ORIG - Lead Placard Package-Burnside.pdf chunk=205 (p. 74) rel=1.000
+- A37806_PRDC12-012R06 - ORIG - Lead Placard Package-Burnside.pdf chunk=217 (p. 79) rel=1.000
+- A37806_PRDC12-012R06 - ORIG - Lead Placard Package-Burnside.pdf chunk=301 (p. 171) rel=1.000
+- A37806_PRDC12-012R06 - ORIG - Lead Placard Package-Burnside.pdf chunk=302 (p. 172) rel=1.000
+
+--- META --- elapsed=15459ms domains=contracts, documents cacheHit=false
+
+========================================================================
+[sq102]
+  In PRDC12-019R00 SikaGrout 212 product submittal, what are the compressive strength values, flowability, and extended working time listed in the product technical data table?
+========================================================================
+
+--- ANSWER ---
+
+## Compressive Strength
+- (p. 16) Compressive strength for SikaGrout 212 varies by consistency (plastic, flowable, fluid) and curing time, ranging from 2,700 psi at 1 day to 7,500 psi at 28 days.
+
+## Flowability
+- (p. 16) Flowability for SikaGrout 212 is 100ΓÇô124% for plastic, 124ΓÇô145% for flowable, and 20ΓÇô40 seconds for fluid consistency.
+
+## Extended Working Time
+- (p. 12, 16) The pot life of SikaGrout 212 is approximately 15 minutes, with lower temperatures extending it and higher temperatures reducing it.
+
+--- SOURCES ---
+
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf
+  pages: 14, 16, 9, 13, 4, 6, 8, 10
+
+--- CITATIONS ---
+
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=23 (p. 14) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=27 (p. 16) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=15 (p. 9) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=21 (p. 13) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=6 (p. 4) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=10 (p. 6) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=14 (p. 8) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=17 (p. 10) rel=1.000
+
+--- META --- elapsed=12628ms domains=documents cacheHit=false

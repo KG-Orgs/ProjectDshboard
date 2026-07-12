@@ -1,0 +1,424 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" "C:\\Users\\georg\\ProjectDshboard\\packages\\backend\\eval\\mlj017-retest2-batch-input.json"
+
+[tier2:ask-batch] project: 731cfd5d-e647-4551-89e7-0a3cc4915115
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 15
+
+========================================================================
+[sq01]
+  In CO#15 for the Ave I water service relocation, what is the scope of work and who is performing it?
+========================================================================
+
+--- ANSWER ---
+
+## Myrtle Ave Rebar Mill Certifications
+- (p. 1, 5) Submit Myrtle Ave Rebar Mill Certifications for Architect/Engineer verification of correct product installation on project A37806 ADA Package 6.
+- (p. 2) Leyla Acosta (MLJ Contracting) is the submitter, and Alexander Timber (Tylin.com) is the AE Reviewer.
+- (p. 11) The rebar is #6/19mm A615 Gr 60/AASHTO M31, 20' 0" long, manufactured by Nucor Rebar Fabrication.
+
+--- SOURCES ---
+
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf
+  pages: 6, 8, 11, 1, 2, 4, 5, 7
+
+--- CITATIONS ---
+
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=7 (p. 6) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=9 (p. 8) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=12 (p. 11) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=2 (p. 1) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=3 (p. 2) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=5 (p. 4) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=6 (p. 5) rel=1.000
+- A37806_33 14 15_MYR-011R00 - RWC - Myrtle Ave Rebar Mill Certifications_PMC comment.pdf chunk=8 (p. 7) rel=1.000
+
+--- META --- elapsed=19210ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq04]
+  In the MTACD-MLJTC2-L-0024 sub-contractor approval letter, what subcontractor is approved, what is their contract value, and what scope are they approved to perform?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval Details
+- (p. 1) The approved subcontractor is 50 States Engineering, Corp. for Land Surveying services, with a subcontract cost of $632,640.00.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0024 Sub-Contractor Approval 50 States Engineering, Corp. $632,640.00.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0024 Sub-Contractor Approval 50 States Engineering, Corp. $632,640.00.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=8601ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq05]
+  In A37806 Phasing Plan GEN-001R05, what are the major project phases described and their key milestones or constraints?
+========================================================================
+
+--- ANSWER ---
+
+## Project Phases and Milestones
+
+- (p. 10) **Investigation and Survey Phase (February 2025 - April 2025):** Conduct site mobilization, investigation, surveys, test pits, borings, and conduit tracing, utilizing existing outages and flagging.
+- (p. 10) **Design Phase (January 2025 - July 2025):** Complete early work design in three submissions (90%, 100%, RFCD) and general packages starting at 60%, with no public closures.
+- (p. 12, p. 4) **Phase 1 (October 2025 - February 2026):** Relocate/install temporary platform utilities, remove canopy rivets, demolish canopy roof and structural steel, and establish ADA boarding areas at local tracks.
+- (p. 13, p. 4) **Phase 2 (February 2026 - August 2026):** Complete remaining platform utility relocation, install barricades around elevator/steel columns, perform partial platform slab demolition, install temporary platforms (if needed), and modify platform structural steel.
+- (p. 4) **Phase 3 (August 2026 - January 2027):** Deliver and install new platforms.
+- (p. 4) **Phase 5 (July 2027 - July 2028):** Drawing shows barricades only on the Jamaica-bound platform.
+
+--- SOURCES ---
+
+- A37806_01 10 30_GEN-001R00 - R&R - Phasing Plan.pdf
+  pages: 4, 25, 1, 2, 3, 9, 12, 13
+
+--- CITATIONS ---
+
+- A37806_01 10 30_GEN-001R00 - R&R - Phasing Plan.pdf chunk=6 (p. 4) rel=1.000
+- A37806_01 10 30_GEN-001R00 - R&R - Phasing Plan.pdf chunk=34 (p. 25) rel=1.000
+- A37806_01 10 30_GEN-001R00 - R&R - Phasing Plan.pdf chunk=2 (p. 1) rel=1.000
+- A37806_01 10 30_GEN-001R00 - R&R - Phasing Plan.pdf chunk=3 (p. 2) rel=1.000
+- A37806_01 10 30_GEN-001R00 - R&R - Phasing Plan.pdf chunk=5 (p. 3) rel=1.000
+- A37806_01 10 30_GEN-001R00 - R&R - Phasing Plan.pdf chunk=7 (p. 4) rel=1.000
+- A37806_01 10 30_GEN-001R00 - R&R - Phasing Plan.pdf chunk=9 (p. 4) rel=1.000
+- A37806_01 10 30_GEN-001R00 - R&R - Phasing Plan.pdf chunk=17 (p. 9) rel=1.000
+
+--- META --- elapsed=6783ms domains=contracts, scheduling, documents cacheHit=false
+
+========================================================================
+[sq13]
+  In the MTACD-MLJTC2-L-0017 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval Details
+- (p. 1) The approved subcontractor is MASE FX, for Progress Photography and Video services, with a subcontract cost of $109,450.00. They must enroll in OCIP before starting work.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0017 Subcontractor Approval MASE FX $109,450.00.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0017 Subcontractor Approval MASE FX $109,450.00.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=7500ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq14]
+  In the MTACD-MLJTC2-L-0028 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval
+- (p. 1) Titanium Linx Consulting, Inc. is approved as a subcontractor for Public Information & Outreach services, limited to labor only, with a subcontract cost of $213,840.00.
+
+--- SOURCES ---
+
+- 2025-03-26 MTACD-MLJTC2-L-0028 Sub-Contractor Approval Titanium Linx Consulting, Inc..pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-26 MTACD-MLJTC2-L-0028 Sub-Contractor Approval Titanium Linx Consulting, Inc..pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=7260ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq15]
+  In the MTACD-MLJTC2-L-0049 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Approved Subcontractor
+- (p. 1) McVac Environmental Services, Inc. is approved as a subcontractor.
+
+## Scope of Work
+- (p. 1) McVac Environmental Services, Inc. will perform vacuum excavation of test pits for subsurface utility engineering.
+
+## Contract Value
+- (p. 1) The subcontract cost for McVac Environmental Services, Inc. is $142,638.73.
+
+--- SOURCES ---
+
+- 2025-06-10 MTACD-MLJTC2-L-0049 Sub-Contractor Approval ΓÇô McVac Environmental Services, Inc..pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-06-10 MTACD-MLJTC2-L-0049 Sub-Contractor Approval ΓÇô McVac Environmental Services, Inc..pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=9031ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq16]
+  In the MTACD-MLJTC2-L-0083 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval
+- (p. 1) Approve American Geophysics Inc. as a subcontractor for underground subsurface investigation, with a subcontract cost of $5,000.00.
+- (p. 1) American Geophysics Inc. must enroll in OCIP and comply with Division 01 Sections 01 35 10 and 01 40 00 before starting work.
+
+--- SOURCES ---
+
+- 2025-08-08 MTACD-MLJTC2-L-0083 - Sub-Contractor Approval ΓÇô American Geophysics Inc..pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-08-08 MTACD-MLJTC2-L-0083 - Sub-Contractor Approval ΓÇô American Geophysics Inc..pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=9585ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq17]
+  In the MTACD-MLJTC2-L-0093 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval
+- (p. 1) Tri-State Civil Construction, LLC is approved as a subcontractor for furnishing and installing micropiles, with a subcontract cost of $1,134,080.00.
+
+--- SOURCES ---
+
+- 2025-08-25 MTACD-MLJTC2-L-0093 - Sub-Contractor Approval ΓÇô Tri-State Civil Construction LLC.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-08-25 MTACD-MLJTC2-L-0093 - Sub-Contractor Approval ΓÇô Tri-State Civil Construction LLC.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=8964ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq63]
+  In GEN-006R01 NCR Template & Log, what data does PRO 26-01 require in the NCR Log for tracking nonconforming items?
+========================================================================
+
+--- ANSWER ---
+
+## NCR Log Data Requirements
+
+- **Date:** Date the NCR was entered into the log (p. 5, 8).
+- **NCR No.:** Unique Non-Conformance Report number (p. 5, 8).
+- **Brief Description of Non-Conformity:** Summary of the non-conforming item (p. 5, 8).
+- **Raised By:** Individual or entity who identified the non-conformity (p. 5, 8).
+- **Date of Issuance:** Date the NCR was formally issued (p. 5, 8).
+- **Location:** Physical location of the non-conforming item (p. 5, 8).
+- **Responsible Party / Subcontractor:** Entity accountable for the non-conformity (p. 5, 8).
+- **Disposition:** Proposed resolution for the non-conformity (p. 5, 8).
+- **Verification:** Confirmation that the disposition was implemented (p. 5, 8).
+- **Initial Status:** Current status of the NCR (p. 5, 8).
+- **Date Closed:** Date the NCR was officially closed (p. 5, 8).
+
+--- SOURCES ---
+
+- A37806_01 40 10_GEN-006R01 - AAN - NCR Template & Log.pdf
+  pages: 1, 2
+
+--- CITATIONS ---
+
+- A37806_01 40 10_GEN-006R01 - AAN - NCR Template & Log.pdf chunk=2 (p. 1) rel=1.000
+- A37806_01 40 10_GEN-006R01 - AAN - NCR Template & Log.pdf chunk=3 (p. 2) rel=1.000
+
+--- META --- elapsed=7072ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq65]
+  Summarize what is in A-37806_J-TRACK-13A-041R00 Material I&T Request 100-8 (6 Hole) Joint Bar 36 inch (Qty.59 Pairs).pdf
+========================================================================
+
+--- ANSWER ---
+
+## Section 3.16 (a-37806 j-track-13a-041r00 - material i&t request 100-8 (6)
+- Exact indexed section text from page(s): 36.
+
+```text
+Specification Section 13A-DB - Tracks - General
+08-02-2022 Contract (Master) 13A-DB - 23
+c. When bolt holes are drilled with a power track drill, a uniform feeding pressure shall be
+maintained until the bit point breaks through the opposite side of the web. Then pressure
+shall be reduced. Forcing the drill may produce a ragged hole that may result in cracks in
+the bolt hole.
+d. After drilling is completed, bolt holes shall be brushed out and inspected. Any burrs or
+chipped edges shall be removed by using a chamfering tool to achieve a smooth edge
+around the entire circumference of the hole.
+e. The distance from the end of a rail to center of the first bolt hole shall not be less than twice
+the diameter of the hole.
+f. The distance between centers of any two holes of the same diameter shall not be less than
+four times the diameter of the hole. In the case of holes of different diameters, the distance
+shall not be less than three and three-quarter times the average diameter of the two holes.
+g. When it is necessary to use a cut rail at a compromise or insulated joint location, the mill-
+or shop-drilled end of the rail shall be placed in the compromise or insulated joint. The bolt
+holes shall be of full diameter and drilled before the joint is applied in accordance with the
+requirements of this Paragraph.
+h. Under no circumstances shall a hole be placed between two holes of a prev
+
+es shall be of full diameter and drilled before the joint is applied in accordance with the
+requirements of this Paragraph.
+h. Under no circumstances shall a hole be placed between two holes of a previous drilling
+pattern.
+i. All rails shall be mechanically cold expanded at the running rail joint bolt holes using the
+RailTec Cold Expansion System by Fatigue Technology Inc. or approved equal.
+3.16 Insulated Track Rail Joints
+a. Insulated joints, of the type specified, shall be installed at the locations shown on the Track
+Drawings. In cases where the installation of the insulated joints is deferred, the Design-
+Builder shall furnish and install suitable temporary end posts of proper thickness so as to
+provide a 7/16-inch space between the ends of the rails to accommodate the installation
+of insulated joints.
+b. New temporary insulated joints and/or rail bonding shall be installed in bolted rail to
+maintain electrical circuits where shown in the Contract Drawings. When the signal system
+is to become operational, the temporary insulated joints and rail bonding shall be removed,
+and the rail adjacent to the temporary insulated joints shall be adjusted or replaced with
+new rail as necessary in order to provide the required opening between rail ends.
+c. Temporary new insulated joints shall replace existing insulated joints in welded rail at
+locations necessary to maintain electrical
+
+sary in order to provide the required opening between rail ends.
+c. Temporary new insulated joints shall replace existing insulated joints in welded rail at
+locations necessary to maintain electrical circuits. When the new signal system is
+operational, the temporary insulated joints, including sections of rails, shall be removed
+and replaced with solid sections of welded rail. The PCEO may designate certain
+additional existing insulated joints in the new track areas to be maintained until the new
+signal system is operational.
+
+Specification Section 13A-DB - Tracks - General
+08-02-2022 Contract (Master) 13A-DB - 24
+d. Insulated joints shall be installed only in the presence of the PCEO. Insulated joints shall
+be assembled in accordance with the Track Drawings and manufacturer's instructions, and
+care shall be exercised not to damage any portion of the insulated joint. At least 2 inches
+of clearance shall be provided between metallic parts of the insulated joints and tie plates
+or other joint bars on adjacent rails. Tie plates shall be installed under rails at insulated
+joints as shown on the Track Drawings. Bolted insulated joints shall be installed as
+described for other bolted joints except where otherwise specified herein. The bolts can
+be easily inserted by hand if rails and joint parts are in the proper position with the bolt
+holes aligned. The Design-Builder shall remove from the rail ends all scale, dirt, burrs,
+lips, and rough edges, clean all metal components of the insulated joint, and clean the rail
+thoroughly with steel wool before installing the insulated joint. All metal parts of the
+insulated joint and adjoining rail surfaces shall be coated with a rust preventative prior to
+assembly: the rust preventative shall be submitted to the PCEO for approval. Nuts shall
+be tightened alternately, keeping the center bolts in the lead. It is important that the base
+of the joint be adjusted frequent
+```
+
+--- SOURCES ---
+
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf
+  pages: 36
+
+--- CITATIONS ---
+
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf chunk=70 (p. 36) rel=1.000
+
+--- META --- elapsed=5019ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq66]
+  In DRFI-0079 for the Middletown NB Stair Foundation Rebar Interference, what is the rebar and anchor bolt conflict under spec section 05 12 00?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 drfi-0079 - mdt nb stair foundation rebar that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_DRFI-0079 - MDT NB Stair Foundation Rebar Interference.pdf
+
+--- META --- elapsed=753ms domains=documents cacheHit=false
+
+========================================================================
+[sq71]
+  In drawing MYR-A-444A, what platform level construction details and accessibility upgrade information are shown in the enlarged section views?
+========================================================================
+
+--- ANSWER ---
+
+## Enlarged Section Views
+- (p. 2) Section 1 shows the Myrtle Avenue hung shielding elevation, details, and notes.
+- (p. 5) Detail A shows a typical opening detail for an existing column or debris chute, including 4x10 blocking, a C6x13 double channel beam with welded ties, and a 1-1/2" threaded rod with a plate washer.
+- (p. 9) Detail A shows a C6x13 double channel beam with welded ties, 1-1/4" plate washer, 4x10 platform demo, 2x6 blocking, and 2x4 to secure blocking.
+
+--- SOURCES ---
+
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf
+  pages: 1, 2, 3, 4, 5
+
+--- CITATIONS ---
+
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=2 (p. 1) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=4 (p. 2) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=3 (p. 1) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=5 (p. 2) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=7 (p. 3) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=8 (p. 4) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=6 (p. 2) rel=1.000
+- A37806_01 10 30_MYR-002R00 - FIO - Demo Shield Drawings.pdf chunk=9 (p. 5) rel=1.000
+
+--- META --- elapsed=6964ms domains=documents cacheHit=false
+
+========================================================================
+[sq73]
+  In RFI-009 for Myrtle Avenue UPS Backup Requirements, what spec section 27 33 01 requirements apply and who submitted this RFI?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 806-rfi-009 - myrtle avenue ups backup requirements that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf
+
+--- META --- elapsed=782ms domains=documents cacheHit=false
+
+========================================================================
+[sq101]
+  In GEN-044R00 List of Competent Persons, which electrical and communications staff from TC Electric are listed with their roles and contact information under spec 01 35 10?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 35 10 gen-044r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-044R00 - FIO - List of Competent Persons.pdf
+
+--- META --- elapsed=759ms domains=documents cacheHit=false
+
+========================================================================
+[sq102]
+  In GEN-044R00 List of Competent Persons under spec 01 35 10, who are the listed heavy civil superintendents and project engineers from MLJ Contracting, with their roles and phone numbers?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 35 10 gen-044r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-044R00 - FIO - List of Competent Persons.pdf
+
+--- META --- elapsed=821ms domains=documents, contracts, field_ops cacheHit=false

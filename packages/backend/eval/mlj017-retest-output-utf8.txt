@@ -1,0 +1,1010 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" "C:\\Users\\georg\\ProjectDshboard\\packages\\backend\\eval\\mlj017-retest-batch-input.json"
+
+[tier2:ask-batch] project: 731cfd5d-e647-4551-89e7-0a3cc4915115
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 30
+
+========================================================================
+[sq01]
+  What is the scope of work in CO#15 for the Ave I water service relocation, and who is performing it?
+========================================================================
+
+--- ANSWER ---
+
+## Fire Alarm Scope of Work
+- (p. 4, 7) AECOM, as the designer for MLJTC2, will install a new fire alarm system in the new part of Myrtle Avenue station, including strobes in all public areas, and connect the new FACP to the main station panel provided by C-40853.
+- (p. 5, 8) MLJTC2 (Contract A-37806) will install strobes in public areas and prepare them for connection to the C-40853 system.
+- (p. 7) C-40853 will provide fire alarm detection and limited notification for back-of-house areas of the existing station.
+- (p. 8) C-40853 will add PA/CIS integration, supervised outputs for public area and back-of-house horn/strobe activation, and an EVAC button for manual control.
+
+--- SOURCES ---
+
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf
+  pages: 4, 5, 1, 2, 3, 6
+
+--- CITATIONS ---
+
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf chunk=5 (p. 4) rel=1.000
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf chunk=8 (p. 5) rel=1.000
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf chunk=2 (p. 1) rel=1.000
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf chunk=3 (p. 2) rel=1.000
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf chunk=4 (p. 3) rel=1.000
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf chunk=6 (p. 4) rel=1.000
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf chunk=9 (p. 5) rel=1.000
+- A37806_01 30 20_GEN-009R00 - FIO - A-37806 and C-40853 - Scope of Work for Fire Alarm at Myrtle Ave Meeting Minutes.pdf chunk=11 (p. 6) rel=1.000
+
+--- META --- elapsed=23976ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq04]
+  In the MTACD-MLJTC2-L-0117 subcontractor approval letter, what subcontractor is approved, what is their contract value, and what scope are they approved to perform?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval Details
+- (p. 1) HRM Engineering Services, P.C. is approved as a subcontractor for design-build services related to ADA upgrades (Package 6).
+- (p. 1) The subcontract cost for HRM Engineering Services, P.C. is valued at $1,117,268.00.
+- (p. 1) HRM Engineering Services, P.C. is approved to perform design of mechanical/HVAC, plumbing, and dry standpipe systems for five stations, including services during construction.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=19845ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq05]: what requirements does spec section 01 10 30 include?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 10 30 gen-001r05 - phasing plan that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 10 30_GEN-001R05 - Phasing Plan 10.22.25 - OP Responses to DB.xlsx
+
+--- META --- elapsed=905ms domains=documents cacheHit=false
+
+========================================================================
+[sq12]: What is in the Myrtle Ave Reserve Service Load Letter?
+========================================================================
+
+--- ANSWER ---
+
+## More context needed
+- Your question asks what is mentioned in that document but doesn't specify a topic.
+- To answer precisely, tell me what you're looking for ΓÇö for example: parties involved, dates, costs, scope, action items, approvals, or a specific subject.
+
+**Possible matching file:** a37806 prdc06 myr-002r00 - orig - myrtle avenue
+- Try asking: _In the a37806 prdc06 myr-002r00 - orig - myrtle avenue, what [specific topic]?_
+
+--- SOURCES ---
+
+- A37806_PRDC06_MYR-002R00 - ORIG - Myrtle Avenue Reserve Service Load Letter.pdf
+
+--- META --- elapsed=8936ms domains=documents cacheHit=false
+
+========================================================================
+[sq13]
+  In the MTACD-MLJTC2-L-0017 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Approved Subcontractor
+- (p. 1) HRM Engineering Services, P.C. is approved as a subcontractor.
+
+## Scope of Work
+- (p. 1) HRM Engineering Services, P.C. will perform design for mechanical/HVAC, plumbing, and dry standpipe systems for five stations, including services during construction.
+
+## Contract Value
+- (p. 1) The subcontract cost for HRM Engineering Services, P.C. is valued at $1,117,268.00.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=9694ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq14]
+  In the MTACD-MLJTC2-L-0028 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval Details
+- (p. 1) HRM Engineering Services, P.C. is approved as a subcontractor for design-build services related to ADA upgrades (Package 6).
+- (p. 1) HRM Engineering Services, P.C. will perform design of mechanical/HVAC, plumbing, and dry standpipe systems for five stations, including services during construction.
+- (p. 1) The subcontract cost for HRM Engineering Services, P.C. is valued at $1,117,268.00.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=10328ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq15]
+  In the MTACD-MLJTC2-L-0049 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval
+- (p. 1) HRM Engineering Services, P.C. is approved to perform design of mechanical/HVAC, plumbing, and dry standpipe systems for five stations, including services during construction, for a subcontract cost of $1,117,268.00.
+- (p. 1) The subcontractor must enroll in OCIP prior to starting any work.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=10032ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq16]
+  In the MTACD-MLJTC2-L-0083 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval
+- (p. 1) The approved subcontractor is HRM Engineering Services, P.C.
+- (p. 1) HRM Engineering Services, P.C. is approved to perform design of mechanical/HVAC, plumbing, and dry standpipe systems for five stations, including services during construction.
+- (p. 1) The subcontract cost for HRM Engineering Services, P.C. is $1,117,268.00.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=9020ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq17]
+  In the MTACD-MLJTC2-L-0093 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval Details
+- (p. 1) HRM Engineering Services, P.C. is approved as a subcontractor for design-build services related to ADA upgrades (Package 6).
+- (p. 1) HRM Engineering Services, P.C. will perform design of mechanical/HVAC, plumbing, and dry standpipe systems for five stations, including services during construction.
+- (p. 1) The subcontract cost for HRM Engineering Services, P.C. is valued at $1,117,268.00.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0020 Sub-Contractor Approval  HRM Engineering Services $1,117,268.00.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=9486ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq35]
+  What was discussed in the September 3, 2025 coordination meeting?
+========================================================================
+
+--- ANSWER ---
+
+## More context needed
+- Your question asks what is mentioned in that document but doesn't specify a topic.
+- To answer precisely, tell me what you're looking for ΓÇö for example: parties involved, dates, costs, scope, action items, approvals, or a specific subject.
+
+**Possible matching file:** a37806 01 35 70 gen-009r00 - fio -
+- Try asking: _In the a37806 01 35 70 gen-009r00 - fio -, what [specific topic]?_
+
+--- SOURCES ---
+
+- A37806_01 35 70_GEN-009R00 - FIO - Utility Coordination - September 2025.pdf
+
+--- META --- elapsed=8091ms domains=documents cacheHit=false
+
+========================================================================
+[sq44]: What current permits are submitted for Burnside Ave.
+========================================================================
+
+--- ANSWER ---
+
+## BUR Permit Submittals
+The following permit-related submittal files are on record for BUR:
+
+- a37806 01 33 10 bur-001r00 - fio -
+- a37806 01 33 10 bur-002r00 - fio -
+- a37806 01 33 10 bur-003r00 - fio -
+- a37806 01 33 10 bur-003r00 - fio -
+- a37806 01 33 10 bur-005r00 - rwnc -
+- a37806 01 33 10 bur-006r00 - fio -
+- a37806 01 33 10 bur-007r00 - fio -
+- a37806 01 33 10 bur-008r00 - fio -
+- a37806 prdc12-079r00 - fio - burnside-nycdep dewatering permit
+- a37806 prdc12-079r01 - fio - burnside-nycdep dewatering permit
+- a37806 prdc12-079r02 - fio - burnside-nycdep dewatering permit
+
+--- SOURCES ---
+
+- A37806_01 33 10_BUR-001R00 - FIO - DOT Permits Exp. 4.30.25.pdf
+- A37806_01 33 10_BUR-002R00 - FIO - DOT Permits Exp. 7.23.25.pdf
+- A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10.21.25-MJ-LT-x6702.pdf
+- A37806_01 33 10_BUR-003R00 - FIO - DOT Permits Exp. 10.21.25.pdf
+- A37806_01 33 10_BUR-005R00 - RWNC - DOT Permits Exp. 12.31.25.pdf
+- A37806_01 33 10_BUR-006R00 - FIO - DOT Permits Exp. 4.11.26 & 6.11.26.pdf
+- A37806_01 33 10_BUR-007R00 - FIO - DOT Permits Exp 6.11.26.pdf
+- A37806_01 33 10_BUR-008R00 - FIO - DOT Permits Exp 6.11.26 & 6.18.26.pdf
+
+--- META --- elapsed=4797ms domains=documents cacheHit=false
+
+========================================================================
+[sq47]: What current permits are submitted for Middletown Ave.
+========================================================================
+
+--- ANSWER ---
+
+## MDT Permit Submittals
+The following permit-related submittal files are on record for MDT:
+
+- 25 10 28 mtacd-mljtc2-l-0117 - delay ins submission
+- a37806 01 33 10 mdt-001r00 - fio -
+- a37806 01 33 10 mdt-003r00 - fio -
+- a37806 01 33 10 mdt-004r00 - fio -
+- a37806 01 33 10 mdt-005r00 - fio -
+- a37806 01 33 10 mdt-005r00 - orig -
+- a37806 01 33 10 mdt-007r00 - fio -
+- a37806 01 33 10 mdt-008r00 - fio -
+- a37806 01 33 10 mdt-009r00 - fio -
+- a37806 01 33 10 mdt-010r00 - fio- dot
+- a37806 01 33 10 mdt-011r00 - fio -
+- a37806 01 33 10 mdt-012r00- fio- dot permits
+- a37806 01 33 10 mdt-013r00 - fio -
+- a37806 01 33 10 mdt-014r00 - fio -
+
+--- SOURCES ---
+
+- 25.10.28 MTACD-MLJTC2-L-0117 - Delay ins Submission of Permit documents & the RFCD Package for EDU2B Structural & Foundation Work ΓÇô MDT.pdf
+- A37806_01 33 10_MDT-001R00 - FIO - DOT Permits Exp. 4.30.25.pdf
+- A37806_01 33 10_MDT-003R00 - FIO - DOT Permits Exp. 9.1.25  9.2.25.pdf
+- A37806_01 33 10_MDT-004R00 - FIO - DOT Permits Exp 8.8.2025.pdf
+- A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work Permit.pdf
+- A37806_01 33 10_MDT-005R00 - ORIG - Middletown Tree Work Permit.pdf
+- A37806_01 33 10_MDT-007R00 - FIO - DOT Permits Exp. 10.21.25.pdf
+- A37806_01 33 10_MDT-008R00 - FIO - DOT Permits Exp. 10.02.25.pdf
+
+--- META --- elapsed=3034ms domains=documents cacheHit=false
+
+========================================================================
+[sq63]
+  Under spec section 01 40 10, what data does PRO 26-01 require in the NCR Log for tracking nonconforming items?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 40 10 gen-006r01 - orig - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 40 10_GEN-006R01 - ORIG - NCR Template & Log.pdf
+
+--- META --- elapsed=841ms domains=documents cacheHit=false
+
+========================================================================
+[sq64]
+  Summarize what is in A37806_RFI-0203 - CLO - Norwood J1 Revised Track Limits R1.pdf
+========================================================================
+
+--- ANSWER ---
+
+## Section 51.56 (a37806 rfi-0203 - clo - norwood j1 revised)
+- Exact indexed section text from page(s): 1, 2, 3, 4.
+
+```text
+DOCUMENT SECTION INDEX (heading ΓåÆ page numbers):
+A37806 ADA PACKAGE 6 [p.3]
+1 Iden╞ƒfied Jamaica (BMT) GOs [pp.4-5]
+3 Ac╞ƒon Items [p.5]
+
+Request For Information - RFI
+A37806 ΓÇô DESIGN BUILD SERVICES FOR ACCESSIBILITY UPGRADES ΓÇô PACKAGE 6
+Page 1 of 2 Rev. 0 5/4/2026
+Subject: Norwood J1 Revised Track Limits RFI # 0203
+Date: 5/4/2026 From: MLJTC2
+Reason for request: ΓÿÆInsufficient Information ΓÿÉEngineering Conflict ΓÿÉAlternate Proposal
+ΓÿÆOther: MTA Change in Direction (Change Proposal Request pending)
+Probable Cost Effect: ΓÿÆIncrease ΓÿÉDecrease ΓÿÉUnknown
+Action Requested: ΓÿÉClarification ΓÿÆDirection ΓÿÉApproval
+Probable Time Effect: ΓÿÆIncrease ΓÿÉDecrease ΓÿÉUnknown
+Priority ΓÿÆHigh ΓÿÉMedium ΓÿÉLow
+Drawing Number: N/A
+Detail Number: N/A
+CSI Code:
+Info. Requested:
+Per direction from MTA on 04/27/2026 MOW Track Construction will be performing the replacement
+of track J2 on its entirety within the Norwood Avenue Station (See attached email). Also, since the
+material for the contractual track J2 work was already procured and delivered, MTA directed MLJTC2
+to extend the limits of track replacement on J1 and use the said material to maintain the overall
+length of trackwork in the contract. Based on this direction, MLJTC2, AECOM and J-Track require the
+following clarifications:
+AECOM
+Track J1
+1. Is there any change to contact rail replacement? Current design shows replacement from Sta
+411+04 to Sta 420+04.
+2. Confirm limits of heat trace to be installed on J1.
+3. Define limits of track J1 replacement. Platform limits are from Sta. 411+51.56 to
+
+rent design shows replacement from Sta
+411+04 to Sta 420+04.
+2. Confirm limits of heat trace to be installed on J1.
+3. Define limits of track J1 replacement. Platform limits are from Sta. 411+51.56 to Sta.
+416+50.68, please confirm these limits can be followed for the track replacement.
+4. Track J1 best fit needs to be prepared in conjunction with Track J2 best fit(to be designed by
+MTA) to ensure top of structural slab at platform is consistent across the length of the
+platform. This also needs to be coordinated with elevator and stair landings and door
+openings.
+a. We request a schedule on when Track J2 best fit will be complete so it can be
+coordinated with the current design.
+Track J2
+1. Confirm MTA will design the contact rail replacement based on track limits.
+2. Confirm heat trace will be design by MTA.
+3. Confirm best fit of J2 will be done by MTA.
+MLJ Notes
+1. Can the work within the Norwood Avenue Station happen first? Currently we are scheduled
+to perform SOGR/Trackwork on J1/Platform Replacement between June and October, any
+
+Request For Information - RFI
+A37806 ΓÇô DESIGN BUILD SERVICES FOR ACCESSIBILITY UPGRADES ΓÇô PACKAGE 6
+Page 2 of 2 Rev. 0 5/4/2026
+track replacement performed by MTA on J2 within the Norwood Avenue Station will directly
+interfere with our work.
+2. The existing traction power on tract J2 at approximately 416+00 has already been tempted
+out and new jumpers installed. Is this work part of the MTA track replacement or a separate
+contract?
+TCE
+1. Please clarify if Traction power work at Track J2 is removed from ADA Package 6 contract.
+2. Please provide limit for traction power scope on Track J1. Current design shows replacement
+from Sta. 411+04 to Sta. 420+04.
+J-Track
+During the survey of the J1 track, it was identified that existing Pandrol plates extend to
+approximately Sta. 417+55 (approximately 105 track feet towards Jamaica Center on the J1 platform)
+and beyond this point, F21 plates are already in place however it is feasible to terminate the
+trackwork at the end of the platform, but due to the 7/8ΓÇ¥ thickness difference between the proposed
+F21 plates (1.75ΓÇ¥) and the existing Pandrol plates (0.93ΓÇ¥), a shimmed runoff would be required to
+achieve a smooth elevation transition if work is terminated at the platform.
+Please note that at this point in time the extend of the delay or cost implications with the extension
+beyond the end of the platform are not known. Due to the significan
+
+s terminated at the platform.
+Please note that at this point in time the extend of the delay or cost implications with the extension
+beyond the end of the platform are not known. Due to the significant schedule impact, MLJTC2
+recommends NYCT Track Engineering address any scope beyond contractual limits.
+Recommendations
+Disclaimer:
+Notes:
+Attachments Provided ΓÿÆYes ΓÿÉNo
+
+1
+Ksenofon Gjerko
+From: Jose Paredes <jose.paredes@tylin.com>
+Sent: Monday, April 27, 2026 1:46 PM
+To: Ksenofon Gjerko; Ravi Jain; Andrew Voss
+Cc: Wilson, Michael; Afua.Safo-Asante; Rony, Mohammed; Jack Czyzewski; Mekh Gurung;
+Dorra Kridis
+Subject: RE: A37806 Norwood Avenue (BMT) Survey Limits Week Of 4/20/26
+Good afternoon, Ksenofon.
+Please see below official direction from MOW Track Engineering. We will obtain better dates for the Track
+J2 in-house trackwork and get back to you.
+A37806 ADA Package 6 - Norwood Avenue BMT Track J1 and Track J2 Replacement Limits
+Update on Trackwork Limits at A-37806 Norwood Avenue Station ΓÇô Jamaica Line (BMT) Trks J1 & J2
+Track J1 (Jamaica-bound):
+Due to trackwork on Track J2 being reassigned to in-house forces, the limits previously specified
+for Track J2 in the Draft Scope of Required Trackwork , will be realigned to Track J1. As a result, Track J1
+will now undergo trackwork /panel replacement on the entire length of the platform.
+Track J2 (Manhattan-bound):
+Trackwork will be performed by in-house forces and is currently scheduled to take place from May
+through October 2026
+Jose Paredes, P.E.
+CONSTRUCTION COMPLIANCE MANAGER
+A37806 ADA PACKAGE 6
+From: Ksenofon Gjerko <kgjerko@mljcontracting.com>
+Sent: Thursday, April 23, 2026 2:41 PM
+To: Jose Paredes <jose.paredes@tylin.com>; rjain <rjain@mljcontracting.com>; Andrew Voss
+<AVoss@mljcontracting.
+
+rom: Ksenofon Gjerko <kgjerko@mljcontracting.com>
+Sent: Thursday, April 23, 2026 2:41 PM
+To: Jose Paredes <jose.paredes@tylin.com>; rjain <rjain@mljcontracting.com>; Andrew Voss
+<AVoss@mljcontracting.com>
+Cc: Wilson, Michael <michael.wilson@mtacd.org>; Afua.Safo-Asante <afua.safo-asante@mtacd.org>; Rony, Mohammed
+<mohammed.rony@mtacd.org>; Jack Czyzewski <jczyzewski@naikgroup.com>; Mekh Gurung
+<mgurung@naikgroup.com>; Dorra Kridis <dorra.kridis@tylin.com>
+Subject: RE: A37806 Norwood Avenue (BMT) Survey Limits Week Of 4/20/26
+Jose,
+Today we finished the survey based on the two scenarios you provided us on Friday.
+Our first track GO is on 6/20/2026 which is now 7 weeks away. We need a direction on this to properly
+prepare and coordinate our work.
+ATTACHMENT 1
+
+1
+Contract: A37806 ADA Package 6
+MTA C&D PCEO: Michael Wilson, Senior Director, Program CEO, MTA C&D ΓÇô Sta╞ƒons Business Unit
+Program Management Consultant: Naik TYLin Joint Venture
+Design-Builder: MLJTC2 (Design-Builder) and AECOM (Designer-of-Record)
+Field Mee╞ƒng: A37806 ADA Package 6 Norwood Avenue (BMT) ΓÇô MOW Track Construc╞ƒon Days
+Walkthrough
+Prepared By: Jose Paredes
+Field Mee╞ƒng Date: May 12, 2026
+Field Mee╞ƒng A╞⌐endees: See A╞⌐ached A╞⌐endance Sheet
+Field Mee╞ƒng Notes
+Item
+No Discussion
+1 Iden╞ƒfied Jamaica (BMT) GOs
+1. Week 20 5/16/2026
+2. Week 25 6/20/2026
+3. Week 26 6/27/2026
+4. Week 28 7/11/2026
+5. Week 30 7/25/2026
+6. Week 32 8/8/2026
+7. Week 33 8/15/2026
+8. Week 36 9/5/2026
+9. Week 37 9/12/2026
+10. Week 40 10/3/2023
+∩é╖ MOW Track Construc╞ƒon Days stated that they own Week 20 (5/16/26); Week 26 (6/27/26);
+Week 30 (7/25/26); Week 32 (8/8/26) and Week 33 (8/15/16)
+∩é╖ Project Team to find out who owns Week 25, 28, 36, 37 and 40.
+2 General Discussion
+∩é╖ MOW defined the scope as ΓÇ£81 track panel replacementΓÇ¥, N/O Crescent Sta╞ƒon to N/O
+Cleveland Sta╞ƒon.
+∩é╖ MOW will allow the Project to PB on Week 20.
+∩é╖ During Week 20, MOW will be working on the Jamaica side of Track J2; therefore, Project will
+only be allowed to install MOU lights on both sides of Track J1, and the Manha╞⌐an side of Track
+J2. Project Team will also be allowed to perform the Track J1 and J2 50 States survey within t
+```
+
+--- SOURCES ---
+
+- A37806_RFI-0203 - CLO - Norwood J1 Revised Track Limits R1.pdf
+  pages: 1, 2, 3, 4
+
+--- META --- elapsed=905ms domains=documents cacheHit=false
+
+========================================================================
+[sq65]
+  Summarize what is in A-37806_J-TRACK-13A-041R01 Material I&T Request 100-8 (6 Hole) Joint Bar 36 inch (Qty.59 Pairs).pdf
+========================================================================
+
+--- ANSWER ---
+
+## Section 3.16 (a-37806 j-track-13a-041r00 - material i&t request 100-8 (6)
+- Exact indexed section text from page(s): 36.
+
+```text
+Specification Section 13A-DB - Tracks - General
+08-02-2022 Contract (Master) 13A-DB - 23
+c. When bolt holes are drilled with a power track drill, a uniform feeding pressure shall be
+maintained until the bit point breaks through the opposite side of the web. Then pressure
+shall be reduced. Forcing the drill may produce a ragged hole that may result in cracks in
+the bolt hole.
+d. After drilling is completed, bolt holes shall be brushed out and inspected. Any burrs or
+chipped edges shall be removed by using a chamfering tool to achieve a smooth edge
+around the entire circumference of the hole.
+e. The distance from the end of a rail to center of the first bolt hole shall not be less than twice
+the diameter of the hole.
+f. The distance between centers of any two holes of the same diameter shall not be less than
+four times the diameter of the hole. In the case of holes of different diameters, the distance
+shall not be less than three and three-quarter times the average diameter of the two holes.
+g. When it is necessary to use a cut rail at a compromise or insulated joint location, the mill-
+or shop-drilled end of the rail shall be placed in the compromise or insulated joint. The bolt
+holes shall be of full diameter and drilled before the joint is applied in accordance with the
+requirements of this Paragraph.
+h. Under no circumstances shall a hole be placed between two holes of a prev
+
+es shall be of full diameter and drilled before the joint is applied in accordance with the
+requirements of this Paragraph.
+h. Under no circumstances shall a hole be placed between two holes of a previous drilling
+pattern.
+i. All rails shall be mechanically cold expanded at the running rail joint bolt holes using the
+RailTec Cold Expansion System by Fatigue Technology Inc. or approved equal.
+3.16 Insulated Track Rail Joints
+a. Insulated joints, of the type specified, shall be installed at the locations shown on the Track
+Drawings. In cases where the installation of the insulated joints is deferred, the Design-
+Builder shall furnish and install suitable temporary end posts of proper thickness so as to
+provide a 7/16-inch space between the ends of the rails to accommodate the installation
+of insulated joints.
+b. New temporary insulated joints and/or rail bonding shall be installed in bolted rail to
+maintain electrical circuits where shown in the Contract Drawings. When the signal system
+is to become operational, the temporary insulated joints and rail bonding shall be removed,
+and the rail adjacent to the temporary insulated joints shall be adjusted or replaced with
+new rail as necessary in order to provide the required opening between rail ends.
+c. Temporary new insulated joints shall replace existing insulated joints in welded rail at
+locations necessary to maintain electrical
+
+sary in order to provide the required opening between rail ends.
+c. Temporary new insulated joints shall replace existing insulated joints in welded rail at
+locations necessary to maintain electrical circuits. When the new signal system is
+operational, the temporary insulated joints, including sections of rails, shall be removed
+and replaced with solid sections of welded rail. The PCEO may designate certain
+additional existing insulated joints in the new track areas to be maintained until the new
+signal system is operational.
+
+Specification Section 13A-DB - Tracks - General
+08-02-2022 Contract (Master) 13A-DB - 24
+d. Insulated joints shall be installed only in the presence of the PCEO. Insulated joints shall
+be assembled in accordance with the Track Drawings and manufacturer's instructions, and
+care shall be exercised not to damage any portion of the insulated joint. At least 2 inches
+of clearance shall be provided between metallic parts of the insulated joints and tie plates
+or other joint bars on adjacent rails. Tie plates shall be installed under rails at insulated
+joints as shown on the Track Drawings. Bolted insulated joints shall be installed as
+described for other bolted joints except where otherwise specified herein. The bolts can
+be easily inserted by hand if rails and joint parts are in the proper position with the bolt
+holes aligned. The Design-Builder shall remove from the rail ends all scale, dirt, burrs,
+lips, and rough edges, clean all metal components of the insulated joint, and clean the rail
+thoroughly with steel wool before installing the insulated joint. All metal parts of the
+insulated joint and adjoining rail surfaces shall be coated with a rust preventative prior to
+assembly: the rust preventative shall be submitted to the PCEO for approval. Nuts shall
+be tightened alternately, keeping the center bolts in the lead. It is important that the base
+of the joint be adjusted frequent
+```
+
+--- SOURCES ---
+
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf
+  pages: 36
+
+--- CITATIONS ---
+
+- A-37806_J-TRACK-13A-041R00 - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).pdf chunk=70 (p. 36) rel=1.000
+
+--- META --- elapsed=5220ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq66]
+  In DRFI-0079 for the Middletown NB Stair Foundation Rebar Interference, what is the rebar and anchor bolt conflict under spec section 05 12 00?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 drfi-0079 - mdt nb stair foundation rebar that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_DRFI-0079 - MDT NB Stair Foundation Rebar Interference.pdf
+
+--- META --- elapsed=738ms domains=documents cacheHit=false
+{"timestamp":"2026-07-02T02:00:55.598Z","level":"info","event":"chat.coordinator.route_summary","projectId":"731cfd5d-e647-4551-89e7-0a3cc4915115","domains":["documents"],"sourceCount":1,"nodeCount":8,"estimatedContextTokens":2225,"specialistAgents":[{"agent":"doc_agent","domains":["documents"],"sourceCount":1,"nodeCount":3,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":1127,"retrievalMs":951,"mergeMs":0,"agentMs":2449,"totalMs":3655},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":1,"fallback":0,"mixed":0,"none":0},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq70]
+  In A37806 RFI096, what ADA upgrade drawing and platform detail is referenced for the McDonald Avenue station?
+========================================================================
+
+--- ANSWER ---
+
+## McDonald Avenue Station ADA Upgrade References
+
+- RFI 096 is for ADA Upgrades Package 6, Contract A-37806, covering five stations (p. 2, 3, 4, 6, 7).
+- The RFI document summary lists "rfi 096" (p. 2).
+- The RFI's purpose is clarification regarding HVAC controls and fire alarm shutdown in Elevator Machine Rooms (EMRs) (p. 2).
+- Specific drawings referenced for Avenue I (not McDonald Avenue) include:
+    - A37806-AVI-MH-101.dgn (p. 3)
+    - A37806-AVI-MH-103.dgn (p. 4)
+- Platform details mentioned generally for ADA upgrades include:
+    - ADA platform height for the full length of the station (p. 8).
+    - Tactile warning strips and rubbing board at all platform edges (p. 8).
+    - Repair and replacement of steel platform components (p. 8).
+    - Existing platform, proposed platform windscreen, and platform roof details (p. 5).
+    - Elevator 1123 and 1124 details, including EMR roof elevations (p. 5).
+- No specific ADA upgrade drawing or platform detail is referenced for the McDonald Avenue station in the provided context. The RFI primarily discusses Avenue I and Myrtle Avenue stations.
+
+--- SOURCES ---
+
+- A37806_ADA P6_RFI096.pdf
+  pages: 23, 9, 10, 12
+
+--- META --- elapsed=3657ms domains=documents cacheHit=false
+{"timestamp":"2026-07-02T02:00:55.601Z","level":"info","event":"feature.rollout.evaluated","projectId":"731cfd5d-e647-4551-89e7-0a3cc4915115","flag":"RETRIEVAL_HYBRID_ENABLED","enabled":true,"canaryConfigured":false,"reason":"project_in_canary_or_open_rollout"}
+{"timestamp":"2026-07-02T02:05:56.614Z","level":"info","event":"retrieval.hybrid.metrics","stage":"search_project","profile":"balanced","vectorCandidates":150,"lexicalCandidates":250,"mergedCandidates":400}
+{"timestamp":"2026-07-02T02:05:56.635Z","level":"info","event":"feature.rollout.evaluated","projectId":"731cfd5d-e647-4551-89e7-0a3cc4915115","flag":"RETRIEVAL_RERANK_ENABLED","enabled":false,"reason":"global_flag_disabled"}
+{"timestamp":"2026-07-02T02:05:58.583Z","level":"info","event":"chat.coordinator.route_summary","projectId":"731cfd5d-e647-4551-89e7-0a3cc4915115","domains":["documents"],"sourceCount":8,"nodeCount":10,"estimatedContextTokens":761,"specialistAgents":[{"agent":"doc_agent","domains":["documents"],"sourceCount":8,"nodeCount":4,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":301333,"retrievalMs":301333,"mergeMs":0,"agentMs":1648,"totalMs":302983},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":8,"fallback":0,"mixed":0,"none":0},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq71]
+  In drawing MYR-A-444A, what platform level construction details and accessibility upgrade information are shown in the enlarged section views?
+========================================================================
+
+--- ANSWER ---
+
+## MYR-A-444A Details
+
+The retrieved context does not contain specific details for drawing MYR-A-444A. However, it indicates that drawings for the Myrtle Avenue Station (Myrtle) are part of:
+
+-   **ADA Upgrades Package 6** for Contract A-37806 (Node 7, 8, 9, 10).
+-   **Accessibility upgrades** at five stations, including component upgrades at one (Node 1, 6, 7, 8, 9, 10).
+-   The work at Myrtle includes the construction of an **overpass above platform level** (Node 2, 3, 4).
+-   **New elevators and stairs** are being constructed at platform level (Node 5).
+
+To answer your query, drawing MYR-A-444A needs to be reviewed.
+
+--- SOURCES ---
+
+- A37806_01 32 10_BUR-072R00 - FIO - Burnside November 2025  Construction Photos.pdf
+  pages: 2
+- A37806_01 10 20_MYR-045R00 - R&R - EDU02E (RFCD) Structural Steel, Foundations and Fire Standpipe Relocation at MYR.pdf
+  pages: 651, 47, 642
+- A37806_01 10 20_MYR-017R00 - ORIG - DU05 PRELIMINARY 60 Percent - Myrtle Avenue.pdf
+  pages: 44, 35, 156
+- A37806_01 10 20_MYR-022R00 - R&R - EDU02C (FINAL - 100) Structural Steel, Foundations and Fire Standpipe Relocation at MYR.pdf
+  pages: 811, 50, 802
+- A37806_RFI_0116 - CLO - Followup to RFI 057 Myrtle Ave PS LAN 9.9.25.pdf
+  pages: 2
+- DU04 90% Remaining Work.pdf
+  pages: 99, 49, 97
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf
+  pages: 14, 12
+- A37806_01 10 20_MYR-015R00 - RWC - EDU02C ADVANCED - Foundations, Structural Steel, Demo and Fire Standpipe Relocation MYR.pdf
+  pages: 199, 27
+
+--- META --- elapsed=302984ms domains=documents cacheHit=false
+
+========================================================================
+[sq73]
+  In RFI-009 for Myrtle Avenue UPS Backup Requirements, what spec section 27 33 01 requirements apply and who submitted this RFI?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 806-rfi-009 - myrtle avenue ups backup requirements that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf
+
+--- META --- elapsed=441ms domains=documents cacheHit=false
+
+========================================================================
+[sq74]
+  In RFI-009 for Myrtle Avenue UPS Backup Requirements, what UPS capacity is required to support existing and new communications systems, including the future use reserve?
+========================================================================
+
+--- ANSWER ---
+
+## Section 7.5 Requirements Summary (806-rfi-009 - myrtle avenue ups backup requirements)
+- Reviewed indexed section evidence from page(s): 1.
+- Key requirements captured from the section:
+
+Evidence: 806-rfi-009 - myrtle avenue ups backup requirements (p. 1).
+
+--- SOURCES ---
+
+- 806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=415ms domains=documents cacheHit=false
+
+========================================================================
+[sq76]: Summarize SWP-016
+========================================================================
+
+--- ANSWER ---
+
+## SWP-016 Summary
+
+- SWP-016 is a Safe Work Plan for night work on elevator steel and enclosure installation for ADA upgrades (p. 3).
+- The document is a submittal for NYCT/MTA review and is currently marked "Revise and Resubmit" (Node 1).
+- It details risks and mitigation for tasks like entering the worksite, working near the Right of Way, tool usage, material delivery, and steel installation (p. 4-9).
+- CRITICAL: No crane usage is permitted during night operations (p. 10).
+- The SWP requires daily safety toolbox meetings and review/signing by all personnel before work starts (p. 4).
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-097R01 - ORIG - SWP-016- Elevator Steel & Enclosure (Night).pdf
+  pages: 3, 4, 5, 6
+
+--- CITATIONS ---
+
+- A37806_01 35 10_GEN-097R01 - ORIG - SWP-016- Elevator Steel & Enclosure (Night).pdf chunk=4 (p. 3) rel=1.000
+- A37806_01 35 10_GEN-097R01 - ORIG - SWP-016- Elevator Steel & Enclosure (Night).pdf chunk=5 (p. 4) rel=1.000
+- A37806_01 35 10_GEN-097R01 - ORIG - SWP-016- Elevator Steel & Enclosure (Night).pdf chunk=9 (p. 5) rel=1.000
+- A37806_01 35 10_GEN-097R01 - ORIG - SWP-016- Elevator Steel & Enclosure (Night).pdf chunk=12 (p. 6) rel=1.000
+- A37806_01 35 10_GEN-097R01 - ORIG - SWP-016- Elevator Steel & Enclosure (Night).pdf chunk=15 (p. 7) rel=1.000
+- A37806_01 35 10_GEN-097R01 - ORIG - SWP-016- Elevator Steel & Enclosure (Night).pdf chunk=19 (p. 8) rel=1.000
+- A37806_01 35 10_GEN-097R01 - ORIG - SWP-016- Elevator Steel & Enclosure (Night).pdf chunk=22 (p. 9) rel=1.000
+- A37806_01 35 10_GEN-097R01 - ORIG - SWP-016- Elevator Steel & Enclosure (Night).pdf chunk=25 (p. 10) rel=1.000
+
+--- META --- elapsed=1723ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq78]: Summarize SWP-011
+========================================================================
+
+--- ANSWER ---
+
+## SWP-011 Summary
+
+-   **Purpose:** Submittal for A/E review and approval of platform concrete demolition methods and materials (p. 18).
+-   **Status:** Approved_As_Noted for R03, Revise_and_Resubmit for R04, Not_Reviewed for R05 (p. 8, 10, 11, 13).
+-   **Scope:** Platform concrete demolition for ADA Upgrades Package 6 (p. 18).
+-   **Key Equipment:** Demo Saw, Air Chipping Hammer, Brokk 180 hydro robot, Mini Excavator TB230 (p. 18).
+-   **Safety:** Includes risk/mitigation for worksite entry, electrical hazards, and debris containment (p. 19, 8).
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf
+  pages: 8, 9, 10, 11
+
+--- CITATIONS ---
+
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf chunk=9 (p. 8) rel=1.000
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf chunk=10 (p. 9) rel=1.000
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf chunk=11 (p. 10) rel=1.000
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf chunk=12 (p. 11) rel=1.000
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf chunk=14 (p. 13) rel=1.000
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf chunk=15 (p. 14) rel=1.000
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf chunk=20 (p. 18) rel=1.000
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf chunk=21 (p. 19) rel=1.000
+
+--- META --- elapsed=1974ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq79]: Summarize SWP-032
+========================================================================
+
+--- ANSWER ---
+
+## SWP-032 Summary
+
+- **Purpose:** Safe Work Plan (SWP) for general formwork, rebar, and concrete installation for ADA Upgrades Package 6 (p. 14).
+- **Status:** Revise and Resubmit (R&R) as of 06/09/2026, with comments from Naik Consulting Group (p. 8).
+- **Key Tasks:** Formwork installation, rebar placement, and concrete pouring (p. 14).
+- **Safety Focus:** Detailed risk assessment and mitigation for tasks including worksite entry, working near large machinery, Right of Way (ROW) work, and tool usage (p. 16-18).
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-055R02 - R&R - ORIG - SWP-032 - General formwork rebar and Concrete.pdf
+  pages: 8, 9, 10, 14
+
+--- CITATIONS ---
+
+- A37806_01 35 10_GEN-055R02 - R&R - ORIG - SWP-032 - General formwork rebar and Concrete.pdf chunk=10 (p. 8) rel=1.000
+- A37806_01 35 10_GEN-055R02 - R&R - ORIG - SWP-032 - General formwork rebar and Concrete.pdf chunk=12 (p. 9) rel=1.000
+- A37806_01 35 10_GEN-055R02 - R&R - ORIG - SWP-032 - General formwork rebar and Concrete.pdf chunk=13 (p. 10) rel=1.000
+- A37806_01 35 10_GEN-055R02 - R&R - ORIG - SWP-032 - General formwork rebar and Concrete.pdf chunk=18 (p. 14) rel=1.000
+- A37806_01 35 10_GEN-055R02 - R&R - ORIG - SWP-032 - General formwork rebar and Concrete.pdf chunk=20 (p. 15) rel=1.000
+- A37806_01 35 10_GEN-055R02 - R&R - ORIG - SWP-032 - General formwork rebar and Concrete.pdf chunk=21 (p. 16) rel=1.000
+- A37806_01 35 10_GEN-055R02 - R&R - ORIG - SWP-032 - General formwork rebar and Concrete.pdf chunk=24 (p. 17) rel=1.000
+- A37806_01 35 10_GEN-055R02 - R&R - ORIG - SWP-032 - General formwork rebar and Concrete.pdf chunk=27 (p. 18) rel=1.000
+
+--- META --- elapsed=1893ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq84]: Summarize GEN-021R00 Safety Coordinator submittal
+========================================================================
+
+--- ANSWER ---
+
+## Safety Coordinator Submittal Summary
+
+- **Status:** Revise and Resubmit (R&R) as of April 8, 2025 (p. 1).
+- **Purpose:** Approval of Diego Gonzalez's Safety Coordinator credentials (p. 1).
+- **Deficiencies:** Missing updated American Society of Safety Professionals certification and NY Dept. of Labor Asbestos certification (p. 1).
+- **Next Step:** MLJ Contracting Corp. must provide updated certifications for re-review (p. 1, 3).
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-021R00 - R&R - Safety Coordinator - Diego Gonzalez.pdf
+  pages: 1, 3, 4
+
+--- CITATIONS ---
+
+- A37806_01 35 10_GEN-021R00 - R&R - Safety Coordinator - Diego Gonzalez.pdf chunk=2 (p. 1) rel=1.000
+- A37806_01 35 10_GEN-021R00 - R&R - Safety Coordinator - Diego Gonzalez.pdf chunk=5 (p. 3) rel=1.000
+- A37806_01 35 10_GEN-021R00 - R&R - Safety Coordinator - Diego Gonzalez.pdf chunk=6 (p. 4) rel=1.000
+
+--- META --- elapsed=1582ms domains=field_ops, documents cacheHit=false
+
+========================================================================
+[sq85]
+  In the Schedule Update 5 June 2025, what are the scheduled start and finish dates for the Elevator 541 Enclosure activities, and what activities involve rated glass installation?
+========================================================================
+
+--- ANSWER ---
+
+## Elevator 541 Enclosure
+- (p. 1, 2, 4) The document lists "Middletown-Elevator 541" and "Middletown Road Elevator EL 541" as active WBS elements, but no start or finish dates are provided.
+- (p. 3) The document lists "EDU04 Elevator Enclosure Procurement" as an active WBS element, but no start or finish dates are provided.
+
+## Rated Glass Installation
+- The provided passages do not contain information about rated glass installation.
+
+--- SOURCES ---
+
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml
+
+--- CITATIONS ---
+
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1921 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1922 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1630 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1653 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1656 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1657 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1958 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1959 (p. ?) rel=1.000
+
+--- META --- elapsed=10117ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq86]
+  In the Schedule Update 5 June 2025, what is the planned outage for EL1121 Elevator Enclosure Framing installation and what are the upcoming enclosure activities at Myrtle Avenue?
+========================================================================
+
+--- ANSWER ---
+
+## Elevator Enclosure Activities
+- (p. 4) Myrtle Avenue Elevator EL 1121 is an active work breakdown structure element.
+- (p. 6) Install enclosure framing below the platform for NA-EL1118, planned from December 29, 2026, to January 20, 2027.
+- (p. 7) Install enclosure framing for BA-EL540, planned from August 18, 2027, to September 9, 2027.
+- (p. 8) Prepare and submit elevator enclosure glass, planned from September 5, 2025, to October 3, 2025.
+- (p. 9) Prepare and submit shop drawings for the elevator enclosure, planned from February 5, 2026, to March 6, 2026.
+- (p. 10) Fabricate and deliver elevator enclosure glass, frames, and louver, planned from October 28, 2025, to February 12, 2026.
+- (p. 11) Fabricate and deliver elevator enclosure stainless steel cladding, planned from October 28, 2025, to March 10, 2026.
+- (p. 12) Procure the EDU04 Elevator Enclosure.
+
+--- SOURCES ---
+
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml
+
+--- CITATIONS ---
+
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=5496 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1655 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1656 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1657 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=1658 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=3157 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=3560 (p. ?) rel=1.000
+- A37806_01 32 10_GEN-032R00 - Schedule Update 5 - June 2025.xml chunk=6205 (p. ?) rel=1.000
+
+--- META --- elapsed=10333ms domains=contracts cacheHit=false
+
+========================================================================
+[sq98]
+  In the PRDC12-019R00 SikaGrout 212 product submittal, what application restrictions and surface preparation requirements apply ├óΓé¼ΓÇ¥ specifically regarding sun, wind, and substrate conditions?
+========================================================================
+
+--- ANSWER ---
+
+## Section 9.5 Requirements Summary (a37806 prdc12-019r00 - orig - sikagrout 212)
+- Reviewed indexed section evidence from page(s): 16, 17, 18.
+- Key requirements captured from the section:
+- NO OTHER WARRANTIES EXPRESS OR IMPLIED SHALL APPLY INCLUDING ANY WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+### 9.5.2. Warranty
+- KEEP OUT OF REACH OF CHILDREN ΓÇó NOT FOR INTERNAL CONSUMPTION ΓÇó FOR INDUSTRIAL USE ONLY ΓÇó FOR PROFESSIONAL USE ONLY Prior to each use of any product of Sika Corporation, its subsidiaries or affiliates (ΓÇ£SIKAΓÇ¥), the user must always read and follow the warnin...
+- Nothing contained in any SIKA literature or materials relieves the user of the obligation to read and follow the warnings and instructions for each SIKA product as set forth in the current product label, Product Data Sheet and Safety Data Sheet prior to use...
+- SIKA warrants this product for one year from date of installation to be free from manufacturing defects and to meet the technical properties on the current Product Data Sheet if used as directed within the productΓÇÖs shelf life.
+- User determines suitability of product for intended use and assumes all risks.
+- UserΓÇÖs and/or buyerΓÇÖs sole remedy shall be limited to the purchase price or replacement of this product exclusive of any labor costs.
+- NO OTHER WARRANTIES EXPRESS OR IMPLIED SHALL APPLY INCLUDING ANY WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+Evidence: a37806 prdc12-019r00 - orig - sikagrout 212 (p. 16, 17, 18).
+
+--- SOURCES ---
+
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf
+  pages: 16, 17, 18
+
+--- CITATIONS ---
+
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=28 (p. 16) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=29 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=30 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=31 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=32 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=33 (p. 18) rel=1.000
+
+--- META --- elapsed=490ms domains=documents cacheHit=false
+
+========================================================================
+[sq99]
+  In the PRDC12-019R00 SikaGrout 212 product submittal, is SikaGrout-212 USDA certifiable and what does the product data say about packaging size and ASTM C-827 compliance?
+========================================================================
+
+--- ANSWER ---
+
+## SikaGrout-212 Certifications and Product Data
+
+- SikaGrout-212 is USDA certifiable (p. 15).
+- Packaging size is 50 lb (22.7 kg) bags (p. 15).
+- The product shows positive expansion when tested in accordance with ASTM C-827 (p. 15).
+
+--- SOURCES ---
+
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf
+  pages: 15, 17, 13, 16
+
+--- CITATIONS ---
+
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=26 (p. 15) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=25 (p. 15) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=30 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=21 (p. 13) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=28 (p. 16) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=2 (p. 1) rel=1.000
+- A37806_PRDC12-019R00 - ORIG - SikaGrout 212.pdf chunk=29 (p. 17) rel=1.000
+
+--- META --- elapsed=8005ms domains=documents cacheHit=false
+
+========================================================================
+[sq101]
+  In GEN-044R00 List of Competent Persons, which electrical and communications staff from TC Electric are listed with their roles and contact information under spec 01 35 10?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 35 10 gen-044r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-044R00 - FIO - List of Competent Persons.pdf
+
+--- META --- elapsed=407ms domains=documents cacheHit=false
+
+========================================================================
+[sq102]
+  In GEN-044R00 List of Competent Persons under spec 01 35 10, who are the listed heavy civil superintendents and project engineers from MLJ Contracting, with their roles and phone numbers?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 35 10 gen-044r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-044R00 - FIO - List of Competent Persons.pdf
+
+--- META --- elapsed=382ms domains=documents, contracts, field_ops cacheHit=false

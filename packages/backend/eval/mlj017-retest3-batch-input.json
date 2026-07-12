@@ -1,0 +1,12 @@
+{
+  "projectId": "731cfd5d-e647-4551-89e7-0a3cc4915115",
+  "questions": [
+    { "id": "sq01", "query": "In CO#15 for the Ave I water service relocation, what is the scope of work and who is performing it?" },
+    { "id": "sq65", "query": "In J-TRACK-13A-041R00 Material I&T Request for 100-8 6-hole joint bar, what is the inspection item description, what quantity is requested, and what ASTM standard governs the material?" },
+    { "id": "sq66", "query": "In DRFI-0079 for the Middletown NB Stair Foundation Rebar Interference, what is the rebar and anchor bolt conflict under spec section 05 12 00?" },
+    { "id": "sq71", "query": "In MYR-002R00 Myrtle Avenue Demo Shield Drawings, what does Section 1 show for the hung shielding system, and what structural steel member sizes and connection details are specified in the enlarged section views?" },
+    { "id": "sq73", "query": "In RFI-009 for Myrtle Avenue UPS Backup Requirements, what spec section 27 33 01 requirements apply and who submitted this RFI?" },
+    { "id": "sq101", "query": "In GEN-044R00 List of Competent Persons, which electrical and communications staff from TC Electric are listed with their roles and contact information under spec 01 35 10?" },
+    { "id": "sq102", "query": "In GEN-044R00 List of Competent Persons under spec 01 35 10, who are the listed heavy civil superintendents and project engineers from MLJ Contracting, with their roles and phone numbers?" }
+  ]
+}
