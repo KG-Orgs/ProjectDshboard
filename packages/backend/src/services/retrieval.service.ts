@@ -213,10 +213,87 @@ function resolveBlendProfile(interpretation: RetrievalOptions["interpretation"])
   if (interpretation?.intent === "file_lookup" || interpretation?.intent === "active_doc_qa") {
     return "lexical_heavy";
   }
+  if (
+    interpretation?.intent === "schedule_risk" ||
+    interpretation?.intent === "cost_risk" ||
+    interpretation?.intent === "status_check"
+  ) {
+    return "lexical_heavy";
+  }
   if (interpretation?.intent === "document_summary") {
     return "semantic_heavy";
   }
   return env.retrievalBlendProfile;
+}
+
+interface IntentSearchScope {
+  categories: string[];
+  tags: string[];
+  candidateTopK: number;
+  categoryRestricted: boolean;
+  lexicalOnly: boolean;
+}
+
+function buildCategoryFileIdClause(projectId: UUID, categoryFilters: string[]): SQL {
+  const normalized = categoryFilters.map((value) => value.trim().toLowerCase()).filter(Boolean);
+  if (normalized.length === 0) {
+    return sql``;
+  }
+  if (normalized.length === 1) {
+    return sql`AND fc.file_id IN (
+      SELECT id FROM file_records
+      WHERE project_id = ${projectId}
+        AND doc_category = ${normalized[0]}
+    )`;
+  }
+  return sql`AND fc.file_id IN (
+    SELECT id FROM file_records
+    WHERE project_id = ${projectId}
+      AND doc_category IN (${sql.join(normalized.map((category) => sql`${category}`), sql`, `)})
+  )`;
+}
+
+function resolveIntentSearchScope(
+  interpretation: RetrievalOptions["interpretation"],
+  explicitCategory?: string,
+  explicitTags?: string[]
+): IntentSearchScope {
+  const tags = (explicitTags ?? interpretation?.retrievalHints?.preferredTags ?? [])
+    .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean);
+
+  const categories = explicitCategory
+    ? [explicitCategory.trim().toLowerCase()].filter(Boolean)
+    : interpretation && interpretation.confidence >= 0.65
+      ? (interpretation.retrievalHints?.preferredCategories ?? [])
+          .map((category) => category.trim().toLowerCase())
+          .filter(Boolean)
+      : [];
+
+  let narrowedCategories = categories;
+  if (interpretation?.intent === "schedule_risk" && categories.includes("schedule")) {
+    narrowedCategories = ["schedule"];
+  } else if (interpretation?.intent === "cost_risk" && categories.includes("change_order")) {
+    narrowedCategories = ["change_order"];
+  }
+
+  const categoryRestricted = narrowedCategories.length > 0;
+  let candidateTopK = categoryRestricted ? 12 : 24;
+  if (interpretation?.intent === "schedule_risk" || interpretation?.intent === "cost_risk") {
+    candidateTopK = 12;
+  }
+
+  return {
+    categories: narrowedCategories,
+    tags,
+    candidateTopK,
+    categoryRestricted,
+    lexicalOnly:
+      categoryRestricted &&
+      (interpretation?.intent === "schedule_risk" ||
+        interpretation?.intent === "cost_risk" ||
+        interpretation?.intent === "file_lookup"),
+  };
 }
 
 function blendWeights(profile: HybridBlendProfile): { semanticWeight: number; lexicalWeight: number } {
@@ -327,6 +404,99 @@ function collapseDocumentFamilies(results: SearchResult[]): SearchResult[] {
     collapsed.push(result);
   }
   return collapsed;
+}
+
+async function runHybridCandidateSearch(
+  projectId: UUID,
+  query: string,
+  queryEmbedding: { vector: number[] } | undefined,
+  searchScope: IntentSearchScope,
+  interpretation?: RetrievalOptions["interpretation"]
+): Promise<RetrievalCandidate[]> {
+  const db = getDbIfInitialized();
+  if (!db) {
+    return inMemorySearch(
+      projectId,
+      query,
+      queryEmbedding?.vector,
+      searchScope.candidateTopK,
+      searchScope.categories[0],
+      searchScope.tags
+    );
+  }
+
+  const hybridEnabled = featureService.isRolloutFlagEnabledForProject(
+    projectId,
+    "RETRIEVAL_HYBRID_ENABLED"
+  );
+
+  const fetchCandidates = async (scope: IntentSearchScope): Promise<RetrievalCandidate[]> => {
+    if (scope.lexicalOnly) {
+      const keywordCandidates = await keywordSearch(
+        projectId,
+        query,
+        scope.candidateTopK,
+        scope.categories,
+        scope.tags
+      );
+      if (keywordCandidates.length > 0) {
+        return keywordCandidates;
+      }
+    }
+
+    if (hybridEnabled) {
+      const profile = resolveBlendProfile(interpretation);
+      const skipVector = scope.lexicalOnly || !queryEmbedding;
+      const [vectorCandidates, lexicalCandidates] = await Promise.all([
+        skipVector
+          ? Promise.resolve([])
+          : pgvectorSearch(projectId, queryEmbedding!.vector, scope.candidateTopK, scope.categories),
+        ftsSearch(projectId, query, scope.candidateTopK, scope.categories, scope.tags),
+      ]);
+
+      const mergedHybrid = mergeHybridCandidates(vectorCandidates, lexicalCandidates, profile);
+      logger.info("retrieval.hybrid.metrics", {
+        profile,
+        categoryRestricted: scope.categoryRestricted,
+        categories: scope.categories,
+        vectorCandidates: vectorCandidates.length,
+        lexicalCandidates: lexicalCandidates.length,
+        mergedCandidates: mergedHybrid.length,
+      });
+
+      if (mergedHybrid.length > 0) {
+        return mergedHybrid;
+      }
+
+      return keywordSearch(projectId, query, scope.candidateTopK, scope.categories, scope.tags);
+    }
+
+    const vectorCandidates = queryEmbedding
+      ? await pgvectorSearch(projectId, queryEmbedding.vector, scope.candidateTopK, scope.categories)
+      : [];
+    if (vectorCandidates.length > 0) {
+      return vectorCandidates;
+    }
+
+    return keywordSearch(projectId, query, scope.candidateTopK, scope.categories, scope.tags);
+  };
+
+  let candidates = await fetchCandidates(searchScope);
+  if (candidates.length === 0 && searchScope.categoryRestricted) {
+    logger.info("retrieval.intent_filter.empty_fallback", {
+      projectId: String(projectId),
+      categories: searchScope.categories,
+    });
+    candidates = await fetchCandidates({
+      ...searchScope,
+      categories: [],
+      categoryRestricted: false,
+      lexicalOnly: false,
+      candidateTopK: 20,
+    });
+  }
+
+  return candidates;
 }
 
 async function maybeApplyRerank(
@@ -696,7 +866,7 @@ async function pgvectorSearch(
   projectId: UUID,
   queryVector: number[],
   topK: number,
-  categoryFilter?: string
+  categoryFilters: string[] = []
 ): Promise<RetrievalCandidate[]> {
   if (pgvectorAvailable === false) return [];
 
@@ -705,12 +875,12 @@ async function pgvectorSearch(
 
   const vectorStr = `[${queryVector.join(",")}]`;
   try {
-    // Use parameterised raw SQL for pgvector cosine distance
-    const categoryClause = categoryFilter
-      ? sql`AND fr.doc_category = ${categoryFilter}`
-      : sql``;
-
-    const efSearch = Math.max(topK * 3, HNSW_EF_SEARCH);
+    const categoryFileIdClause = buildCategoryFileIdClause(projectId, categoryFilters);
+    const categoryRestricted = categoryFilters.length > 0;
+    const vectorLimit = Math.max(topK * (categoryRestricted ? 2 : 3), categoryRestricted ? 16 : 24);
+    const efSearch = categoryRestricted
+      ? Math.max(topK * 2, 64)
+      : Math.max(topK * 3, HNSW_EF_SEARCH);
     const rows = await db.transaction(async (tx) => {
       // SET LOCAL only applies inside a transaction. efSearch is a derived
       // integer (no injection risk), so sql.raw is safe here; SET does not
@@ -757,9 +927,9 @@ async function pgvectorSearch(
       JOIN file_records fr ON fr.id = fc.file_id
       WHERE fc.project_id = ${projectId}
         AND fc.embedding_vector IS NOT NULL
-        ${categoryClause}
+        ${categoryFileIdClause}
       ORDER BY fc.embedding_vector <=> ${vectorStr}::vector
-      LIMIT ${topK * 3}
+      LIMIT ${vectorLimit}
     `);
     });
 
@@ -801,7 +971,7 @@ async function keywordSearch(
   projectId: UUID,
   query: string,
   topK: number,
-  categoryFilter?: string,
+  categoryFilters: string[] = [],
   tagsFilter?: string[]
 ): Promise<RetrievalCandidate[]> {
   const db = getDbIfInitialized();
@@ -819,9 +989,7 @@ async function keywordSearch(
     return sql`(fc.chunk_text ILIKE ${like} OR fc.file_name ILIKE ${like})`;
   });
 
-  const categoryClause = categoryFilter
-    ? sql`AND fr.doc_category = ${categoryFilter}`
-    : sql``;
+  const categoryFileIdClause = buildCategoryFileIdClause(projectId, categoryFilters);
 
   const loweredTags = (tagsFilter ?? [])
     .map((tag) => tag.toLowerCase())
@@ -873,7 +1041,7 @@ async function keywordSearch(
     FROM file_chunks fc
     JOIN file_records fr ON fr.id = fc.file_id
     WHERE fc.project_id = ${projectId}
-      ${categoryClause}
+      ${categoryFileIdClause}
       ${tagsClause}
       AND (${sql.join(tokenClauses, sql` OR `)})
     ORDER BY fc.file_id, fc.chunk_index
@@ -921,7 +1089,7 @@ async function ftsSearch(
   projectId: UUID,
   query: string,
   topK: number,
-  categoryFilter?: string,
+  categoryFilters: string[] = [],
   tagsFilter?: string[]
 ): Promise<RetrievalCandidate[]> {
   const db = getDbIfInitialized();
@@ -930,9 +1098,9 @@ async function ftsSearch(
   const normalizedQuery = query.trim();
   if (!normalizedQuery) return [];
 
-  const categoryClause = categoryFilter
-    ? sql`AND fr.doc_category = ${categoryFilter}`
-    : sql``;
+  const categoryFileIdClause = buildCategoryFileIdClause(projectId, categoryFilters);
+  const categoryRestricted = categoryFilters.length > 0;
+  const ftsLimit = Math.max(topK * (categoryRestricted ? 3 : 4), categoryRestricted ? 24 : 32);
 
   const loweredTags = (tagsFilter ?? []).map((tag) => tag.toLowerCase()).filter(Boolean);
   const tagsClause = loweredTags.length > 0
@@ -1005,7 +1173,7 @@ async function ftsSearch(
       FROM file_chunks fc
       JOIN file_records fr ON fr.id = fc.file_id
       WHERE fc.project_id = ${projectId}
-        ${categoryClause}
+        ${categoryFileIdClause}
         ${tagsClause}
         AND (
           -- Only predicates backed by GIN expression indexes on file_chunks
@@ -1018,7 +1186,7 @@ async function ftsSearch(
           OR to_tsvector('english', COALESCE(fc.file_name, '')) @@ ${tsquery}
         )
       ORDER BY fts_rank DESC
-      LIMIT ${Math.max(topK * 5, 50)}
+      LIMIT ${ftsLimit}
     `);
 
   try {
@@ -1235,57 +1403,23 @@ export const retrievalService = {
     if (!projectId || !query.trim()) return [];
 
     const normalized = normalizeOptions(options);
-    const db = getDbIfInitialized();
-    const hybridEnabled = featureService.isRolloutFlagEnabledForProject(
-      projectId,
-      "RETRIEVAL_HYBRID_ENABLED"
+    const searchScope = resolveIntentSearchScope(
+      options?.interpretation,
+      normalized.category || undefined,
+      normalized.tags
     );
-    const canUseVectorSearch = pgvectorAvailable !== false;
+    const canUseVectorSearch = pgvectorAvailable !== false && !searchScope.lexicalOnly;
     const queryEmbedding = canUseVectorSearch
       ? await getCachedQueryEmbedding(query)
       : undefined;
 
-    let candidates: RetrievalCandidate[] = [];
-    if (!db) {
-      candidates = await inMemorySearch(
-        projectId,
-        query,
-        queryEmbedding?.vector,
-        normalized.topK,
-        normalized.category || undefined,
-        normalized.tags
-      );
-    } else {
-      if (hybridEnabled) {
-        const profile = resolveBlendProfile(options?.interpretation);
-        const [vectorCandidates, lexicalCandidates] = await Promise.all([
-          queryEmbedding
-            ? pgvectorSearch(projectId, queryEmbedding.vector, normalized.topK, normalized.category || undefined)
-            : Promise.resolve([]),
-          ftsSearch(projectId, query, normalized.topK, normalized.category || undefined, normalized.tags),
-        ]);
-
-        const mergedHybrid = mergeHybridCandidates(vectorCandidates, lexicalCandidates, profile);
-        logger.info("retrieval.hybrid.metrics", {
-          stage: "retrieve_sources",
-          profile,
-          vectorCandidates: vectorCandidates.length,
-          lexicalCandidates: lexicalCandidates.length,
-          mergedCandidates: mergedHybrid.length,
-        });
-
-        candidates = mergedHybrid.length > 0
-          ? mergedHybrid
-          : await keywordSearch(projectId, query, normalized.topK, normalized.category || undefined, normalized.tags);
-      } else {
-        candidates = queryEmbedding
-          ? await pgvectorSearch(projectId, queryEmbedding.vector, normalized.topK, normalized.category || undefined)
-          : [];
-        if (candidates.length === 0) {
-          candidates = await keywordSearch(projectId, query, normalized.topK, normalized.category || undefined, normalized.tags);
-        }
-      }
-    }
+    let candidates = await runHybridCandidateSearch(
+      projectId,
+      query,
+      queryEmbedding,
+      searchScope,
+      options?.interpretation
+    );
 
     candidates = filterLowQualityChunks(candidates);
     candidates = applySourceTypePolicy(candidates, query);
@@ -1362,56 +1496,23 @@ export const retrievalService = {
       }
     }
 
-    const hybridEnabled = featureService.isRolloutFlagEnabledForProject(
-      projectId,
-      "RETRIEVAL_HYBRID_ENABLED"
+    const searchScope = resolveIntentSearchScope(
+      options?.interpretation,
+      normalized.category || undefined,
+      normalized.tags
     );
-    const canUseVectorSearch = pgvectorAvailable !== false;
+    const canUseVectorSearch = pgvectorAvailable !== false && !searchScope.lexicalOnly;
     const queryEmbedding = canUseVectorSearch
       ? await getCachedQueryEmbedding(query)
       : undefined;
 
-    let candidates: RetrievalCandidate[] = [];
-    if (!db) {
-      candidates = await inMemorySearch(
-        projectId,
-        query,
-        queryEmbedding?.vector,
-        50,
-        normalized.category || undefined,
-        normalized.tags
-      );
-    } else {
-      if (hybridEnabled) {
-        const profile = resolveBlendProfile(options?.interpretation);
-        const [vectorCandidates, lexicalCandidates] = await Promise.all([
-          queryEmbedding
-            ? pgvectorSearch(projectId, queryEmbedding.vector, 50, normalized.category || undefined)
-            : Promise.resolve([]),
-          ftsSearch(projectId, query, 50, normalized.category || undefined, normalized.tags),
-        ]);
-
-        const mergedHybrid = mergeHybridCandidates(vectorCandidates, lexicalCandidates, profile);
-        logger.info("retrieval.hybrid.metrics", {
-          stage: "search_project",
-          profile,
-          vectorCandidates: vectorCandidates.length,
-          lexicalCandidates: lexicalCandidates.length,
-          mergedCandidates: mergedHybrid.length,
-        });
-
-        candidates = mergedHybrid.length > 0
-          ? mergedHybrid
-          : await keywordSearch(projectId, query, 50, normalized.category || undefined, normalized.tags);
-      } else {
-        candidates = queryEmbedding
-          ? await pgvectorSearch(projectId, queryEmbedding.vector, 50, normalized.category || undefined)
-          : [];
-        if (candidates.length === 0) {
-          candidates = await keywordSearch(projectId, query, 50, normalized.category || undefined, normalized.tags);
-        }
-      }
-    }
+    let candidates = await runHybridCandidateSearch(
+      projectId,
+      query,
+      queryEmbedding,
+      searchScope,
+      options?.interpretation
+    );
 
     candidates = filterLowQualityChunks(candidates);
     candidates = applySourceTypePolicy(candidates, query);
@@ -1873,6 +1974,7 @@ export const retrievalService = {
 export const retrievalInternals = {
   blendWeights,
   resolveBlendProfile,
+  resolveIntentSearchScope,
   mergeHybridCandidates,
 };
 

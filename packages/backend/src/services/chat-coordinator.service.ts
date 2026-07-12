@@ -1081,6 +1081,12 @@ function buildRetrievalQuery(query: string): string {
       return `${query} ${abbrev} submittal`;
     }
   }
+  // For schedule/lookahead queries, inject schedule terms only when missing.
+  if (/\b(schedule|lookahead|gantt|critical path|milestone|delay|slippage|tia)\b/i.test(query)) {
+    if (!/\b(lookahead|gantt|baseline|progress)\b/i.test(query)) {
+      return `${query} schedule lookahead gantt baseline update`;
+    }
+  }
   return query;
 }
 
@@ -4206,7 +4212,7 @@ function buildSpecialistRoutes(domains: QueryDomain[]): SpecialistRoute[] {
     {
       agent: "sched_agent",
       domains: domains.filter((domain) => routeDomainSet.sched_agent.has(domain)),
-      categories: ["report", "rfi", "drawing"],
+      categories: ["schedule", "report", "rfi", "drawing"],
       tags: ["schedule", "delay", "milestone"],
     },
     {
@@ -5589,6 +5595,38 @@ export const chatCoordinatorService = {
       if (specSearch.results.length > 0) {
         const supplementalSources = sourcesFromSearchResults(specSearch.results);
         const supplementalNodes = buildNodesFromSearchResults(trimmedQuery, specSearch.results, 400, 4);
+        const maxKeep = Math.max(0, 8 - supplementalSources.length);
+        sources = [...supplementalSources, ...sources.slice(0, maxKeep)];
+        graphNodes = [...supplementalNodes, ...graphNodes.slice(0, maxKeep)];
+      }
+    }
+
+    // Two-pass schedule retrieval: when the query is schedule-focused but no
+    // schedule/lookahead file appeared in the primary hybrid results, run a
+    // targeted supplemental search with schedule category pre-filtering.
+    const hasScheduleEvidence =
+      sources.some((s) =>
+        /schedule|lookahead|gantt|baseline|progress|update/i.test(
+          (s.fileName ?? s.displayName ?? "").toLowerCase()
+        )
+      ) ||
+      graphNodes.some(
+        (node) =>
+          (node.docCategory ?? "").toLowerCase() === "schedule" ||
+          (node.tags ?? []).some((tag) => /schedule|delay|milestone|lookahead/i.test(tag))
+      );
+    if (interpretation.intent === "schedule_risk" && !hasScheduleEvidence) {
+      const scheduleSupplementQuery = `${trimmedQuery} schedule lookahead gantt baseline update progress`;
+      const scheduleSearch = await retrievalService.searchProject(projectId, scheduleSupplementQuery, {
+        topK: 6,
+        minRelevance: 0.1,
+        category: "schedule",
+        interpretation: retrievalInterpretation,
+        includeChunks: true,
+      });
+      if (scheduleSearch.results.length > 0) {
+        const supplementalSources = sourcesFromSearchResults(scheduleSearch.results);
+        const supplementalNodes = buildNodesFromSearchResults(trimmedQuery, scheduleSearch.results, 500, 5);
         const maxKeep = Math.max(0, 8 - supplementalSources.length);
         sources = [...supplementalSources, ...sources.slice(0, maxKeep)];
         graphNodes = [...supplementalNodes, ...graphNodes.slice(0, maxKeep)];

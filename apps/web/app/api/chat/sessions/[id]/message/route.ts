@@ -49,6 +49,7 @@ async function fetchBackendChatMessage(
       if (attempt === retries || !isTransientFetchError(error)) {
         throw error;
       }
+      await new Promise((resolve) => setTimeout(resolve, 750 * (attempt + 1)));
     } finally {
       clearTimeout(timeout);
     }

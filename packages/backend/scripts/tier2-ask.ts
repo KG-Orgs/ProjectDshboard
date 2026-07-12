@@ -67,7 +67,9 @@ async function main(): Promise<void> {
   console.log(`[tier2-ask] hybrid: ${env.retrievalHybridEnabled}`);
   console.log(`[tier2-ask] query: "${query}"\n`);
 
+  const startedAt = Date.now();
   const reply = await chatCoordinatorService.generateReply(projectId as any, query);
+  const elapsedMs = Date.now() - startedAt;
 
   console.log("========== ANSWER ==========");
   console.log(reply.content);
@@ -94,6 +96,16 @@ async function main(): Promise<void> {
   console.log("\n========== META ==========");
   console.log(`domains: ${reply.domains.join(", ")}`);
   console.log(`cacheHit: ${reply.cacheHit}`);
+  console.log(`elapsedMs: ${elapsedMs}`);
+  if (reply.coordinator?.telemetry) {
+    const t = reply.coordinator.telemetry;
+    console.log(
+      `telemetry: route=${t.routeMs}ms retrieval=${t.retrievalMs}ms merge=${t.mergeMs}ms agent=${t.agentMs}ms total=${t.totalMs}ms`
+    );
+  }
+  if (reply.interpretation) {
+    console.log(`intent: ${reply.interpretation.intent} (confidence=${reply.interpretation.confidence})`);
+  }
 
   process.exit(0);
 }

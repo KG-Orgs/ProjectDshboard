@@ -316,6 +316,10 @@ export const fileRecords = pgTable(
   (table) => ({
     projectIdx: index("idx_file_records_project").on(table.projectId),
     categoryIdx: index("idx_file_records_category").on(table.docCategory),
+    projectCategoryIdx: index("idx_file_records_project_doc_category").on(
+      table.projectId,
+      table.docCategory
+    ),
     tagsIdx: index("idx_file_records_tags").on(table.tags),
     specSectionIdx: index("idx_file_records_spec").on(table.specSection),
   })

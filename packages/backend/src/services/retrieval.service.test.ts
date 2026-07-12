@@ -235,7 +235,7 @@ describe("retrievalService", () => {
       },
     });
 
-    expect(sources).toHaveLength(2);
+    expect(sources).toHaveLength(1);
     expect(sources[0]?.fileId).toBe(asUuid("file-schedule"));
   });
 
