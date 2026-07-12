@@ -5095,6 +5095,127 @@ async function tryInTheDocumentAnswer(
   return answerFromDocumentDetail(detail, rawQuery, startedAt, history, openDocs, detail.fileName, { forceSummaryFallback: true });
 }
 
+function isExampleSubmittalsQuery(query: string): boolean {
+  const normalized = normalizeText(query);
+  if (!/\bsubmittals?\b/.test(normalized)) {
+    return false;
+  }
+
+  // Station-scoped permit/shop-drawing submittal lookups use a different path.
+  if (STATION_SCOPED_SUBMITTAL_PATTERN.test(query) && getStationAbbreviation(query)) {
+    return false;
+  }
+
+  // Content questions about submittal requirements belong in spec retrieval.
+  if (
+    /\b(requirement|requirements|section|spec|specification|mockup|warranty|procedure|mentioned|discussed)\b/.test(
+      normalized
+    )
+  ) {
+    return false;
+  }
+
+  return (
+    /\b(?:give|show|list|provide|get|name|tell|share)\b.*\b(?:example|sample|some|few|couple|\d+|two|three|four|five)\b.*\bsubmittals?\b/.test(
+      normalized
+    ) ||
+    /\b(?:example|sample)\s+submittals?\b/.test(normalized) ||
+    /\bsubmittals?\s+(?:examples?|samples?)\b/.test(normalized) ||
+    /\b(?:two|2|three|3|four|4|five|5|\d+)\s+(?:example|sample)\s+submittals?\b/.test(normalized)
+  );
+}
+
+function parseExampleSubmittalCount(query: string): number {
+  const normalized = normalizeText(query);
+  const wordCounts: Record<string, number> = {
+    one: 1,
+    a: 1,
+    an: 1,
+    couple: 2,
+    few: 3,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+  };
+
+  for (const [word, count] of Object.entries(wordCounts)) {
+    if (new RegExp(`\\b${word}\\b`).test(normalized)) {
+      return count;
+    }
+  }
+
+  const numMatch = normalized.match(/\b(\d+)\b/);
+  if (numMatch) {
+    const parsed = Number.parseInt(numMatch[1] ?? "", 10);
+    if (parsed >= 1 && parsed <= 10) {
+      return parsed;
+    }
+  }
+
+  return 2;
+}
+
+/**
+ * For "give me two example submittals" style queries, list indexed submittal files
+ * directly instead of running unscoped hybrid retrieval over the full chunk corpus.
+ */
+async function tryExampleSubmittalsLookup(
+  projectId: UUID,
+  rawQuery: string,
+  startedAt: number
+): Promise<CoordinatorResult | null> {
+  if (!isExampleSubmittalsQuery(rawQuery)) {
+    return null;
+  }
+
+  const count = parseExampleSubmittalCount(rawQuery);
+  const context = await retrievalService.getProjectContext(projectId);
+  const submittals = context.pendingSubmittals.slice(0, count);
+  const domains: QueryDomain[] = ["documents"];
+  const telemetry = buildTelemetry(startedAt);
+
+  if (submittals.length === 0) {
+    return {
+      content: [
+        "## Example Submittals",
+        "- I do not have any indexed submittal files for this project yet.",
+        "- Sync and index submittal documents, or ask about submittal requirements in the spec sections.",
+      ].join("\n"),
+      sources: [],
+      domains,
+      coordinator: buildCoordinatorMetadata(domains, telemetry),
+      cacheHit: false,
+    };
+  }
+
+  const fileLines = submittals.map((submittal) => {
+    const name = deriveShortFormName(submittal.fileName);
+    const number = submittal.submittalNumber ? ` (${submittal.submittalNumber})` : "";
+    const status = submittal.status ? ` — ${submittal.status}` : "";
+    return `- **${name}**${number}${status}`;
+  });
+
+  const sources = submittals.flatMap((submittal) =>
+    buildSingleSource(submittal.fileId as UUID, submittal.fileName, {
+      displayName: deriveShortFormName(submittal.fileName),
+    })
+  );
+
+  return {
+    content: [
+      "## Example Submittals",
+      `Here ${submittals.length === 1 ? "is" : "are"} ${submittals.length} indexed submittal file${submittals.length === 1 ? "" : "s"} from this project:`,
+      "",
+      ...fileLines,
+    ].join("\n"),
+    sources,
+    domains,
+    coordinator: buildCoordinatorMetadata(domains, telemetry),
+    cacheHit: false,
+  };
+}
+
 /**
  * For permit queries at a named station, do a filename-based search for files matching
  * the station abbreviation + "permit" pattern and list them directly.
@@ -5288,6 +5409,11 @@ export const chatCoordinatorService = {
         coordinator: buildCoordinatorMetadata(domains, telemetry),
         cacheHit: false,
       };
+    }
+
+    const exampleSubmittalsAnswer = await tryExampleSubmittalsLookup(projectId, rawQuery, startedAt);
+    if (exampleSubmittalsAnswer) {
+      return exampleSubmittalsAnswer;
     }
 
     if (isVagueOpenEndedQuery(rawQuery)) {
