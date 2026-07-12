@@ -7,7 +7,7 @@ import {
 } from '../../../../_lib/proxy';
 
 export const dynamic = 'force-dynamic';
-const BACKEND_FETCH_TIMEOUT_MS = 30_000;
+const BACKEND_FETCH_TIMEOUT_MS = 120_000;
 const BACKEND_FETCH_RETRIES = 2;
 
 function isTransientFetchError(error: unknown): boolean {
