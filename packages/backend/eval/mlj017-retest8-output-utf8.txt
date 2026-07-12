@@ -1,0 +1,38 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" "C:\\Users\\georg\\ProjectDshboard\\packages\\backend\\eval\\mlj017-retest8-batch-input.json"
+
+[tier2:ask-batch] project: 731cfd5d-e647-4551-89e7-0a3cc4915115
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 1
+
+========================================================================
+[sq01]
+  In GEN-042R00, what subcontractor is being reviewed for approval, what type of work experience do they describe in their application, and are any active contracts listed?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval Review
+
+- **Subcontractor:** All Points Communications, Inc. (p. 1, Document Summary)
+- **Work Experience Described:** Engineer's Field Offices, Turnkey Solutions (including Interior Design & Layout Services), Office Furniture, IT Network Design, Equipment, Installation (p. 4).
+- **Active Contracts Listed:** The document includes a section to "List active contracts that are running concurrently with this contract" (Schedule F1, Question 6, p. 12), but no specific contracts are listed within the provided text.
+
+--- SOURCES ---
+
+- A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf
+  pages: 1, 4, 15, 3
+
+--- CITATIONS ---
+
+- A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf chunk=2 (p. 1) rel=1.000
+- A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf chunk=6 (p. 4) rel=1.000
+- A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf chunk=25 (p. 15) rel=1.000
+- A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf chunk=4 (p. 3) rel=1.000
+- A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf chunk=8 (p. 5) rel=1.000
+- A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf chunk=13 (p. 7) rel=1.000
+- A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf chunk=12 (p. 7) rel=1.000
+- A37806_GEN-042R00 - ORIG - Subcontractor Approval Forms - All Points Communication, Inc..pdf chunk=19 (p. 12) rel=1.000
+
+--- META --- elapsed=6085ms domains=contracts, documents, subcontractor cacheHit=false

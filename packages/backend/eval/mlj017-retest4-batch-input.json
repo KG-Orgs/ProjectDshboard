@@ -1,0 +1,11 @@
+{
+  "projectId": "731cfd5d-e647-4551-89e7-0a3cc4915115",
+  "questions": [
+    { "id": "sq01", "query": "What does CO#15 specify for the Avenue I water main relocation scope, and which contractor is performing the work?" },
+    { "id": "sq66", "query": "What structural rebar and anchor bolt interference is documented for the Middletown Avenue NB stair foundation, and what spec section 05 12 00 requirements are in conflict?" },
+    { "id": "sq71", "query": "In MYR-002R00 Myrtle Avenue Demo Shield Drawings, what construction details and shielding elements are shown in the enlarged section views, and what platform-level steel connections are specified?" },
+    { "id": "sq73", "query": "What UPS backup capacity is specified for Myrtle Avenue communications systems in RFI-009, and what spec section 27 33 01 requirements apply?" },
+    { "id": "sq101", "query": "In PRDC12-012R02 Lead Placard Package for Burnside, what PPE requirements and air monitoring protocols apply to lead paint removal workers?" },
+    { "id": "sq102", "query": "In PRDC12-019R00 SikaGrout 212 product submittal, what mixing instructions and temperature requirements apply for installing SikaGrout-212 in anchor bolts or base plates?" }
+  ]
+}

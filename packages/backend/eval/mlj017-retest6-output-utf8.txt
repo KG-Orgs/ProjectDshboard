@@ -1,0 +1,37 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" "C:\\Users\\georg\\ProjectDshboard\\packages\\backend\\eval\\mlj017-retest6-batch-input.json"
+
+[tier2:ask-batch] project: 731cfd5d-e647-4551-89e7-0a3cc4915115
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 1
+
+========================================================================
+[sq01]
+  In GEN-042R00 A37806 and C49321R Coordination Meeting, what interface points and scope division between the two contracts were discussed, and what action items relate to change orders or contract modifications?
+========================================================================
+
+--- ANSWER ---
+
+## Interface Points and Scope Division
+
+-   **Contract C-34915 Scope:** Blasting, painting, steel repairs, and concrete pier foundation repairs along elevated track (p. 1).
+-   **Interference Points:**
+    -   C-37806 hanging scaffolding directly interferes with locations of new structure supporting steel (p. 3).
+    -   C-37806 scope may interfere with A-37806 foundation placement due to occupation of street adjacent to new structure (p. 3).
+-   **Location:** Elevated track structure from Bent #71 to Bent #309, including Avenue I station limits (Bent #158-173) (p. 1).
+
+## Change Order / Contract Modification Action Items
+
+-   No action items related to change orders or contract modifications were discussed in the provided context.
+
+--- SOURCES ---
+
+- A37806_01 30 20_GEN-022R00 - FIO - C34915 Coordination Meeting Minutes 06.04.25.pdf
+  pages: 3
+
+--- CITATIONS ---
+
+- A37806_01 30 20_GEN-022R00 - FIO - C34915 Coordination Meeting Minutes 06.04.25.pdf chunk=6 (p. 3) rel=1.000
+
+--- META --- elapsed=5813ms domains=contracts, documents cacheHit=false
