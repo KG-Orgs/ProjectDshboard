@@ -1,10 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import LoginPage from './page';
-
-vi.mock('next/navigation', () => ({
-  useSearchParams: () => new URLSearchParams(window.location.search),
-}));
 
 describe('Login page', () => {
   it('renders a Microsoft sign-in link that points at the web auth proxy route', () => {
@@ -22,14 +18,22 @@ describe('Login page', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders a friendly setup message when OAuth is not configured', () => {
-    window.history.pushState(
-      {},
-      '',
-      'http://localhost:3000/login?error=oauth_not_configured&message=Microsoft%20OAuth%20is%20not%20configured'
-    );
+  it('does not crash when searchParams is undefined', () => {
+    expect(() => render(<LoginPage />)).not.toThrow();
+    expect(
+      screen.getByRole('link', { name: 'Continue with Microsoft' })
+    ).toBeInTheDocument();
+  });
 
-    render(<LoginPage />);
+  it('renders a friendly setup message when OAuth is not configured', () => {
+    render(
+      <LoginPage
+        searchParams={{
+          error: 'oauth_not_configured',
+          message: 'Microsoft OAuth is not configured',
+        }}
+      />
+    );
 
     expect(screen.getByText('Microsoft OAuth is not configured')).toBeInTheDocument();
   });
