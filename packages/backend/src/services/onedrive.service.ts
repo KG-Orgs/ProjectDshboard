@@ -651,6 +651,52 @@ export const onedriveService = {
     };
   },
 
+  /**
+   * Download a corpus file by its relative path from the user's OneDrive root.
+   * Used as a fallback when the local sync path is unavailable (e.g. the folder
+   * moved to a different OneDrive account or the user is on a different machine).
+   * Returns null (instead of throwing) when the user has no OneDrive connection
+   * or the path is not found, so callers can handle it gracefully.
+   */
+  async downloadFileContentByPath(
+    user: RequestUserContext | undefined,
+    filePath: string
+  ): Promise<OneDriveFileContent | null> {
+    const authenticatedUser = requireUser(user);
+    const connection = await loadConnectionForUser(authenticatedUser.id);
+    if (!connection) {
+      return null;
+    }
+    const accessToken = await exchangeRefreshToken(connection);
+
+    // Normalise separators and encode each path segment individually so that
+    // spaces and special characters are handled correctly by Graph.
+    const encodedPath = filePath
+      .replace(/\\/g, "/")
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/");
+
+    const response = await fetch(
+      `${getGraphBaseUrl()}/me/drive/root:/${encodedPath}:/content`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    if (!response.ok) {
+      // 404 / 403 just means the file isn't at that path in this user's drive.
+      return null;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return {
+      buffer: Buffer.from(arrayBuffer),
+      contentType: response.headers.get("content-type") ?? undefined,
+    };
+  },
+
   async downloadFileContent(
     user: RequestUserContext | undefined,
     itemId: string

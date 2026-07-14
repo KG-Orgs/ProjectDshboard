@@ -724,8 +724,27 @@ async function createApp(): Promise<Express> {
         res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
         res.send(buffer);
         return;
-      } catch (error) {
-        const details = error instanceof Error ? error.message : String(error);
+      } catch (localError) {
+        // Local file not found (stale deepLinkUrl or LOCAL_CORPUS_PARENT not set).
+        // Fall back to fetching the file from the requesting user's OneDrive by
+        // relative path.  This lets any team member who has the shared folder in
+        // their own OneDrive view PDFs without reindexing.
+        const relPath = file.filePath;
+        if (relPath && req.user) {
+          try {
+            const oneDriveContent = await onedriveService.downloadFileContentByPath(req.user, relPath);
+            if (oneDriveContent) {
+              res.setHeader("Content-Type", oneDriveContent.contentType ?? guessMimeType(file.fileName, file.mimeType ?? undefined));
+              res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
+              res.send(oneDriveContent.buffer);
+              return;
+            }
+          } catch {
+            // OneDrive path lookup also failed; fall through to 404.
+          }
+        }
+
+        const details = localError instanceof Error ? localError.message : String(localError);
         logger.warn("project.file_content.local_read_failed", {
           projectId,
           fileId,
@@ -734,7 +753,7 @@ async function createApp(): Promise<Express> {
         });
         res.status(404).json({
           error: "local_corpus_file_missing",
-          message: "Indexed file is not available on disk at the expected local path.",
+          message: "Indexed file is not available on disk or in your connected OneDrive.",
           details: { path: absolutePath },
         });
         return;

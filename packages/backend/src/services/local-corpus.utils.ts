@@ -29,7 +29,13 @@ export function resolveLocalCorpusAbsolutePath(input: {
 }): string | null {
   if (input.deepLinkUrl?.startsWith("file://")) {
     try {
-      return fileURLToPath(input.deepLinkUrl);
+      const candidate = fileURLToPath(input.deepLinkUrl);
+      // Only use the deepLinkUrl path if the file actually exists there.
+      // This allows graceful fallback when the OneDrive folder has moved to a
+      // different local sync path (different account, machine, or user).
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
     } catch {
       // Fall through to path-based resolution.
     }

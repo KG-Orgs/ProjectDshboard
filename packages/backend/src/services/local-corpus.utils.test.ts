@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { guessMimeType, isLocalCorpusItemId, resolveLocalCorpusAbsolutePath } from "./local-corpus.utils";
+
+// This file itself is guaranteed to exist — used to test deepLinkUrl resolution.
+const THIS_FILE = fileURLToPath(import.meta.url);
+const THIS_FILE_URL = new URL(import.meta.url).href;
 
 describe("local-corpus.utils", () => {
   it("detects local corpus item ids", () => {
@@ -8,19 +13,38 @@ describe("local-corpus.utils", () => {
     expect(isLocalCorpusItemId("onedrive-item-1")).toBe(false);
   });
 
-  it("resolves from deep link url", () => {
-    const resolved = resolveLocalCorpusAbsolutePath({
-      deepLinkUrl: "file:///tmp/corpus/QWP-001.pdf",
+  describe("resolveLocalCorpusAbsolutePath", () => {
+    it("resolves from deep link url when file exists on disk", () => {
+      const resolved = resolveLocalCorpusAbsolutePath({
+        deepLinkUrl: THIS_FILE_URL,
+      });
+      expect(resolved).toBe(THIS_FILE);
     });
-    expect(resolved).toBe(path.resolve("/tmp/corpus/QWP-001.pdf"));
-  });
 
-  it("resolves from local item id and corpus parent", () => {
-    const resolved = resolveLocalCorpusAbsolutePath({
-      onedriveItemId: "local:MLJ-017/05 - SUBMITTALS/QWP-001.pdf",
-      corpusParent: "/data/onedrive",
+    it("falls back to corpusParent when deepLinkUrl file does not exist", () => {
+      const resolved = resolveLocalCorpusAbsolutePath({
+        deepLinkUrl: "file:///stale/old-onedrive/MLJ-017/file.pdf",
+        onedriveItemId: "local:MLJ-017/file.pdf",
+        corpusParent: "/data/new-onedrive",
+      });
+      expect(resolved).toBe(path.join("/data/new-onedrive", "MLJ-017/file.pdf"));
     });
-    expect(resolved).toBe(path.join("/data/onedrive", "MLJ-017/05 - SUBMITTALS/QWP-001.pdf"));
+
+    it("falls back to corpusParent when deepLinkUrl is absent", () => {
+      const resolved = resolveLocalCorpusAbsolutePath({
+        onedriveItemId: "local:MLJ-017/05 - SUBMITTALS/QWP-001.pdf",
+        corpusParent: "/data/onedrive",
+      });
+      expect(resolved).toBe(path.join("/data/onedrive", "MLJ-017/05 - SUBMITTALS/QWP-001.pdf"));
+    });
+
+    it("returns null when deepLinkUrl file is absent and no corpusParent configured", () => {
+      const resolved = resolveLocalCorpusAbsolutePath({
+        deepLinkUrl: "file:///stale/old-onedrive/MLJ-017/file.pdf",
+        onedriveItemId: "local:MLJ-017/file.pdf",
+      });
+      expect(resolved).toBeNull();
+    });
   });
 
   it("guesses pdf mime type", () => {
