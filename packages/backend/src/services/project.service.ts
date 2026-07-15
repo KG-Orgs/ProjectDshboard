@@ -11,6 +11,7 @@ import type {
 } from "@contractor/shared";
 import {
   chunkLinks,
+  documentIdentifiers,
   fileChunks,
   fileRecords,
   getDbIfInitialized,
@@ -885,6 +886,26 @@ export const projectService = {
     file.chunkCount = update.chunkCount ?? file.chunkCount;
     file.lastIndexed = update.lastIndexed;
     file.updatedAt = new Date();
+  },
+
+  async replaceFileIdentifiers(
+    projectId: UUID,
+    fileId: UUID,
+    identifiers: Array<{ type: string; valueNormalized: string; raw: string }>
+  ): Promise<void> {
+    const db = getDbIfInitialized();
+    if (!db) return;
+    await db.delete(documentIdentifiers).where(eq(documentIdentifiers.fileId, fileId));
+    if (identifiers.length === 0) return;
+    await db.insert(documentIdentifiers).values(
+      identifiers.map((identifier) => ({
+        fileId,
+        projectId,
+        type: identifier.type,
+        valueNormalized: identifier.valueNormalized,
+        raw: identifier.raw,
+      }))
+    );
   },
 
   async replaceFileChunks(

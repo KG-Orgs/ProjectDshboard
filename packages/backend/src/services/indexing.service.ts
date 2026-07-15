@@ -12,6 +12,7 @@ import { documentStorageService } from "./document-storage.service";
 import { rm } from "node:fs/promises";
 import { getDbIfInitialized, indexingErrors } from "../db";
 import { constructionClassifierService, type ClassificationResult } from "./construction-classifier.service";
+import { extractIdentifiers, extractPathMetadata } from "./identifier-extraction.utils";
 
 // Process high-priority files first; 5 concurrent per batch
 const INDEXING_BATCH_SIZE = 5;
@@ -842,7 +843,9 @@ export const indexingService = {
                   extractedFields: cls.extractedFields as Record<string, unknown>,
                   specSection: cls.extractedFields.specSection,
                   sheetNumber: cls.extractedFields.sheetNumber,
-                  revision: cls.extractedFields.revision,
+                  // Prefer the path-derived revision (e.g. R04 from GEN-096R04) over the
+                  // content-regex revision which requires an explicit "Rev" prefix.
+                  revision: cls.extractedFields.revision ?? extractPathMetadata(file.fileName, file.filePath).revision,
                 }),
                 FILE_STATUS_UPDATE_TIMEOUT_MS,
                 `Index status update timed out after ${Math.round(FILE_STATUS_UPDATE_TIMEOUT_MS / 1000)}s.`
@@ -856,6 +859,21 @@ export const indexingService = {
                 error
               );
             }
+
+            // Populate document_identifiers so exact-identifier lookup works for
+            // queries like "summarize SWP-016" or "RFI-042 status".
+            const fileIdentifiers = extractIdentifiers(file.fileName, file.filePath);
+            projectService.replaceFileIdentifiers(
+              projectId,
+              file.id as UUID,
+              fileIdentifiers
+            ).catch((identifierError: unknown) => {
+              logger.warn("indexing.identifiers.failed", {
+                projectId,
+                fileId: file.id,
+                error: identifierError instanceof Error ? identifierError.message : String(identifierError),
+              });
+            });
 
             const healthyCircuit = getOrCreateCircuit(projectId);
             healthyCircuit.consecutiveFatal = 0;
