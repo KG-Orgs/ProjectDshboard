@@ -190,7 +190,7 @@ function normalizeProjectFilesQuery(query: ProjectFilesQuery): {
   const page = Number.isFinite(query.page) && (query.page ?? 1) > 0 ? Number(query.page) : 1;
   const pageSize =
     Number.isFinite(query.pageSize) && (query.pageSize ?? 50) > 0
-      ? Math.min(Number(query.pageSize), 200)
+      ? Math.min(Number(query.pageSize), 10000)
       : 50;
   const search = query.search?.trim();
   const category = query.category?.trim();

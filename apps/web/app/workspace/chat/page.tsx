@@ -1055,7 +1055,7 @@ function ChatWorkspacePageContent() {
     let cancelled = false;
     setWsFilesLoading(true);
 
-    fetch(`/api/projects/${encodeURIComponent(projectId)}/files?page=1&pageSize=300`, { cache: 'no-store' })
+    fetch(`/api/projects/${encodeURIComponent(projectId)}/files?page=1&pageSize=10000`, { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
       .then((data: { files: WsFile[] }) => {
         if (cancelled) return;
