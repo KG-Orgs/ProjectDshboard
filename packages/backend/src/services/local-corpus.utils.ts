@@ -1,6 +1,8 @@
 import fs from "node:fs";
+import { promises as fsPromises } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
 
 const LOCAL_ITEM_PREFIX = "local:";
 
@@ -63,7 +65,19 @@ export function guessMimeType(fileName: string, fallback?: string): string {
   return MIME_BY_EXT[ext] ?? fallback ?? "application/octet-stream";
 }
 
-export function readLocalCorpusFile(absolutePath: string): Buffer {
+/**
+ * Read a local corpus file asynchronously with a timeout.
+ *
+ * On Windows, OneDrive Files On-Demand placeholders pass existsSync() but
+ * block indefinitely on readFileSync() while waiting for a cloud download
+ * (especially if the source account is disconnected). Using an async read
+ * with AbortSignal.timeout lets us bail out and fall back to the Graph API
+ * instead of hanging the request forever.
+ */
+export async function readLocalCorpusFile(
+  absolutePath: string,
+  timeoutMs = 5_000
+): Promise<Buffer> {
   if (!fs.existsSync(absolutePath)) {
     throw new Error(`local_corpus_file_missing:${absolutePath}`);
   }
@@ -73,5 +87,7 @@ export function readLocalCorpusFile(absolutePath: string): Buffer {
     throw new Error(`local_corpus_not_a_file:${absolutePath}`);
   }
 
-  return fs.readFileSync(absolutePath);
+  // AbortSignal.timeout available since Node 17.3 — safe on Node 22.
+  const signal = AbortSignal.timeout(timeoutMs);
+  return fsPromises.readFile(absolutePath, { signal } as Parameters<typeof fsPromises.readFile>[1]);
 }

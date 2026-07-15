@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { guessMimeType, isLocalCorpusItemId, resolveLocalCorpusAbsolutePath } from "./local-corpus.utils";
+import { guessMimeType, isLocalCorpusItemId, readLocalCorpusFile, resolveLocalCorpusAbsolutePath } from "./local-corpus.utils";
 
 // This file itself is guaranteed to exist — used to test deepLinkUrl resolution.
 const THIS_FILE = fileURLToPath(import.meta.url);
@@ -49,5 +49,16 @@ describe("local-corpus.utils", () => {
 
   it("guesses pdf mime type", () => {
     expect(guessMimeType("QWP-001.pdf")).toBe("application/pdf");
+  });
+
+  it("readLocalCorpusFile rejects immediately for a missing path", async () => {
+    await expect(readLocalCorpusFile("/nonexistent/path/file.pdf")).rejects.toThrow(
+      "local_corpus_file_missing"
+    );
+  });
+
+  it("readLocalCorpusFile reads an existing file", async () => {
+    const buffer = await readLocalCorpusFile(THIS_FILE);
+    expect(buffer.length).toBeGreaterThan(0);
   });
 });

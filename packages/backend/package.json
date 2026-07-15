@@ -26,6 +26,7 @@
     "tier2:supervisor": "bash ./scripts/tier2-supervisor.sh",
     "tier2:launchd-start": "bash ./scripts/tier2-launchd-start.sh",
     "tier2:launchd-stop": "bash ./scripts/tier2-launchd-stop.sh",
+    "test:pdf-serving": "tsx ./scripts/test-pdf-serving.ts",
     "tier2:search": "tsx ./scripts/tier2-search-demo.ts",
     "tier2:ask": "tsx ./scripts/tier2-ask.ts",
     "tier2:ask-batch": "tsx ./scripts/tier2-ask-batch.ts",

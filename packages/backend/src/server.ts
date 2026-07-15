@@ -719,7 +719,7 @@ async function createApp(): Promise<Express> {
       }
 
       try {
-        const buffer = readLocalCorpusFile(absolutePath);
+        const buffer = await readLocalCorpusFile(absolutePath);
         res.setHeader("Content-Type", guessMimeType(file.fileName, file.mimeType ?? undefined));
         res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
         res.send(buffer);
@@ -978,7 +978,7 @@ async function createApp(): Promise<Express> {
       return;
     }
 
-    const fileBuffer = readLocalCorpusFile(absolutePath);
+    const fileBuffer = await readLocalCorpusFile(absolutePath);
 
     // Validate sheet exists before attempting edits
     const sheetNames = excelEditorService.getSheetNames(fileBuffer);
