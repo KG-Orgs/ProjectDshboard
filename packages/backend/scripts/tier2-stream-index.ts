@@ -23,12 +23,13 @@ import { execSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
 import { config } from "dotenv";
-import { and, eq, gt, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../src/db/schema";
 import { getEnv } from "../src/config/env";
 import { fileChunks, fileRecords } from "../src/db/schema";
+import { initializeDb } from "../src/db/index.js";
 import { indexingPipelineService } from "../src/services/indexing-pipeline.service";
 import { embeddingsService } from "../src/services/embeddings.service";
 import { projectService } from "../src/services/project.service";
@@ -54,6 +55,10 @@ interface CliArgs {
   limit?: number;
   shard?: { k: number; n: number };
   dryRun: boolean;
+  /** Re-process files that previously indexed with chunkCount=0, forcing v2 extractor if configured. */
+  reindexZeroChunks: boolean;
+  /** When set, only process files whose extension matches one of these (e.g. Set{"pptx","docx"}). */
+  filterExt?: Set<string>;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -63,6 +68,8 @@ function parseArgs(argv: string[]): CliArgs {
   let limit: number | undefined;
   let shard: { k: number; n: number } | undefined;
   let dryRun = false;
+  let reindexZeroChunks = false;
+  let filterExt: Set<string> | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -77,11 +84,16 @@ function parseArgs(argv: string[]): CliArgs {
       i++;
     }
     else if (arg === "--dry-run") { dryRun = true; }
+    else if (arg === "--reindex-zero-chunks") { reindexZeroChunks = true; }
+    else if (arg === "--filter-ext" && next) {
+      filterExt = new Set(next.split(",").map((e) => e.trim().toLowerCase().replace(/^\./, "")));
+      i++;
+    }
   }
 
   if (!corpus) throw new Error("--corpus <path> is required");
   if (!projectId) throw new Error("--project-id <uuid> is required");
-  return { corpus, projectId, concurrency, limit, shard, dryRun };
+  return { corpus, projectId, concurrency, limit, shard, dryRun, reindexZeroChunks, filterExt };
 }
 
 // ─── File discovery ───────────────────────────────────────────────────────────
@@ -94,12 +106,14 @@ interface WalkEntry {
   size: number;
 }
 
-function isEligibleExt(ext: string, size: number): boolean {
+function isEligibleExt(ext: string, size: number, filterExt?: Set<string>): boolean {
   if (ARCHIVE_EXTENSIONS.has(ext)) return false;
   if (VIDEO_EXTENSIONS.has(ext)) return false;
   if (IMAGE_EXTENSIONS.has(ext)) return false;
   if (ext === "pdf" && size > MAX_TEXT_PDF_BYTES) return false;
-  return TEXT_EXTENSIONS.has(ext);
+  if (!TEXT_EXTENSIONS.has(ext)) return false;
+  if (filterExt && filterExt.size > 0 && !filterExt.has(ext)) return false;
+  return true;
 }
 
 function shardBucket(relativePath: string, n: number): number {
@@ -122,7 +136,7 @@ function walkCorpus(corpus: string, corpusParent: string, args: CliArgs): WalkEn
       try { stat = fs.lstatSync(full); } catch { continue; }
       const size = Number(stat.size);
       const ext = extensionOf(entry.name);
-      if (!isEligibleExt(ext, size)) continue;
+      if (!isEligibleExt(ext, size, args.filterExt)) continue;
       const relativePath = path.relative(corpusParent, full);
       if (args.shard && shardBucket(relativePath, args.shard.n) !== args.shard.k) continue;
       out.push({ absolutePath: full, relativePath, fileName: entry.name, ext, size });
@@ -224,11 +238,26 @@ async function findOrCreateFileRecord(
 ): Promise<{ id: string; onedriveItemId: string; tags: string[] | null }> {
   const onedriveItemId = `local:${entry.relativePath}`;
   const now = new Date();
+
+  // 1. Exact match by onedriveItemId (fast path — covers re-runs).
   const [existing] = await db
     .select().from(fileRecords)
     .where(and(eq(fileRecords.projectId, projectId), eq(fileRecords.onedriveItemId, onedriveItemId)))
     .limit(1);
   if (existing) return { id: existing.id, onedriveItemId, tags: existing.tags };
+
+  // 2. Fallback: look for an existing record with the same fileName (e.g. an
+  //    OneDrive-synced record whose onedriveItemId is the real OneDrive item ID).
+  //    Writing chunks to this record ensures the UI's activeDocFileId stays valid
+  //    instead of creating a shadow duplicate that the frontend never discovers.
+  const [existingByName] = await db
+    .select().from(fileRecords)
+    .where(and(eq(fileRecords.projectId, projectId), eq(fileRecords.fileName, entry.fileName)))
+    .orderBy(desc(fileRecords.chunkCount))   // prefer the record that already has chunks
+    .limit(1);
+  if (existingByName) return { id: existingByName.id, onedriveItemId: existingByName.onedriveItemId!, tags: existingByName.tags };
+
+  // 3. Genuinely new file — create the local: record.
   const [row] = await db.insert(fileRecords).values({
     id: randomUUID(), projectId, onedriveItemId,
     fileName: entry.fileName, filePath: entry.relativePath,
@@ -262,12 +291,12 @@ async function embedChunks(
 // ─── Index one file ───────────────────────────────────────────────────────────
 
 async function indexOneFile(
-  db: Db, projectId: string, entry: WalkEntry, dryRun: boolean
+  db: Db, projectId: string, entry: WalkEntry, dryRun: boolean, forceExtractorV2 = false
 ): Promise<{ status: "indexed" | "skipped" | "error"; reason?: string; chunks?: number }> {
   if (dryRun) return { status: "indexed", chunks: 0 };
   try {
     const file = await findOrCreateFileRecord(db, projectId, entry);
-    const extractorV2Enabled = featureService.isRolloutFlagEnabledForProject(
+    const extractorV2Enabled = forceExtractorV2 || featureService.isRolloutFlagEnabledForProject(
       projectId as any, "INDEXING_EXTRACTOR_PIPELINE_V2_ENABLED"
     );
     const insights = await indexingPipelineService.indexTempFile({
@@ -345,7 +374,7 @@ async function runWorkerPool(targets: WalkEntry[], db: Db, args: CliArgs, stats:
       }
 
       // 2. Index
-      const result = await indexOneFile(db, args.projectId, entry, args.dryRun);
+      const result = await indexOneFile(db, args.projectId, entry, args.dryRun, args.reindexZeroChunks);
       if (result.status === "indexed") {
         stats.indexed++;
         process.stdout.write(`${pos} ✓ ${entry.fileName} chunks=${result.chunks}\n`);
@@ -390,6 +419,10 @@ async function main(): Promise<void> {
   if (!fs.existsSync(args.corpus)) throw new Error(`Corpus not found: ${args.corpus}`);
 
   const db = initShardDb(env.databaseUrl);
+  // Also initialize the shared DB singleton so projectService methods
+  // (replaceFileChunks, updateFileIndexingResult) use the real DB instead
+  // of the silent in-memory fallback.
+  await initializeDb(env.databaseUrl);
   const corpusParent = path.dirname(args.corpus);
 
   console.log(`[stream] corpus:      ${args.corpus}`);
@@ -398,6 +431,9 @@ async function main(): Promise<void> {
   if (args.shard) console.log(`[stream] shard:       ${args.shard.k}/${args.shard.n}`);
   if (args.limit) console.log(`[stream] limit:       ${args.limit}`);
   if (args.dryRun) console.log("[stream] DRY RUN");
+  if (args.reindexZeroChunks) console.log("[stream] --reindex-zero-chunks: ON  (forces v2 extractor; re-processes all 0-chunk files)");
+  if (args.filterExt) console.log(`[stream] --filter-ext:          ${[...args.filterExt].join(",")}  (only these extensions processed)`);
+  if (args.filterExt && !args.reindexZeroChunks) console.log("[stream] TIP: add --reindex-zero-chunks to also retry files that previously returned 0 chunks");
 
   console.log("[stream] walking corpus...");
   const allFiles = walkCorpus(args.corpus, corpusParent, args);
@@ -405,6 +441,20 @@ async function main(): Promise<void> {
 
   console.log("[stream] checking already-indexed...");
   const alreadyIndexed = await loadIndexedIds(env.databaseUrl, args.projectId);
+
+  // Files with chunkCount=0 are already excluded from alreadyIndexed (loadIndexedIds uses gt(chunkCount,0)).
+  // When --reindex-zero-chunks is set, report how many zero-chunk files exist so the operator can track progress.
+  if (args.reindexZeroChunks) {
+    const db2 = initShardDb(env.databaseUrl);
+    try {
+      const zeroChunkRows = await db2
+        .select({ onedriveItemId: fileRecords.onedriveItemId, fileName: fileRecords.fileName })
+        .from(fileRecords)
+        .where(and(eq(fileRecords.projectId, args.projectId), eq(fileRecords.chunkCount, 0)));
+      console.log(`[stream] zero-chunk files in DB: ${zeroChunkRows.length} (will be re-attempted with v2 extractor if configured)`);
+    } catch { /* non-fatal */ }
+  }
+
   const targets = allFiles.filter((f) => !alreadyIndexed.has(`local:${f.relativePath}`));
   console.log(`[stream] ${targets.length} to index | ${alreadyIndexed.size} already done\n`);
 

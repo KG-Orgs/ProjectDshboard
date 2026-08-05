@@ -27,7 +27,15 @@ RUN pnpm --filter @contractor/backend build
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache wget
+# poppler-utils provides pdftoppm (PDF→PNG for OCR).
+# Pre-download the English Tesseract traineddata so the first OCR run doesn't
+# hit the network; stored in /app/.tessdata which tesseract.js will find via
+# TESSDATA_PREFIX / the TESSERACT_LANG_PATH env var.
+RUN apk add --no-cache wget poppler-utils \
+    && mkdir -p /app/.tessdata \
+    && wget -q "https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata" \
+         -O /app/.tessdata/eng.traineddata
+ENV TESSERACT_LANG_PATH=/app/.tessdata
 
 COPY --from=builder /app/packages/backend/dist          ./packages/backend/dist
 COPY --from=builder /app/packages/backend/node_modules  ./packages/backend/node_modules

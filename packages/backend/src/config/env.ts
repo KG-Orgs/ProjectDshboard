@@ -25,6 +25,7 @@ export interface AppEnv {
   openAiEmbeddingModel: string;
   openAiEmbeddingEndpoint: string;
   openAiEmbeddingDimensions: number;
+  openAiEmbeddingApiKey?: string;
   anthropicApiKey?: string;
   anthropicChatModel: string;
   anthropicChatEndpoint: string;
@@ -41,6 +42,7 @@ export interface AppEnv {
   chatStrictCitationVerificationEnabled: boolean;
   chatRetrievalTraceEnabled: boolean;
   indexingExtractorPipelineV2Enabled: boolean;
+  indexingOcrEnabled: boolean;
   docParserTimeoutMs: number;
   docParserEndpoint?: string;
   retrievalHybridEnabled: boolean;
@@ -171,6 +173,7 @@ export function getEnv(): AppEnv {
     openAiEmbeddingEndpoint:
       process.env.OPENAI_EMBEDDING_ENDPOINT ?? "https://api.openai.com/v1/embeddings",
     openAiEmbeddingDimensions: embeddingDimensions,
+    openAiEmbeddingApiKey: process.env.OPENAI_EMBEDDING_API_KEY ?? deepseekApiKey,
     anthropicApiKey: process.env.ANTHROPIC_API_KEY,
     anthropicChatModel: process.env.ANTHROPIC_CHAT_MODEL ?? "claude-sonnet-4-5",
     anthropicChatEndpoint:
@@ -191,6 +194,7 @@ export function getEnv(): AppEnv {
     chatStrictCitationVerificationEnabled: parseBooleanFlag(process.env.CHAT_STRICT_CITATION_VERIFICATION_ENABLED, true),
     chatRetrievalTraceEnabled: parseBooleanFlag(process.env.CHAT_RETRIEVAL_TRACE_ENABLED, false),
     indexingExtractorPipelineV2Enabled: parseBooleanFlag(process.env.INDEXING_EXTRACTOR_PIPELINE_V2_ENABLED, false),
+    indexingOcrEnabled: parseBooleanFlag(process.env.INDEXING_OCR_ENABLED, false),
     docParserTimeoutMs: Number.isNaN(docParserTimeoutMs) || docParserTimeoutMs < 500 ? 12000 : docParserTimeoutMs,
     docParserEndpoint: process.env.DOC_PARSER_ENDPOINT,
     retrievalHybridEnabled: parseBooleanFlag(process.env.RETRIEVAL_HYBRID_ENABLED, false),

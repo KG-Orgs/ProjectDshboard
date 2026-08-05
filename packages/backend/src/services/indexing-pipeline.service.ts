@@ -6,17 +6,19 @@
  * construction classifier.
  *
  * Supported types:
- *   PDF, DOCX/DOC, XLSX/XLS, CSV, TXT/MD, MSG/EML, Images (metadata stubs)
+ *   PDF, DOCX/DOC, XLSX/XLS, CSV, TXT/MD, MSG/EML, PPTX/PPT, Images (metadata stubs)
  *
  * Chunking strategy:
  *   - PDF: page-aware chunks (one chunk per page, or split long pages)
  *   - DOCX: heading-based + paragraph chunks
+ *   - PPTX: per-slide chunks extracted via ZIP/XML reader (no external deps)
  *   - XLSX/CSV: sheet/table row-based chunks (max N rows per chunk)
  *   - TXT: sliding-window character chunks with overlap
  *   - Images: metadata stub chunk (no OCR body text in v1)
  */
 
 import { readFile } from "node:fs/promises";
+import zlib from "node:zlib";
 import path from "node:path";
 import { getEnv } from "../config/env";
 import { logger } from "../lib/logger";
@@ -311,9 +313,66 @@ async function extractPdfText(tempFilePath: string): Promise<{ text: string; pag
 }
 
 async function extractDocxText(tempFilePath: string): Promise<string> {
-  const mammoth = await import("mammoth");
-  const result = await mammoth.extractRawText({ path: tempFilePath });
-  return result.value ?? "";
+  try {
+    const mammoth = await import("mammoth");
+    const result = await mammoth.extractRawText({ path: tempFilePath });
+    const text = result.value ?? "";
+    if (text.trim().length > 0) return text;
+  } catch { /* fall through to ZIP extractor */ }
+
+  // Fallback: read word/document.xml directly from the OOXML ZIP.
+  // Handles password-free docs that mammoth chokes on (complex templates,
+  // malformed XML, legacy .doc-wrapped-as-.docx, etc.).
+  return extractDocxTextRaw(tempFilePath);
+}
+
+/**
+ * Raw ZIP-based DOCX text extraction — reads word/document.xml and
+ * extracts all <w:t> text runs. No mammoth dependency; same approach as
+ * extractPptxText. Returns "" if the file is encrypted or not a valid OOXML ZIP.
+ */
+async function extractDocxTextRaw(tempFilePath: string): Promise<string> {
+  const buf = await readFile(tempFilePath);
+  const texts: string[] = [];
+  let offset = 0;
+
+  while (offset + 30 < buf.length) {
+    if (buf.readUInt32LE(offset) !== 0x04034b50) break;
+
+    const flags            = buf.readUInt16LE(offset + 6);
+    const compressionMethod = buf.readUInt16LE(offset + 8);
+    const compressedSize   = buf.readUInt32LE(offset + 18);
+    const filenameLen      = buf.readUInt16LE(offset + 26);
+    const extraLen         = buf.readUInt16LE(offset + 28);
+
+    if (offset + 30 + filenameLen > buf.length) break;
+    const filename = buf.toString("utf8", offset + 30, offset + 30 + filenameLen);
+    const dataStart = offset + 30 + filenameLen + extraLen;
+    const hasDataDescriptor = (flags & 0x08) !== 0;
+
+    // word/document.xml is the main body; word/document2.xml covers long docs
+    const isDocBody = /^word\/document\d*\.xml$/i.test(filename);
+    if (!hasDataDescriptor && isDocBody && compressedSize > 0) {
+      const compressed = buf.subarray(dataStart, dataStart + compressedSize);
+      try {
+        const xml = compressionMethod === 0
+          ? compressed.toString("utf8")
+          : zlib.inflateRawSync(compressed).toString("utf8");
+        // Extract <w:t> runs; preserve paragraph breaks via <w:p> tags
+        const body = xml
+          .replace(/<w:p[ >]/gi, "\n")       // paragraph → newline
+          .replace(/<w:t[^>]*>([^<]*)<\/w:t>/gi, "$1 "); // text run
+        const stripped = body.replace(/<[^>]+>/g, "").replace(/[ \t]{2,}/g, " ").trim();
+        if (stripped.length > 0) texts.push(stripped);
+      } catch { /* corrupted entry */ }
+    }
+
+    const nextOffset = dataStart + (hasDataDescriptor ? 0 : Math.max(0, compressedSize));
+    if (nextOffset <= offset) break;
+    offset = nextOffset;
+  }
+
+  return texts.join("\n\n");
 }
 
 async function extractXlsxText(tempFilePath: string): Promise<{ sheets: Array<{ name: string; rows: string[][] }> }> {
@@ -344,6 +403,57 @@ async function extractCsvText(tempFilePath: string): Promise<string[][]> {
     const content = await readFile(tempFilePath, "utf8");
     return content.split("\n").map((line) => line.split(","));
   }
+}
+
+/**
+ * Extract text from a PPTX file by reading slide XML from the ZIP archive.
+ * Uses only Node built-ins (zlib for deflate decompression) — no extra deps.
+ * Returns one string per slide, joined with double newlines.
+ */
+async function extractPptxText(tempFilePath: string): Promise<string> {
+  const buf = await readFile(tempFilePath);
+  const slideTexts: string[] = [];
+  let offset = 0;
+
+  while (offset + 30 < buf.length) {
+    // Local file header signature: PK\x03\x04
+    if (buf.readUInt32LE(offset) !== 0x04034b50) break;
+
+    const flags            = buf.readUInt16LE(offset + 6);
+    const compressionMethod = buf.readUInt16LE(offset + 8);
+    let   compressedSize   = buf.readUInt32LE(offset + 18);
+    const filenameLen      = buf.readUInt16LE(offset + 26);
+    const extraLen         = buf.readUInt16LE(offset + 28);
+
+    if (offset + 30 + filenameLen > buf.length) break;
+    const filename = buf.toString("utf8", offset + 30, offset + 30 + filenameLen);
+    const dataStart = offset + 30 + filenameLen + extraLen;
+
+    // If bit 3 of flags is set, compressedSize is stored in a data descriptor
+    // after the data; skip this entry to avoid reading garbage size.
+    const hasDataDescriptor = (flags & 0x08) !== 0;
+
+    if (!hasDataDescriptor && /^ppt\/slides\/slide\d+\.xml$/i.test(filename) && compressedSize > 0) {
+      const compressed = buf.subarray(dataStart, dataStart + compressedSize);
+      try {
+        const xml = compressionMethod === 0
+          ? compressed.toString("utf8")
+          : zlib.inflateRawSync(compressed).toString("utf8");
+        // Extract text from <a:t> tags (PowerPoint text runs)
+        const textRuns = Array.from(xml.matchAll(/<a:t[^>]*>([^<]*)<\/a:t>/g))
+          .map((m) => m[1] ?? "")
+          .filter(Boolean)
+          .join(" ");
+        if (textRuns.trim()) slideTexts.push(textRuns.trim());
+      } catch { /* skip corrupted slide */ }
+    }
+
+    const nextOffset = dataStart + (hasDataDescriptor ? 0 : Math.max(0, compressedSize));
+    if (nextOffset <= offset) break; // safety: no forward progress
+    offset = nextOffset;
+  }
+
+  return slideTexts.join("\n\n");
 }
 
 // ============================================================
@@ -597,14 +707,38 @@ const defaultExtractionAdapter: ExtractionAdapter = {
     if (mime.includes("pdf") || ext === "pdf") {
       try {
         const { pageTexts, text } = await extractPdfText(input.tempFilePath);
-        const blocks = buildPdfRawChunks(pageTexts, text);
+        if (text.trim().length > 0) {
+          const blocks = buildPdfRawChunks(pageTexts, text);
+          return {
+            text: normalizeText(text),
+            blocks,
+            provenance: { parserName: "legacy-default", parserMode: "active" },
+          };
+        }
+
+        // No digital text layer — attempt OCR if enabled.
+        const env = getEnv();
+        if (env.indexingOcrEnabled) {
+          const { ocrPdfPages } = await import("./pdf-ocr.service.js");
+          const ocr = await ocrPdfPages(input.tempFilePath);
+          if (ocr.text.trim().length > 0) {
+            const ocrBlocks = buildPdfRawChunks(ocr.pageTexts, ocr.text).map((c) => ({
+              ...c,
+              confidence: 0.6, // OCR text is lower confidence than digital extraction
+            }));
+            return {
+              text: normalizeText(ocr.text),
+              blocks: ocrBlocks,
+              provenance: { parserName: "ocr-tesseract", parserMode: "active" as const },
+            };
+          }
+        }
+
+        // Digital extraction returned nothing, OCR unavailable / also empty.
         return {
-          text: normalizeText(text),
-          blocks,
-          provenance: {
-            parserName: "legacy-default",
-            parserMode: "active",
-          },
+          text: "",
+          blocks: buildPdfRawChunks(pageTexts, text),
+          provenance: { parserName: "legacy-default", parserMode: "active" },
         };
       } catch {
         const text = await readFile(input.tempFilePath, "utf8");
@@ -655,6 +789,37 @@ const defaultExtractionAdapter: ExtractionAdapter = {
           },
         };
       }
+    }
+
+    // ---------------- PPTX / PPT ----------------
+    if (mime.includes("presentationml") || mime.includes("ms-powerpoint") || ["pptx", "ppt"].includes(ext)) {
+      try {
+        const text = await extractPptxText(input.tempFilePath);
+        const normalized = normalizeText(text);
+        if (normalized.length > 0) {
+          return {
+            text: normalized,
+            blocks: slidingWindowChunks(normalized).map((chunkText) => ({
+              chunkText,
+              sourceType: "content" as const,
+              confidence: 0.85,
+            })),
+            provenance: { parserName: "legacy-default", parserMode: "active" },
+          };
+        }
+      } catch { /* fall through to plain text */ }
+      // Fallback: plain text (unlikely to help for binary ppt but safe)
+      const text = await readFile(input.tempFilePath, "utf8").catch(() => "");
+      const normalized = normalizeText(text);
+      return {
+        text: normalized,
+        blocks: slidingWindowChunks(normalized).map((chunkText) => ({
+          chunkText,
+          sourceType: "content" as const,
+          confidence: 0.2,
+        })),
+        provenance: { parserName: "legacy-default", parserMode: "active" },
+      };
     }
 
     // ---------------- XLSX / XLS ----------------

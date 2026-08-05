@@ -110,7 +110,7 @@ async function requestEmbeddings(input: string | string[]): Promise<{
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${env.openAiApiKey}`,
+        Authorization: `Bearer ${env.openAiEmbeddingApiKey ?? env.openAiApiKey}`,
       },
       body: JSON.stringify({
         model,

@@ -207,13 +207,16 @@ export const identifierLookupService = {
 
       // Resolve the near-duplicate family to the latest/approved member.
       // Disambiguation order (most → least important):
-      //   1. hasChunks  — a member with 0 indexed chunks can't answer anything,
-      //      so never prefer it over a sibling that has content.
-      //   2. nameOverlap — when the query carries distinctive filename words
-      //      (e.g. "QWP-001 track replacement"), prefer the member whose name
-      //      matches them, rather than blindly taking the latest revision.
-      //   3. approvedRank → revisionNum → modifiedAt — the prior latest/approved
-      //      tie-break for genuine same-document revision families.
+      //   1. nameOverlap — when the query carries distinctive filename words
+      //      (e.g. "GEN-027R00 Subcontractor Approval Forms for Crossroads JV LLC"),
+      //      prefer the member whose name best matches, even if it currently has
+      //      zero indexed chunks. Returning "file found but not yet indexed" is
+      //      far better than confidently answering from a wrong document that
+      //      happens to share the same submittal number.
+      //   2. hasChunks  — within the same name-overlap tier, prefer a member
+      //      that has indexed content so the query can be answered immediately.
+      //   3. approvedRank → revisionNum → modifiedAt — tie-break for genuine
+      //      same-document revision families where name tokens are identical.
       const queryNameTokens = filenameTokens(query).filter(
         (token) => token !== candidate.valueNormalized.toLowerCase()
       );
@@ -232,8 +235,8 @@ export const identifierLookupService = {
         })
         .sort(
           (a, b) =>
-            b.hasChunks - a.hasChunks ||
             b.nameOverlap - a.nameOverlap ||
+            b.hasChunks - a.hasChunks ||
             b.approvedRank - a.approvedRank ||
             b.revisionNum - a.revisionNum ||
             b.modifiedAt - a.modifiedAt

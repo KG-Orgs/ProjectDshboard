@@ -66,6 +66,7 @@ export type {
   CreateProjectResponse,
   UpdateProjectFolderRequest,
   UpdateProjectFolderResponse,
+  BindProjectDriveRequest,
   ProjectDetailsResponse,
   ProjectFilesRequest,
   ProjectFilesResponse,

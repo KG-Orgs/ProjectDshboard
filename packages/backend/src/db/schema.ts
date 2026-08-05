@@ -191,6 +191,8 @@ export const projects = pgTable(
       .notNull(),
     name: text("name").notNull(),
     onedriveFolderId: text("onedrive_folder_id"),
+    /** Owner's Graph driveId — enables /drives/{id}/... access for all members. */
+    onedriveDriveId: text("onedrive_drive_id"),
     status: text("status", { enum: ["active", "archived"] })
       .default("active")
       .notNull(),

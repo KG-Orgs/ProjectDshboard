@@ -454,16 +454,23 @@ export const onedriveService = {
 
   async browse(
     user: RequestUserContext | undefined,
-    folderId?: string
+    folderId?: string,
+    driveId?: string
   ): Promise<OneDriveBrowseResponse> {
     const authenticatedUser = requireUser(user);
     const connection = await getConnectionOrThrow(authenticatedUser);
     const accessToken = await exchangeRefreshToken(connection);
 
+    // Use /drives/{driveId}/... when a specific drive is configured so that
+    // team members (non-owners) can browse without the owner's token.
+    const baseSegment = driveId
+      ? `/drives/${encodeURIComponent(driveId)}`
+      : "/me/drive";
+
     const target = folderId
-      ? `/me/drive/items/${encodeURIComponent(folderId)}/children?` +
+      ? `${baseSegment}/items/${encodeURIComponent(folderId)}/children?` +
         "$select=id,name,webUrl,folder,size,lastModifiedDateTime"
-      : "/me/drive/root/children?$select=id,name,webUrl,folder,size,lastModifiedDateTime";
+      : `${baseSegment}/root/children?$select=id,name,webUrl,folder,size,lastModifiedDateTime`;
 
     const childrenResponse = await fetchGraph(target, accessToken);
     if (!childrenResponse.ok) {
@@ -489,7 +496,7 @@ export const onedriveService = {
     let parentId: string | undefined;
     if (folderId) {
       const folderResponse = await fetchGraph(
-        `/me/drive/items/${encodeURIComponent(folderId)}?$select=id,parentReference`,
+        `${baseSegment}/items/${encodeURIComponent(folderId)}?$select=id,parentReference`,
         accessToken
       );
 
@@ -524,7 +531,8 @@ export const onedriveService = {
   async listFiles(
     user: RequestUserContext | undefined,
     rootFolderId: string,
-    onProgress?: (progress: OneDriveListFilesProgress) => void
+    onProgress?: (progress: OneDriveListFilesProgress) => void,
+    driveId?: string
   ): Promise<OneDriveFileMetadata[]> {
     const authenticatedUser = requireUser(user);
     const connection = await getConnectionOrThrow(authenticatedUser);
@@ -534,6 +542,11 @@ export const onedriveService = {
       { folderId: rootFolderId, pathPrefix: "" },
     ];
 
+    // Use /drives/{driveId}/... so non-owners can list a shared drive's contents.
+    const baseSegment = driveId
+      ? `${getGraphBaseUrl()}/drives/${encodeURIComponent(driveId)}`
+      : `${getGraphBaseUrl()}/me/drive`;
+
     while (stack.length > 0) {
       const current = stack.pop();
       if (!current) {
@@ -541,7 +554,7 @@ export const onedriveService = {
       }
 
       let nextUrl =
-        `${getGraphBaseUrl()}/me/drive/items/${encodeURIComponent(current.folderId)}/children?` +
+        `${baseSegment}/items/${encodeURIComponent(current.folderId)}/children?` +
         "$select=id,name,folder,file,size,eTag,lastModifiedDateTime";
 
       while (nextUrl) {
@@ -717,6 +730,56 @@ export const onedriveService = {
 
     if (!response.ok) {
       const errorBody = await response.text();
+      throw new AppError(
+        502,
+        "onedrive_download_failed",
+        `OneDrive download failed: ${errorBody || response.statusText}`
+      );
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return {
+      buffer: Buffer.from(arrayBuffer),
+      contentType: response.headers.get("content-type") ?? undefined,
+    };
+  },
+
+  /**
+   * Download file content using the owner's Graph driveId + itemId.
+   * This works for all users with an OneDrive connection who have been
+   * granted access to the shared folder — unlike /me/drive/items/{id}/content
+   * which only works for the file owner.
+   */
+  async downloadFileContentByDriveItem(
+    user: RequestUserContext | undefined,
+    driveId: string,
+    itemId: string
+  ): Promise<OneDriveFileContent> {
+    const authenticatedUser = requireUser(user);
+    const connection = await getConnectionOrThrow(authenticatedUser);
+    const accessToken = await exchangeRefreshToken(connection);
+
+    const response = await fetch(
+      `${getGraphBaseUrl()}/drives/${encodeURIComponent(driveId)}/items/${encodeURIComponent(itemId)}/content`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    if (!response.ok) {
+      const status = response.status;
+      const errorBody = await response.text();
+      // Map Graph 403/404 to a clear app error so callers can surface useful UX.
+      if (status === 403 || status === 404) {
+        throw new AppError(
+          status === 403 ? 403 : 404,
+          status === 403 ? "graph_file_access_denied" : "graph_file_not_found",
+          status === 403
+            ? "You don't have permission to access this file. Ask the project owner to share the folder with your Microsoft account."
+            : "File not found in the project's OneDrive folder."
+        );
+      }
       throw new AppError(
         502,
         "onedrive_download_failed",

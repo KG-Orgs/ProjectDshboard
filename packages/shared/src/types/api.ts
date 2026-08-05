@@ -205,6 +205,13 @@ export interface UpdateProjectFolderRequest {
   resetIndexedData?: boolean;
 }
 
+export interface BindProjectDriveRequest {
+  /** Owner's Graph driveId (e.g. 78BEF1F85B43E5D5). */
+  driveId: string;
+  /** Owner's root folderId for this project. */
+  folderId: string;
+}
+
 export interface UpdateProjectFolderResponse {
   project: Project;
   resetPerformed: boolean;

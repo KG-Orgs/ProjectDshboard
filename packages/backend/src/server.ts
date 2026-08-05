@@ -26,6 +26,7 @@ import type {
   UpdateChatSessionRequest,
   UpdateProjectFolderRequest,
   UpdateProjectFeatureRequest,
+  BindProjectDriveRequest,
 } from "@contractor/shared";
 import { isOrgPowerUser } from "@contractor/shared";
 import { getEnv, hasMicrosoftOAuthConfig } from "./config/env";
@@ -577,7 +578,8 @@ async function createApp(): Promise<Express> {
   app.post("/api/onedrive/sync", requireAuthenticatedRequest, handleOneDriveSync);
   app.get("/api/onedrive/browse", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const folderId = typeof req.query.folderId === "string" ? req.query.folderId : undefined;
-    res.json(await onedriveService.browse(req.user, folderId));
+    const driveId = typeof req.query.driveId === "string" ? req.query.driveId : undefined;
+    res.json(await onedriveService.browse(req.user, folderId, driveId));
   }));
 
   // Projects
@@ -643,6 +645,25 @@ async function createApp(): Promise<Express> {
           : "Project folder updated.",
     });
   }));
+  /**
+   * POST /api/projects/:id/drive
+   * Bind a project to the owner's Graph driveId + root folderId.
+   * After this, file access uses /drives/{driveId}/... for all team members.
+   */
+  app.post("/api/projects/:id/drive", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
+    const projectId = toUuid(req.params.id);
+    await projectAccessService.assertCanManageMembers(projectId, projectAccessFromRequest(req));
+
+    const body = req.body as BindProjectDriveRequest;
+    const driveId = body.driveId?.trim();
+    const folderId = body.folderId?.trim();
+    if (!driveId || !folderId) {
+      throw new AppError(400, "invalid_drive_binding", "driveId and folderId are required");
+    }
+
+    const project = await projectService.bindProjectDrive(projectId, driveId, folderId);
+    res.json({ project });
+  }));
   app.get("/api/projects/:id", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     res.json(await projectService.getProjectDetails(toUuid(req.params.id)));
   }));
@@ -674,7 +695,7 @@ async function createApp(): Promise<Express> {
     const projectId = toUuid(req.params.id);
     const fileId = toUuid(req.params.fileId);
 
-    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
+    const project = await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
 
     const file = await projectService.getProjectFileById(projectId, fileId);
     if (!file) {
@@ -760,9 +781,13 @@ async function createApp(): Promise<Express> {
       }
     }
 
-    const fileContent = await onedriveService.downloadFileContent(req.user, file.onedriveItemId);
+    // For Graph-backed projects (onedriveDriveId set), use /drives/{driveId}/items/{id}/content
+    // so non-owners with share access can open files (not just the drive owner).
+    const graphDriveId = project.onedriveDriveId;
+    const fileContent = graphDriveId
+      ? await onedriveService.downloadFileContentByDriveItem(req.user, graphDriveId, file.onedriveItemId)
+      : await onedriveService.downloadFileContent(req.user, file.onedriveItemId);
     const contentType = fileContent.contentType ?? file.mimeType ?? "application/octet-stream";
-
     res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
     res.send(fileContent.buffer);

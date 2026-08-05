@@ -86,6 +86,7 @@ function toProjectResponseProject(record: {
   orgId: string;
   name: string;
   onedriveFolderId: string | null;
+  onedriveDriveId?: string | null;
   status: "active" | "archived";
   createdAt: Date;
 }): CreateProjectResponse["project"] {
@@ -94,6 +95,7 @@ function toProjectResponseProject(record: {
     orgId: toUuid(record.orgId),
     name: record.name,
     onedriveFolderId: record.onedriveFolderId ?? undefined,
+    onedriveDriveId: record.onedriveDriveId ?? undefined,
     status: record.status,
     createdAt: record.createdAt,
   };
@@ -386,6 +388,7 @@ export const projectService = {
       orgId: toUuid(resolvedOrgId),
       name: request.name,
       onedriveFolderId: request.onedriveFolderId,
+      onedriveDriveId: undefined as string | undefined,
       status: "active" as const,
       createdAt: new Date(),
     };
@@ -453,6 +456,43 @@ export const projectService = {
     }
 
     return updatedProject;
+  },
+
+  /**
+   * Bind a project to a specific Graph driveId + folderId (owner's IDs).
+   * After this, all file access uses /drives/{driveId}/items/{id}/... so
+   * any team member with a Graph token (not just the owner) can open files.
+   */
+  async bindProjectDrive(
+    projectId: UUID,
+    driveId: string,
+    folderId: string
+  ): Promise<CreateProjectResponse["project"]> {
+    const db = getDbIfInitialized();
+
+    if (db) {
+      const [updated] = await db
+        .update(projects)
+        .set({ onedriveDriveId: driveId, onedriveFolderId: folderId })
+        .where(eq(projects.id, projectId))
+        .returning();
+
+      if (!updated) {
+        throw new AppError(404, "project_not_found", "Project not found");
+      }
+
+      return toProjectResponseProject(updated);
+    }
+
+    // in-memory fallback
+    const allProjects = Array.from(projectsByOrg.values()).flat();
+    const project = allProjects.find((entry) => entry.id === projectId);
+    if (!project) {
+      throw new AppError(404, "project_not_found", "Project not found");
+    }
+    project.onedriveDriveId = driveId;
+    project.onedriveFolderId = folderId;
+    return project;
   },
 
   async getProjectDetails(projectId: UUID): Promise<ProjectDetailsResponse> {
@@ -1030,6 +1070,15 @@ export const projectService = {
         for (const linkBatch of toBatches(linkRows, CHUNK_INSERT_BATCH_SIZE)) {
           await tx.insert(chunkLinks).values(linkBatch);
         }
+
+        // Update chunkCount atomically inside this transaction so that if the
+        // process crashes after replaceFileChunks but before updateFileIndexingResult,
+        // the next run's loadIndexedIds (which filters on chunkCount > 0) correctly
+        // skips this file rather than re-processing it.
+        await tx
+          .update(fileRecords)
+          .set({ chunkCount: inserted.length, updatedAt: now })
+          .where(and(eq(fileRecords.projectId, projectId), eq(fileRecords.id, fileId)));
       });
 
       return;

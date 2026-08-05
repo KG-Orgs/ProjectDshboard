@@ -484,8 +484,9 @@ const DEPTH_MODE_ADDENDUM = [
   "",
   "DEPTH MODE (this is a factual / specification / extraction query)",
   "- Extract and list EVERY matching item found in the retrieved context; do not stop after the first.",
-  "- Quote concrete specifics: numbers, dimensions, dates, names, spec/section numbers, and page references.",
+  "- Quote concrete specifics: numbers, dimensions, kVA/kW ratings, psi/MPa values, dates, names, spec/section numbers, and page references.",
   "- Do NOT merely restate section headers, document titles, or generic category labels — give the underlying requirement or value.",
+  "- Do NOT use a heading like 'Section X.X Requirements Summary'; instead use a 2-5 word heading that names the specific topic found (e.g. '## Pipe Hanger Requirements', '## UPS Capacity').",
   "- Synthesize across multiple chunks when several contain relevant detail.",
   "- The 'under 18 words per bullet' limit does NOT apply here; prefer complete, precise bullets over brevity.",
   "- Still ground every statement in the retrieved context. If a detail is not present, say so explicitly rather than guessing.",
@@ -2538,7 +2539,7 @@ function buildSectionRequirementsSummaryContent(
   const seen = new Set<string>();
   const subsectionMap = new Map<string, SectionSubsection>();
   let activeSubsectionAnchor: string | undefined;
-  const requirementSignal = /\b(expansion|joint|warranty|submittal|assembly|manufacturer|finish|roof|sample|color|texture|width)\b/i;
+  const requirementSignal = /\b(expansion|joint|warranty|submittal|assembly|manufacturer|finish|roof|sample|color|texture|width|hanger|support|pipe|pitch|slope|grade|drain|velocity|pressure|capacity|kva|kw|amp|circuit|panel|bolt|anchor|embed|weld|rebar|concrete|steel|grout|seal|coat|abrasement|lead|silica|dust|respirator|ppe|clearance|spacing|interval|torque|temperature|substrate|cure|mix|ratio|load|force|deflection|bearing|connection|uplift|tension|compression|shear)\b/i;
 
   const ensureSubsection = (anchor: string, title: string): SectionSubsection => {
     const existing = subsectionMap.get(anchor);
@@ -2715,6 +2716,12 @@ function buildSectionRequirementsSummaryContent(
       `### ${subsection.anchor}. ${subsection.title}`,
       ...subsection.lines.map((line) => `- ${line}`),
     ]);
+
+  // If the deterministic extractor found no actionable points, fall back to dumping the raw
+  // indexed text so the user gets the actual chunk content rather than empty boilerplate.
+  if (uniquePoints.length === 0 && subsectionBlocks.length === 0) {
+    return buildExactSectionReviewContent(fileName, sectionAnchor, chunks, pages);
+  }
 
   return [
     `## Section ${sectionAnchor} Requirements Summary (${deriveShortFormName(fileName)})`,

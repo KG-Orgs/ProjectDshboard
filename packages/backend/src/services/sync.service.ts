@@ -344,7 +344,8 @@ export const syncService = {
         project.onedriveFolderId,
         ({ downloadedFileCount, currentFilePath }) => {
           updateDownloadedCount(projectId, downloadedFileCount, currentFilePath);
-        }
+        },
+        project.onedriveDriveId
       );
       const records = files.map((file) => buildFileRecord(projectId, file));
       await projectService.setProjectFiles(projectId, records);

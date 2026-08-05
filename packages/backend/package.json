@@ -34,6 +34,7 @@
     "chunk-audit:sample": "tsx ./scripts/tier2-chunk-audit-sample.ts",
     "chunk-audit:smoke": "tsx ./scripts/tier2-chunk-audit-sample.ts -- --smoke",
     "chunk-audit:smoke-run": "tsx ./scripts/tier2-chunk-audit-sample.ts -- --smoke --run-ask",
+    "db:dedup-records": "tsx ./scripts/dedup-file-records.ts",
     "eval:chunk-curated": "tsx ./scripts/eval-run.ts -- --file ./eval/mlj017-chunk-curated-questions.json --report ./eval/mlj017-chunk-curated-report.json",
     "eval:smoke": "tsx ./scripts/eval-run.ts -- --file ./eval/mlj017-smoke-questions.json --report ./eval/mlj017-smoke-eval-report.json",
     "eval:smoke-search": "tsx ./scripts/eval-run.ts -- --file ./eval/mlj017-smoke-questions.json --report ./eval/mlj017-smoke-search-report.json --search-only",
@@ -44,7 +45,9 @@
     "grant:org-access": "tsx ./scripts/grant-org-access.ts",
     "grant:project-access": "tsx ./scripts/grant-project-access.ts",
     "backfill:project-access": "tsx ./scripts/backfill-project-access.ts",
-    "backfill:identifiers": "tsx ./scripts/backfill-identifiers.ts"
+    "backfill:identifiers": "tsx ./scripts/backfill-identifiers.ts",
+    "discover:onedrive-folder": "tsx ./scripts/discover-onedrive-folder.ts",
+    "probe:graph-cross-user": "tsx ./scripts/probe-graph-cross-user.ts"
   },
   "dependencies": {
     "@contractor/ai-actions": "workspace:*",
@@ -58,6 +61,7 @@
     "pdf-parse": "^2.4.5",
     "postgres": "^3.4.0",
     "redis": "^4.6.0",
+    "tesseract.js": "^7.0.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

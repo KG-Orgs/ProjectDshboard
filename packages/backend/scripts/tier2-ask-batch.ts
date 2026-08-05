@@ -29,6 +29,8 @@ const PROJECT_NAME = "MLJ-017 Package 6 - General (TEST CLONE)";
 interface BatchQuestion {
   id?: string;
   query: string;
+  activeDocFileId?: string;
+  activeDocFileName?: string;
 }
 
 interface QuestionFile {
@@ -155,7 +157,14 @@ async function main(): Promise<void> {
   for (const [index, question] of questions.entries()) {
     const label = question.id ? `[${question.id}]` : `[${index + 1}/${questions.length}]`;
     const startedAt = Date.now();
-    const reply = await chatCoordinatorService.generateReply(projectId as UUID, question.query);
+    const reply = await chatCoordinatorService.generateReply(
+      projectId as UUID,
+      question.query,
+      undefined,
+      undefined,
+      question.activeDocFileName,
+      question.activeDocFileId as UUID | undefined
+    );
     printReply(label, question.query, startedAt, reply);
   }
 

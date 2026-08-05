@@ -64,6 +64,8 @@ export interface Project {
   orgId: UUID;
   name: string;
   onedriveFolderId?: string;
+  /** Owner's Graph driveId — enables /drives/{id}/... access for all team members. */
+  onedriveDriveId?: string;
   status: "active" | "archived";
   createdAt: Date;
   /** Present when listing projects for the current user. */

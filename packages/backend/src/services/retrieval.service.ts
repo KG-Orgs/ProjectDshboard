@@ -854,6 +854,20 @@ async function getCachedQueryEmbedding(query: string) {
     return await value;
   } catch (error) {
     queryEmbeddingCache.delete(cacheKey);
+    // On non-retryable auth/provider failures, fall back to lexical-only search
+    // rather than crashing the entire request.
+    const isAuthOrProviderError =
+      error instanceof Error &&
+      ((error as { code?: string }).code === "embedding_auth" ||
+        (error as { code?: string }).code === "embedding_bad_request" ||
+        (error as { retryable?: boolean }).retryable === false);
+    if (isAuthOrProviderError) {
+      logger.warn("retrieval.embedding.auth_failure", {
+        error: error instanceof Error ? error.message : String(error),
+        fallback: "lexical_only",
+      });
+      return undefined;
+    }
     throw error;
   }
 }
@@ -886,6 +900,10 @@ async function pgvectorSearch(
       // integer (no injection risk), so sql.raw is safe here; SET does not
       // accept bind parameters.
       await tx.execute(sql.raw(`SET LOCAL hnsw.ef_search = ${efSearch}`));
+      // Cap the vector search time so large projects (>100K chunks) don't stall
+      // the entire request. On timeout the outer catch returns [] and the caller
+      // falls back to FTS / keyword search.
+      await tx.execute(sql.raw(`SET LOCAL statement_timeout = '30000'`));
       return tx.execute<{
       id: string;
       file_id: string;
@@ -962,6 +980,7 @@ async function pgvectorSearch(
       pgvectorAvailable = false;
     }
     // pgvector may be unavailable or embedding_vector may not be native vector in local DB.
+    // Also catches statement_timeout when the project has too many chunks for a fast ANN scan.
     logger.warn("retrieval.pgvector.failed", { error: message });
     return [];
   }
@@ -1147,47 +1166,53 @@ async function ftsSearch(
   };
 
   const runFts = (tsquery: SQL) =>
-    db.execute<FtsRow>(sql`
-      SELECT
-        fc.id,
-        fc.file_id,
-        fc.file_name,
-        fr.file_path,
-        fc.chunk_index,
-        fc.chunk_text,
-        fc.source_type,
-        fc.page_number,
-        fc.section_label,
-        fc.metadata,
-        fc.confidence,
-        fr.doc_category,
-        fr.tags,
-        fr.priority_score,
-        fr.updated_at,
-        fr.extracted_fields,
-        (
-          ts_rank_cd(to_tsvector('english', COALESCE(fc.chunk_text, '')), ${tsquery})
-          + ts_rank_cd(to_tsvector('english', COALESCE(fc.file_name, '')), ${tsquery})
-          + ts_rank_cd(to_tsvector('english', COALESCE(fr.file_path, '')), ${tsquery})
-        ) AS fts_rank
-      FROM file_chunks fc
-      JOIN file_records fr ON fr.id = fc.file_id
-      WHERE fc.project_id = ${projectId}
-        ${categoryFileIdClause}
-        ${tagsClause}
-        AND (
-          -- Only predicates backed by GIN expression indexes on file_chunks
-          -- (chunk_text, file_name) so the planner uses a BitmapOr index scan
-          -- instead of a full seq scan over every chunk. file_path lives on the
-          -- joined file_records table with no FTS index; including it here forced
-          -- a 1.18M-row seq scan (~117s). file_path still contributes to ranking
-          -- above, and filename/path targeting is handled by exact-id routing.
-          to_tsvector('english', COALESCE(fc.chunk_text, '')) @@ ${tsquery}
-          OR to_tsvector('english', COALESCE(fc.file_name, '')) @@ ${tsquery}
-        )
-      ORDER BY fts_rank DESC
-      LIMIT ${ftsLimit}
-    `);
+    db.transaction(async (tx) => {
+      // Cap FTS time so large projects (>100K chunks) don't stall the request.
+      // On timeout the outer catch returns [] and the caller falls back to
+      // the keyword search path.
+      await tx.execute(sql.raw(`SET LOCAL statement_timeout = '25000'`));
+      return tx.execute<FtsRow>(sql`
+        SELECT
+          fc.id,
+          fc.file_id,
+          fc.file_name,
+          fr.file_path,
+          fc.chunk_index,
+          fc.chunk_text,
+          fc.source_type,
+          fc.page_number,
+          fc.section_label,
+          fc.metadata,
+          fc.confidence,
+          fr.doc_category,
+          fr.tags,
+          fr.priority_score,
+          fr.updated_at,
+          fr.extracted_fields,
+          (
+            ts_rank_cd(to_tsvector('english', COALESCE(fc.chunk_text, '')), ${tsquery})
+            + ts_rank_cd(to_tsvector('english', COALESCE(fc.file_name, '')), ${tsquery})
+            + ts_rank_cd(to_tsvector('english', COALESCE(fr.file_path, '')), ${tsquery})
+          ) AS fts_rank
+        FROM file_chunks fc
+        JOIN file_records fr ON fr.id = fc.file_id
+        WHERE fc.project_id = ${projectId}
+          ${categoryFileIdClause}
+          ${tagsClause}
+          AND (
+            -- Only predicates backed by GIN expression indexes on file_chunks
+            -- (chunk_text, file_name) so the planner uses a BitmapOr index scan
+            -- instead of a full seq scan over every chunk. file_path lives on the
+            -- joined file_records table with no FTS index; including it here forced
+            -- a 1.18M-row seq scan (~117s). file_path still contributes to ranking
+            -- above, and filename/path targeting is handled by exact-id routing.
+            to_tsvector('english', COALESCE(fc.chunk_text, '')) @@ ${tsquery}
+            OR to_tsvector('english', COALESCE(fc.file_name, '')) @@ ${tsquery}
+          )
+        ORDER BY fts_rank DESC
+        LIMIT ${ftsLimit}
+      `);
+    });
 
   try {
     let rows = await runFts(sql`websearch_to_tsquery('english', ${normalizedQuery})`);
