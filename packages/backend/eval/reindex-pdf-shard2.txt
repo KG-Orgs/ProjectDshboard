@@ -1,0 +1,1662 @@
+﻿
+> @contractor/backend@0.0.1 tier2:stream C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-stream-index.ts "--corpus" "C:\\Users\\georg\\Iovino Enterprises, LLC\\MLJ-017 Package 6 - General" "--project-id" "145b3dcf-272e-4c45-9e19-953f20f25bb9" "--reindex-zero-chunks" "--filter-ext" "pdf" "--shard" "2/10" "--concurrency" "1"
+
+[stream] corpus:      C:\\Users\\georg\\Iovino Enterprises, LLC\\MLJ-017 Package 6 - General
+[stream] project-id:  145b3dcf-272e-4c45-9e19-953f20f25bb9
+[stream] concurrency: 1
+[stream] shard:       2/10
+[stream] --reindex-zero-chunks: ON  (forces v2 extractor; re-processes all 0-chunk files)
+[stream] --filter-ext:          pdf  (only these extensions processed)
+[stream] walking corpus...
+[stream] 3715 text-eligible files in scope
+[stream] checking already-indexed...
+[stream] zero-chunk files in DB: 41447 (will be re-attempted with v2 extractor if configured)
+[stream] 502 to index | 39851 already done
+
+node.exe : {"timestamp":"2026-08-03T20:34:33.537Z","level":"warn","event":"inde
+xing-pipeline.summary.llm-failed","error":"OpenAI error: 429"}
+At C:\nvm4w\nodejs\pnpm.ps1:16 char:5
++     & "$basedir/node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.cjs"  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ({"timestamp":"2...AI error: 429"} 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[w1 1/502] Γ£ô Attachments.pdf chunks=6
+{"timestamp":"2026-08-03T20:34:37.188Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 2/502] Γ£ô MDT_HP_Markup_PMC_20260709.pdf chunks=3
+{"timestamp":"2026-08-03T20:34:40.946Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"CCTV_C52072_MR246-Ave I -M1-Communication Room 
+Shop Drawings_Ver1 1_Ver1.pdf","droppedGarbage":1,"kept":5}
+{"timestamp":"2026-08-03T20:34:40.977Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 3/502] Γ£ô CCTV_C52072_MR246-Ave I -M1-Communication Room Shop Drawings_Ver1 1_Ver1.pdf chunks=7
+{"timestamp":"2026-08-03T20:34:45.107Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 4/502] Γ£ô A37806_01 40 10_GEN-015R02 - APP - CWP-001- Selective Demolition.pdf chunks=23
+{"timestamp":"2026-08-03T20:34:49.033Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 5/502] Γ£ô A37806_01 35 10_GEN-020R01 - APP - SWP-005 - Working Under GO Flagging.pdf chunks=46
+{"timestamp":"2026-08-03T20:36:24.406Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 6/502] Γ£ù A37806_01 10 20_BUR-063R00 - EDU07 Burnside SOGR RFCD.pdf ERROR: update or delete on table "file_chunks" violates foreign key constraint "chunk_links_source_chunk_id_file_chunks_id_fk" on table "chunk_links"
+{"timestamp":"2026-08-03T20:37:59.519Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 7/502] Γ£ô A37806_01 40 10_GEN-059R01 - AEAN - CWP-022 -  State of Good Repairs.pdf chunks=26
+{"timestamp":"2026-08-03T20:40:00.292Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 8/502] Γ£ô A37806_01 10 20_BUR-063R00 - EDU07 Burnside SOGR RFCD.pdf chunks=4051
+{"timestamp":"2026-08-03T20:41:35.571Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 9/502] Γ£ô A37806_01 35 10_GEN-050R01 - APP - SWP-008 - Lead Abatement.pdf chunks=127
+{"timestamp":"2026-08-03T20:41:41.064Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 10/502] Γ£ô MTA A37140 - EL800 - Rev_C - Final Layout for Record.pdf chunks=9
+{"timestamp":"2026-08-03T20:41:44.158Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 11/502] Γ£ô Quartet QRTS538 96x48 Whtbrd.pdf chunks=4
+{"timestamp":"2026-08-03T20:41:47.852Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 12/502] Γ£ô A37806_01 35 10_GEN-046R01 - APP-EAN - SWP-028 - Jet-Vac-Video Pipe Inspections.pdf chunks=76
+{"timestamp":"2026-08-03T20:41:51.831Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 13/502] Γ£ô A37806 Standpipe Middletown 20241014.pdf chunks=14
+{"timestamp":"2026-08-03T20:41:56.136Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 14/502] Γ£ô A37806_Volume_03_Elevator_Maint_Agreement_Technical_Specs.pdf chunks=232
+{"timestamp":"2026-08-03T20:42:03.123Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 15/502] Γ£ô Rigging Catalog.pdf chunks=3
+{"timestamp":"2026-08-03T20:42:05.798Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 16/502] Γ£ô Rigging Catalog.pdf chunks=3
+{"timestamp":"2026-08-03T20:42:08.774Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 17/502] Γ£ô Pages from MOU Attachments (002).pdf chunks=3
+{"timestamp":"2026-08-03T20:42:11.623Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 18/502] Γ£ô Milwaukee Rotary hammer.pdf chunks=28
+{"timestamp":"2026-08-03T20:42:14.859Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 19/502] Γ£ô A37806_01 35 10_GEN-004R01 - SWP-028 - Jet Vac Video Rev. 1  6.12.25.pdf chunks=24
+{"timestamp":"2026-08-03T20:42:18.909Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 20/502] Γ£ô 450-Series-Articulating-Boom-Specs.pdf chunks=7
+{"timestamp":"2026-08-03T20:42:22.800Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 21/502] Γ£ô 450-Series-Articulating-Boom-Specs.pdf chunks=7
+{"timestamp":"2026-08-03T20:42:25.526Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 22/502] Γ£ô Baker Scaffolding.pdf chunks=3
+{"timestamp":"2026-08-03T20:42:29.058Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 23/502] Γ£ô Pneumatic Rivet Buster.pdf chunks=3
+{"timestamp":"2026-08-03T20:42:45.399Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 24/502] Γ£ô Walkbehind Saw.pdf chunks=3
+{"timestamp":"2026-08-03T20:42:51.806Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"A37806_PRDC11-025R05 - APP - 
+TC-SB-Middletown-MR362-01 - P2 Track Replacement 
+Bulletin.pdf","droppedGarbage":2,"kept":123}
+{"timestamp":"2026-08-03T20:42:52.008Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 25/502] Γ£ô A37806_PRDC11-025R05 - APP - TC-SB-Middletown-MR362-01 - P2 Track Replacement Bulletin.pdf chunks=125
+
+ΓöÇΓöÇ 25/502 | Γ£ô24 ~0 Γ£ù1 | 0.05 files/s | etaΓëê2.8h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T20:42:58.185Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 26/502] Γ£ô 8 - DOT Permits.pdf chunks=56
+{"timestamp":"2026-08-03T20:43:01.821Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 27/502] Γ£ô 2 - MLJ Certificate of insurance for private water main cnstruction REV01 20250801.pdf chunks=8
+{"timestamp":"2026-08-03T20:43:04.683Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 28/502] Γ£ô 3 - MLJ Certificate of Liability Insurance.pdf chunks=8
+{"timestamp":"2026-08-03T20:43:08.169Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 29/502] Γ£ô A37806_01 10 30_BUR-001R01 - RWC - Burnside Ave Shielding Design (for MTA approval).pdf chunks=35
+{"timestamp":"2026-08-03T20:43:12.117Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 30/502] Γ£ô 09 90 00 Painting and Finishing.pdf chunks=67
+{"timestamp":"2026-08-03T20:43:15.973Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 31/502] Γ£ô 31 66 33 Drilled Grouted Piles_REV0.pdf chunks=22
+{"timestamp":"2026-08-03T20:43:19.897Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 32/502] Γ£ô 33 14 15 Sewer and Water Main Work_REV0.pdf chunks=26
+{"timestamp":"2026-08-03T20:43:23.343Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 33/502] Γ£ô 08 80 00 Glazing.pdf chunks=40
+{"timestamp":"2026-08-03T20:43:26.836Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 34/502] Γ£ô 10 29 00 Bird Deterrent Systems.pdf chunks=16
+{"timestamp":"2026-08-03T20:43:31.483Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 35/502] Γ£ô 22 14 40 Plumbing Fixtures.pdf chunks=21
+{"timestamp":"2026-08-03T20:43:34.482Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 36/502] Γ£ô 23 05 48 Mechanical Vibration Controls.pdf chunks=9
+{"timestamp":"2026-08-03T20:43:37.187Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 37/502] Γ£ô 27 05 05 SELECTIVE DEMOLITION FOR COMMUNICATIONS.pdf chunks=10
+{"timestamp":"2026-08-03T20:43:40.090Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 38/502] Γ£ô 6.49 Temporary Pavement Markings.pdf chunks=15
+{"timestamp":"2026-08-03T20:43:43.105Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 39/502] Γ£ô 6.70 Maintenance and Protection of Traffic.pdf chunks=58
+{"timestamp":"2026-08-03T20:43:46.872Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 40/502] Γ£ô Document1.pdf chunks=3
+{"timestamp":"2026-08-03T20:43:49.382Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 41/502] Γ£ô Lead Sign.pdf chunks=3
+{"timestamp":"2026-08-03T20:43:51.811Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 42/502] Γ£ô Inspection Request_rev.pdf chunks=4
+{"timestamp":"2026-08-03T20:43:54.617Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 43/502] Γ£ô CD Request for Inspection of Wire and Cable Rev 9.24.pdf chunks=4
+{"timestamp":"2026-08-03T20:43:57.556Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 44/502] Γ£ô ADA Projects ΓÇô Communications Commissioning Process Rev1.pdf chunks=41
+{"timestamp":"2026-08-03T20:44:01.018Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 45/502] Γ£ô A37806_07 14 16_GEN-003R00 - AAN - Bridge Deck Membrane Waterproofing System.pdf chunks=12
+{"timestamp":"2026-08-03T20:44:04.632Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 46/502] Γ£ô A37806_32 16 00_MYR-001R00 - RWC - Myrtle Curb & Sidewalk Drawings.pdf chunks=15
+{"timestamp":"2026-08-03T20:44:07.526Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 47/502] Γ£ô A37806_PRDC02-031R01 - NET - DEP Type 1 Catch Basin.pdf chunks=7
+{"timestamp":"2026-08-03T20:44:10.277Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 48/502] Γ£ô 32 11 00 Subbase Courses.pdf chunks=28
+{"timestamp":"2026-08-03T20:44:13.773Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 49/502] Γ£ô A37806_PRDC11-024R04 - APP - TC-SB-Norwood-MR088-01 J1 Track Replacement Bulletin.pdf chunks=28
+{"timestamp":"2026-08-03T20:44:16.874Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 50/502] Γ£ô 08 45 25 - Interior Porcelain Enamel Panels.pdf chunks=18
+
+ΓöÇΓöÇ 50/502 | Γ£ô49 ~0 Γ£ù1 | 0.08 files/s | etaΓëê1.5h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T20:44:20.599Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 51/502] Γ£ô 13 34 80 Utility Enclosures.pdf chunks=23
+{"timestamp":"2026-08-03T20:44:23.863Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 52/502] Γ£ô 22 05 16 Expansion Fittings and Loops for Plumbing Piping.pdf chunks=13
+{"timestamp":"2026-08-03T20:44:26.654Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 53/502] Γ£ô 22 05 23.12 Ball Valves for Plumbing Piping.pdf chunks=19
+{"timestamp":"2026-08-03T20:44:30.882Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 54/502] Γ£ô 23 37 13 Air Inlets and Outlets.pdf chunks=12
+{"timestamp":"2026-08-03T20:44:34.136Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 55/502] Γ£ô 26 41 00 Facility Lightning Protection.pdf chunks=17
+{"timestamp":"2026-08-03T20:44:37.231Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 56/502] Γ£ô 27 00 00 Communications Systems.pdf chunks=56
+{"timestamp":"2026-08-03T20:44:41.608Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 57/502] Γ£ô 27 01 00 Drawings, Manuals and Testing.pdf chunks=85
+{"timestamp":"2026-08-03T20:44:45.966Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 58/502] Γ£ô 27 05 00 Common Work Results for Communications Systems.pdf chunks=42
+{"timestamp":"2026-08-03T20:44:49.088Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 59/502] Γ£ô 27 05 05 SELECTIVE DEMOLITION FOR COMMUNICATIONS.pdf chunks=10
+{"timestamp":"2026-08-03T20:44:52.430Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 60/502] Γ£ô 27 05 28 Pathways for Communications Systems.pdf chunks=67
+{"timestamp":"2026-08-03T20:44:56.862Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 61/502] Γ£ô 27 10 05 COMMUNICATIONS DATA CABLING.pdf chunks=139
+{"timestamp":"2026-08-03T20:45:04.090Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 62/502] Γ£ô 28 20 00 VIDEO SURVEILLANCE SYSTEM.pdf chunks=46
+{"timestamp":"2026-08-03T20:45:07.734Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 63/502] Γ£ô 33 14 15 Sewer and Water Main Work_REV0.pdf chunks=26
+{"timestamp":"2026-08-03T20:45:11.191Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 64/502] Γ£ô Structural Steel.pdf chunks=24
+{"timestamp":"2026-08-03T20:45:14.314Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 65/502] Γ£ô Verizon Wingback Daily Report 3.10.pdf chunks=5
+{"timestamp":"2026-08-03T20:45:16.939Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 66/502] Γ£ô 304963.pdf chunks=3
+{"timestamp":"2026-08-03T20:45:19.281Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 67/502] Γ£ô EO-3036.pdf chunks=15
+{"timestamp":"2026-08-03T20:45:22.084Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 68/502] Γ£ô Yealink T54W Spec Sheet.pdf chunks=11
+{"timestamp":"2026-08-03T20:45:24.877Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 69/502] Γ£ô Document1.pdf chunks=3
+{"timestamp":"2026-08-03T20:45:27.205Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 70/502] Γ£ô CDSR 2026-06-12 NYCT A-37806 NL OCIP 2 (Myrtle Ave).pdf chunks=8
+{"timestamp":"2026-08-03T20:45:30.055Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 71/502] Γ£ô CDSR 2026-07-13 NYCT A-37806 NL OCIP 2 (Myrtle Ave).pdf chunks=7
+{"timestamp":"2026-08-03T20:45:34.007Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 72/502] Γ£ô 450-Series-Articulating-Boom-Specs.pdf chunks=7
+{"timestamp":"2026-08-03T20:45:36.846Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 73/502] Γ£ô Pedestrian Ramp Construction Triggers.pdf chunks=9
+{"timestamp":"2026-08-03T20:45:39.572Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 74/502] Γ£ô Notes-Lessons Learned ( 8 Stations -P2 ).pdf chunks=14
+{"timestamp":"2026-08-03T20:45:42.953Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 75/502] Γ£ô A37806 Discipline Leads-2025.01.29.pdf chunks=5
+
+ΓöÇΓöÇ 75/502 | Γ£ô74 ~0 Γ£ù1 | 0.11 files/s | etaΓëê1.1h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T20:45:46.514Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 76/502] Γ£ô 25.10.15 Myrtle Ave Phasing Plan Rev. 5.pdf chunks=16
+{"timestamp":"2026-08-03T20:45:49.521Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 77/502] Γ£ô 05 12 00 Structural Steel Framing.pdf chunks=24
+{"timestamp":"2026-08-03T20:45:52.547Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 78/502] Γ£ô 05 50 00 Metal Fabrications.pdf chunks=31
+{"timestamp":"2026-08-03T20:45:55.716Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 79/502] Γ£ô 07 27 13 Air Barriers.pdf chunks=18
+{"timestamp":"2026-08-03T20:45:58.735Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 80/502] Γ£ô 07 61 13 Standing-Seam Metal Roof.pdf chunks=34
+{"timestamp":"2026-08-03T20:46:02.458Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 81/502] Γ£ô 14 24 00 Hydraulic Elevator Equipment.pdf chunks=102
+{"timestamp":"2026-08-03T20:46:08.090Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 82/502] Γ£ô 26 05 26 Grounding and Bonding.pdf chunks=14
+{"timestamp":"2026-08-03T20:46:11.553Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 83/502] Γ£ô 26 05 29 Hangers and Supports for Electrical Systems.pdf chunks=19
+{"timestamp":"2026-08-03T20:46:14.665Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 84/502] Γ£ô 27 11 16 COMMUNICATIONS CABINETS, RACKS, FRAMES, AND ENCLOSURES.pdf chunks=27
+{"timestamp":"2026-08-03T20:46:18.259Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 85/502] Γ£ô 27 11 19 COMMUNICATIONS TERMINATION BLOCKS AND PATCH PANELS.pdf chunks=30
+{"timestamp":"2026-08-03T20:46:21.324Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 86/502] Γ£ô 32 16 00 Concrete Curbs and Sidewalks.pdf chunks=23
+{"timestamp":"2026-08-03T20:46:24.327Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 87/502] Γ£ô 4.08 Curb, Concrete.pdf chunks=11
+{"timestamp":"2026-08-03T20:46:27.107Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 88/502] Γ£ô 40.09 Final Restoration of Pavements.pdf chunks=9
+{"timestamp":"2026-08-03T20:46:30.585Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 89/502] Γ£ô Norwood Avenue Revised Phasing Plan.pdf chunks=8
+{"timestamp":"2026-08-03T20:46:33.259Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 90/502] Γ£ô QWP-Utility Relocation Combined- EMAIL-EP.pdf chunks=31
+{"timestamp":"2026-08-03T20:46:37.304Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 91/502] Γ£ô A37806_01 40 10_GEN-019R00 - R&R - QWP-001 - Concretre, Reinforcement, Formwork.pdf chunks=24
+{"timestamp":"2026-08-03T20:46:45.565Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 92/502] Γ£ô A37806_Volume_01_Instructions to Proposers.pdf chunks=592
+{"timestamp":"2026-08-03T20:47:03.130Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 93/502] Γ£ô 02 41 19 Selective Demolition.pdf chunks=17
+{"timestamp":"2026-08-03T20:47:06.245Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 94/502] Γ£ô 07 13 50 Membrane Waterproofing v5.pdf chunks=19
+{"timestamp":"2026-08-03T20:47:09.228Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 95/502] Γ£ô 33 05 16 Utility Structures.pdf chunks=14
+{"timestamp":"2026-08-03T20:47:12.086Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 96/502] Γ£ô NYCT Insurance Cert.pdf chunks=7
+{"timestamp":"2026-08-03T20:47:20.148Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 97/502] Γ£ô A37806 Division 1 General Requirements.pdf chunks=742
+{"timestamp":"2026-08-03T20:48:44.783Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"A37806_Volume_05_Project_Requirements_and_Design_
+Criteria.pdf","droppedGarbage":2,"kept":2775}
+{"timestamp":"2026-08-03T20:48:45.059Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 98/502] Γ£ô A37806_Volume_05_Project_Requirements_and_Design_Criteria.pdf chunks=2776
+{"timestamp":"2026-08-03T20:50:06.563Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 99/502] Γ£ô A37806_Volume 01_Instructions to Proposers.pdf chunks=592
+{"timestamp":"2026-08-03T20:50:23.206Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 100/502] Γ£ô 37135_01S_006R01_SWP-002 Pre-Construction and SOGR Inspections_Ver4.pdf chunks=23
+
+ΓöÇΓöÇ 100/502 | Γ£ô99 ~0 Γ£ù1 | 0.10 files/s | etaΓëê1.1h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T20:50:26.315Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 101/502] Γ£ô 37135_01S_120R00_SWP-087 Installation of Landscape Materials and Plantings.pdf chunks=18
+{"timestamp":"2026-08-03T20:50:29.735Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 102/502] Γ£ô stihl-ts-410-420 Cut.pdf chunks=3
+{"timestamp":"2026-08-03T20:50:33.819Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 103/502] Γ£ô SWP 061 Elevator Steel Erection Rev 04.pdf chunks=82
+{"timestamp":"2026-08-03T20:50:37.674Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 104/502] Γ£ô Coverv sheet 2.pdf chunks=3
+{"timestamp":"2026-08-03T20:50:42.883Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 105/502] Γ£ô SWP 027 Installation Of Conduit, Junction Boxes & Wireways Rev 3.pdf chunks=188
+{"timestamp":"2026-08-03T20:50:48.441Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 106/502] Γ£ô SWP 018 Rolling Scaffold Installation REV-1 - .pdf chunks=14
+{"timestamp":"2026-08-03T20:50:51.178Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 107/502] Γ£ô SWP 14 Installation of Temporary Lighting REV 001.pdf chunks=14
+{"timestamp":"2026-08-03T20:50:53.835Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 108/502] Γ£ô SWP - 013 Temporary Steel Removal for RB4 Repairs.pdf chunks=3
+{"timestamp":"2026-08-03T20:50:56.195Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 109/502] Γ£ô SWP - 014 Temporary Support.pdf chunks=3
+{"timestamp":"2026-08-03T20:50:58.586Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 110/502] Γ£ô SWP - 017 Demoltion of Track & Contact Rail Removal Rev 5.pdf chunks=3
+{"timestamp":"2026-08-03T20:51:01.158Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 111/502] Γ£ô SWP - 031 Concrete Pour Rev. 1.pdf chunks=3
+{"timestamp":"2026-08-03T20:51:03.877Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 112/502] Γ£ô SWP - 003 Track Barrier Installation Rev. 3.pdf chunks=3
+{"timestamp":"2026-08-03T20:51:06.416Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 113/502] Γ£ô 6 - Letter #003 - MFM-MLJ - 7.24.2025 - NYCDEP Vendor List Water.pdf chunks=8
+{"timestamp":"2026-08-03T20:51:09.429Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 114/502] Γ£ô 7 - SOE Plans.pdf chunks=80
+{"timestamp":"2026-08-03T20:51:13.490Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 115/502] Γ£ô Cover Page.pdf chunks=3
+{"timestamp":"2026-08-03T20:51:18.568Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 116/502] Γ£ô SWP 027 Installation Of Conduit, Junction Boxes & Wireways Rev 3.pdf chunks=188
+{"timestamp":"2026-08-03T20:52:25.684Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"A37806_Volume_05_Project_Requirements_and_Design_
+Criteria_CONFORMED.pdf","droppedGarbage":2,"kept":2791}
+{"timestamp":"2026-08-03T20:52:25.884Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 117/502] Γ£ô A37806_Volume_05_Project_Requirements_and_Design_Criteria_CONFORMED.pdf chunks=2792
+{"timestamp":"2026-08-03T20:53:35.573Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 118/502] Γ£ô Burnside Steel Repair Tracking.pdf chunks=4
+{"timestamp":"2026-08-03T20:53:38.401Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"2.pdf","droppedGarbage":4,"kept":6}
+{"timestamp":"2026-08-03T20:53:38.429Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 119/502] Γ£ô 2.pdf chunks=8
+{"timestamp":"2026-08-03T20:53:41.234Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 120/502] Γ£ô 2.pdf chunks=5
+{"timestamp":"2026-08-03T20:53:44.096Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"Mail - Emmanuel Olagbaiye - 
+Outlook.pdf","droppedGarbage":4,"kept":8}
+{"timestamp":"2026-08-03T20:53:44.126Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 121/502] Γ£ô Mail - Emmanuel Olagbaiye - Outlook.pdf chunks=10
+{"timestamp":"2026-08-03T20:53:46.975Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"3.pdf","droppedGarbage":2,"kept":1}
+{"timestamp":"2026-08-03T20:53:47.009Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 122/502] Γ£ô 3.pdf chunks=3
+{"timestamp":"2026-08-03T20:53:50.138Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"6.pdf","droppedGarbage":8,"kept":9}
+{"timestamp":"2026-08-03T20:53:50.168Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 123/502] Γ£ô 6.pdf chunks=11
+{"timestamp":"2026-08-03T20:53:53.026Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"5.pdf","droppedGarbage":4,"kept":5}
+{"timestamp":"2026-08-03T20:53:53.051Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 124/502] Γ£ô 5.pdf chunks=7
+{"timestamp":"2026-08-03T20:53:55.955Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 125/502] Γ£ô A37806_PRDC04-003R00 - FIO - Norwood Avenue Test Pits.pdf chunks=17
+
+ΓöÇΓöÇ 125/502 | Γ£ô124 ~0 Γ£ù1 | 0.11 files/s | etaΓëê1.0h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T20:53:59.213Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"1.pdf","droppedGarbage":2,"kept":1}
+{"timestamp":"2026-08-03T20:53:59.235Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 126/502] Γ£ô 1.pdf chunks=3
+{"timestamp":"2026-08-03T20:54:01.950Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 127/502] Γ£ô Notes- Lessons Learned (8 Stations- P2 ) - Volume 2.pdf chunks=26
+{"timestamp":"2026-08-03T20:54:05.071Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 128/502] Γ£ô Notes-Lessons Learned ( 8 Stations -P2 ).pdf chunks=14
+{"timestamp":"2026-08-03T20:54:07.808Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 129/502] Γ£ô Contract A37806 ADA Stations; Burnside Avenue DEP Hydrant Permit.pdf chunks=3
+[w1 130/502] Γåô 26827.pdf...
+{"timestamp":"2026-08-03T20:54:11.287Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 130/502] Γ£ô 26827.pdf chunks=3
+{"timestamp":"2026-08-03T20:54:13.837Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 131/502] Γ£ô 27143.pdf chunks=3
+{"timestamp":"2026-08-03T20:54:16.568Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 132/502] Γ£ô MLJ- P6 Sales Tax Exempt Form.pdf chunks=3
+{"timestamp":"2026-08-03T20:54:19.396Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 133/502] Γ£ô Notes- Lessons Learned (8 Stations- P2 ) - Volume 2.pdf chunks=26
+{"timestamp":"2026-08-03T20:54:22.531Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 134/502] Γ£ô 4.pdf chunks=4
+{"timestamp":"2026-08-03T20:54:25.987Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"QWP-001 Formwork Rebar & Concrete 
+Checklist.pdf","droppedGarbage":2,"kept":4}
+{"timestamp":"2026-08-03T20:54:26.073Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 135/502] Γ£ô QWP-001 Formwork Rebar & Concrete Checklist.pdf chunks=6
+{"timestamp":"2026-08-03T20:54:28.556Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 136/502] Γ£ô Updated Miscellaneous Metals Checklist 01-23-26.pdf chunks=6
+{"timestamp":"2026-08-03T20:54:31.450Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"SWP-082 Installation of HVAC System All Eight 
+Stations.pdf","droppedGarbage":4,"kept":24}
+{"timestamp":"2026-08-03T20:54:31.476Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 137/502] Γ£ô SWP-082 Installation of HVAC System All Eight Stations.pdf chunks=26
+{"timestamp":"2026-08-03T20:54:34.926Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 138/502] Γ£ô SWP 055 Installation of Platform Barrier at Queensboro Plaza Rev1.pdf chunks=31
+{"timestamp":"2026-08-03T20:54:39.372Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 139/502] Γ£ô Spec Sheets.pdf chunks=206
+{"timestamp":"2026-08-03T20:54:52.066Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 140/502] Γ£ô SWP 037 General Pouring Concrete 1.pdf chunks=18
+{"timestamp":"2026-08-03T20:54:54.939Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 141/502] Γ£ô SWP 036 - General Concrete Demolition.pdf chunks=16
+{"timestamp":"2026-08-03T20:54:58.105Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 142/502] Γ£ô SWP 018 Rolling Scaffold Installation REV-1 - .pdf chunks=14
+{"timestamp":"2026-08-03T20:55:01.030Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 143/502] Γ£ô SWP 14 Installation of Temporary Lighting REV 001.pdf chunks=14
+{"timestamp":"2026-08-03T20:55:06.034Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 144/502] Γ£ô JLG 450.pdf chunks=160
+{"timestamp":"2026-08-03T20:55:11.519Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 145/502] Γ£ô SWP 007 Borings Rev 001.pdf chunks=16
+{"timestamp":"2026-08-03T20:55:14.479Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 146/502] Γ£ô A-37116-35302 - SWP CCM Summary Table - update 7-15-19.pdf chunks=4
+{"timestamp":"2026-08-03T20:55:18.342Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 147/502] Γ£ô SWP - 002 Test Pit for Drill Boring.pdf chunks=3
+{"timestamp":"2026-08-03T20:55:21.225Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 148/502] Γ£ô SWP - 026 - Rebar Installation.pdf chunks=3
+{"timestamp":"2026-08-03T20:55:23.656Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 149/502] Γ£ô SWP - 050 Rev. 1 Demolition of Ceiling at 6th Ave. IND-BMT.pdf chunks=3
+{"timestamp":"2026-08-03T20:55:27.295Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 150/502] Γ£ô SWP - 094 Installing Steel Beams for New Stair Case at GCS.pdf chunks=31
+
+ΓöÇΓöÇ 150/502 | Γ£ô149 ~0 Γ£ù1 | 0.12 files/s | etaΓëê0.8h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T20:55:30.589Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 151/502] Γ£ô 430110 - Submittal #5 - MP Installation JHA.pdf chunks=32
+{"timestamp":"2026-08-03T20:55:33.467Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 152/502] Γ£ô A37806_07 61 13_GEN-009R00 - RWC - Sheet Metal Flashing & Trim Samples PMC Reviewed.pdf chunks=16
+{"timestamp":"2026-08-03T20:55:36.297Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 153/502] Γ£ô Standing Seam Roof Samples, Mockups, and Warranties.pdf chunks=53
+{"timestamp":"2026-08-03T20:55:39.584Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 154/502] Γ£ô Fellowes Powershred 79Ci Specs.pdf chunks=5
+{"timestamp":"2026-08-03T20:55:42.150Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 155/502] Γ£ô Xerox VersaLink C7120ENGS2.pdf chunks=16
+{"timestamp":"2026-08-03T20:55:45.031Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 156/502] Γ£ô MDT-MPT-102-SD 022125.pdf chunks=5
+{"timestamp":"2026-08-03T20:55:48.350Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 157/502] Γ£ô MDT-MPT-Stage 1A 20250613.pdf chunks=3
+{"timestamp":"2026-08-03T20:55:51.520Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 158/502] Γ£ô Tree Protection Plan - Myrtle Ave.pdf chunks=4
+{"timestamp":"2026-08-03T20:55:54.113Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 159/502] Γ£ô A37806 SL & TS Concept Dwgs- Civil- Middletown 20241011.pdf chunks=4
+{"timestamp":"2026-08-03T20:55:57.121Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 160/502] Γ£ô 20250505 - SK-002.04_Test Pit and Boring Location Plans.pdf chunks=12
+{"timestamp":"2026-08-03T20:56:00.298Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 161/502] Γ£ô MDT - TESTPIT 20250606.pdf chunks=10
+{"timestamp":"2026-08-03T20:56:03.110Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 162/502] Γ£ô MDT Test Pits 20250506.pdf chunks=4
+{"timestamp":"2026-08-03T20:56:05.655Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 163/502] Γ£ô MDT_VERIZON_Test Pits 20250506.pdf chunks=4
+{"timestamp":"2026-08-03T20:56:08.283Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 164/502] Γ£ô 4A - Subcontractor Approval Forms - MFM Contracting Corp..pdf chunks=3
+{"timestamp":"2026-08-03T20:56:11.095Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 165/502] Γ£ô Field Cards FC 5.pdf chunks=3
+{"timestamp":"2026-08-03T20:56:14.179Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 166/502] Γ£ô 20250130 - Middletown Sched.pdf chunks=50
+{"timestamp":"2026-08-03T20:56:18.090Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 167/502] Γ£ô 20251021 Middletown Sche MDT Comments.pdf chunks=72
+{"timestamp":"2026-08-03T20:56:22.275Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 168/502] Γ£ô DCB - 3.09 (Con Ed)_Myrle Backup_July 26.pdf chunks=4
+{"timestamp":"2026-08-03T20:56:25.006Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 169/502] Γ£ô Verizon Bill March.pdf chunks=3
+{"timestamp":"2026-08-03T20:56:28.445Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 170/502] Γ£ô MY - DCB-Item 3.09 - Jan Backup_Rev 1.pdf chunks=7
+{"timestamp":"2026-08-03T20:56:31.250Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 171/502] Γ£ô A37806 Asite Kickoff Presentation PDF.pdf chunks=21
+{"timestamp":"2026-08-03T20:56:34.174Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 172/502] Γ£ô 25.12.12_A37806_Myrtle_Sewer_Preconstruction Meeting (DEP -MLJ-MFM).pdf chunks=8
+{"timestamp":"2026-08-03T20:56:37.078Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 173/502] Γ£ô Burnside WM Relocation Schematic Sketch-Option 2B_2025.03.04.pdf chunks=17
+{"timestamp":"2026-08-03T20:56:43.828Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 174/502] Γ£ô 20250617 EDU01B Middletown Road Utilities 100%.pdf chunks=61
+{"timestamp":"2026-08-03T20:56:47.828Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 175/502] Γ£ô 806-RFI-033 - New PA Server Testing.pdf chunks=12
+
+ΓöÇΓöÇ 175/502 | Γ£ô174 ~0 Γ£ù1 | 0.13 files/s | etaΓëê0.7h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T20:56:50.452Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 176/502] Γ£ô 806-RFI-027 - Middletown Fire Alarm As-Builts.pdf chunks=3
+{"timestamp":"2026-08-03T20:56:53.623Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 177/502] Γ£ô A37806_RFI-0203 - CLO - Norwood J1 Revised Track Limits R1 - Updated Response 6-23-26.pdf chunks=17
+{"timestamp":"2026-08-03T20:56:56.927Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 178/502] Γ£ô Attachment 2.pdf chunks=11
+{"timestamp":"2026-08-03T20:57:00.171Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 179/502] Γ£ô A37806_RFI-0052 - Follow up to RFI-0021 Norwood Avenue Rubbing Boards.pdf chunks=14
+{"timestamp":"2026-08-03T20:57:03.632Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 180/502] Γ£ô A37806_RFI-0015 - Jamaica Line Rail Direction.pdf chunks=32
+{"timestamp":"2026-08-03T20:57:11.186Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 181/502] Γ£ô A37806_RFI-0004 - CLO - Fire Alarm Sys. at MYR Ave. MTA Contract C40853.pdf chunks=110
+{"timestamp":"2026-08-03T20:57:15.970Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 182/502] Γ£ô MYR-A-516.pdf chunks=5
+{"timestamp":"2026-08-03T20:57:18.472Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 183/502] Γ£ô MYR-CS-131.pdf chunks=3
+{"timestamp":"2026-08-03T20:57:22.370Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 184/502] Γ£ô A37806_DRFI-0046 - Myrtle Ave Platform EL Entrance.pdf chunks=22
+{"timestamp":"2026-08-03T20:57:25.691Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 185/502] Γ£ô A37806_DRFI-0041 - CLO - Myrtle Ave Truss Splice Connection (Seiko-RFI4).pdf chunks=3
+{"timestamp":"2026-08-03T20:57:29.477Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 186/502] Γ£ô Attachment.pdf chunks=64
+{"timestamp":"2026-08-03T20:57:33.812Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 187/502] Γ£ô A37806 SL & TS Concept Dwgs- Civil- Burnside - Option Work-R01 20241118 (DOT COMMENT).pdf chunks=4
+{"timestamp":"2026-08-03T20:57:36.632Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 188/502] Γ£ô DOT PERMITS EXP 4-29 & 5-12-26 RENEWED (Water & Sewer Install).pdf chunks=25
+{"timestamp":"2026-08-03T20:57:39.981Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 189/502] Γ£ô 2025-10-15 Hydrant Permit 30-day Fee and Per Day Fee.pdf chunks=3
+{"timestamp":"2026-08-03T20:57:42.741Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 190/502] Γ£ô 04. OCIP Enrollment Forms A & B.pdf chunks=5
+{"timestamp":"2026-08-03T20:57:46.092Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 191/502] Γ£ô A37806_01 40 10_GEN-019R03 - APP - QWP-001 Formwork Rebar & Concrete.pdf chunks=40
+{"timestamp":"2026-08-03T20:57:49.245Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 192/502] Γ£ô A37806-Quality  Meeting_AGENDA-20250911.pdf chunks=6
+{"timestamp":"2026-08-03T20:57:51.971Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 193/502] Γ£ô 5.9 NRB Technical_Quality_Review_Record_Arch-AECOM.pdf chunks=6
+{"timestamp":"2026-08-03T20:57:54.651Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 194/502] Γ£ô Technical_Quality_Review_Record_FireAlarm-AECOM.pdf chunks=6
+{"timestamp":"2026-08-03T20:57:59.035Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 195/502] Γ£ô Technical_Quality_Review_Record_Geotech-AECOM (1)_QA_signed.pdf chunks=6
+{"timestamp":"2026-08-03T20:58:01.541Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 196/502] Γ£ô A37806_DQR_260713_NOR_signed.pdf chunks=6
+{"timestamp":"2026-08-03T20:58:05.371Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 197/502] Γ£ô A37806_DQR_260714_AVI-READY.pdf chunks=26
+{"timestamp":"2026-08-03T20:58:08.412Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 198/502] Γ£ô A37806_DQR_260714_NOR_signed.pdf chunks=6
+{"timestamp":"2026-08-03T20:58:10.850Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 199/502] Γ£ô A37806_DQR_260719_NOR_nowork.pdf chunks=5
+{"timestamp":"2026-08-03T20:58:13.677Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 200/502] Γ£ô A37806_DQR_260724_MYR_ORIG.pdf chunks=5
+
+ΓöÇΓöÇ 200/502 | Γ£ô199 ~0 Γ£ù1 | 0.14 files/s | etaΓëê0.6h ΓöÇΓöÇ
+
+[w1 201/502] Γåô A37806_DQR_260803_BUR.pdf...
+{"timestamp":"2026-08-03T20:58:16.928Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 201/502] Γ£ô A37806_DQR_260803_BUR.pdf chunks=5
+{"timestamp":"2026-08-03T20:58:20.883Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 202/502] Γ£ô A37806_DQR_260722_MDT.pdf chunks=30
+{"timestamp":"2026-08-03T20:58:23.996Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 203/502] Γ£ô A37806_DQR_260718_MDT.pdf chunks=5
+{"timestamp":"2026-08-03T20:58:41.084Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 204/502] Γ£ô A37806_DQR_260720_MYR_ORIG.pdf chunks=430
+{"timestamp":"2026-08-03T20:58:53.653Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 205/502] Γ£ô A37806_DQR_260720_NOR_signed.pdf chunks=11
+{"timestamp":"2026-08-03T20:58:56.706Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 206/502] Γ£ô CD Request For Inspection of Structural Steel Rev 9.24.pdf chunks=6
+{"timestamp":"2026-08-03T20:58:59.194Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 207/502] Γ£ô Contract Specification 13MM-DB, 3.7.a.1.pdf chunks=7
+{"timestamp":"2026-08-03T20:59:07.101Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 208/502] Γ£ô A37806_05 12 00_AVI-001R02 - AAN - North-Bound Anchor Bolts and Structural Steel.pdf chunks=189
+{"timestamp":"2026-08-03T20:59:12.898Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 209/502] Γ£ô A37806_PRDC02-032R00 - NET - DEP Clean Fill (Petro).pdf chunks=6
+{"timestamp":"2026-08-03T20:59:17.119Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 210/502] Γ£ô A37806_33 14 15_GEN-002R00 - NET - Ductile Iron Pipe Fittings.pdf chunks=79
+{"timestamp":"2026-08-03T20:59:21.385Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 211/502] Γ£ô A37806_PRDC02-012R01 - RWC - Catch Basin Type 3 Shop Drawings-MTA 09.04.25.pdf chunks=9
+{"timestamp":"2026-08-03T20:59:24.919Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 212/502] Γ£ô A37806_01 40 10_GEN-019R03 - APP - QWP-001 Formwork Rebar & Concrete.pdf chunks=40
+{"timestamp":"2026-08-03T20:59:29.120Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 213/502] Γ£ô A37806_01 40 10_GEN-043R01 - APP - CWP-019 - Lead Abatement.pdf chunks=24
+{"timestamp":"2026-08-03T20:59:33.382Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 214/502] Γ£ô A37806_PRDC04-025R00 - AAN - Norwood SOE Plan.pdf chunks=40
+{"timestamp":"2026-08-03T20:59:36.611Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 215/502] Γ£ô A37806_09 29 00_GEN-002R00 - FIO - DensGlass Fireguard Sheathing Product & Safety Data Sheets MTA.pdf chunks=34
+{"timestamp":"2026-08-03T20:59:40.635Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 216/502] Γ£ô A37806_09 90 00_MYR-001R00 - AAN - Structural Steel Paint Procedure for Myrtle (Seiko #44).pdf chunks=3
+{"timestamp":"2026-08-03T20:59:43.621Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 217/502] Γ£ô A37806_PRDC04-026R00 - AAN - Structural Steel Bolting Procedures.pdf chunks=13
+{"timestamp":"2026-08-03T20:59:46.666Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 218/502] Γ£ô A37806_07 61 13_GEN-008R01 - AAN - Roof Underlayment Product Data.pdf chunks=8
+{"timestamp":"2026-08-03T20:59:55.874Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 219/502] Γ£ô A37806_07 61 13_MDT-001R01 - AAN - MDT Standing Seam Metal Roof.pdf chunks=28
+{"timestamp":"2026-08-03T20:59:59.031Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 220/502] Γ£ô F12 A-37806 Material_Equipment Receiving Inspection Report Log_260413.pdf chunks=28
+{"timestamp":"2026-08-03T21:00:01.931Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 221/502] Γ£ô A-37806 QMP Review and Sign off from Mac Contracting Of SI.pdf chunks=3
+{"timestamp":"2026-08-03T21:00:04.472Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 222/502] Γ£ô A-37806 QMP Review and Sign off from ACS 7.7.2026.pdf chunks=3
+{"timestamp":"2026-08-03T21:00:07.073Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 223/502] Γ£ô A-37806 QMP Review and Sign off from Providence Construction Corp..pdf chunks=3
+{"timestamp":"2026-08-03T21:00:14.441Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"A-37806_12L Complete_Burnside Avenue 
+Station.pdf","droppedGarbage":11,"kept":286}
+{"timestamp":"2026-08-03T21:00:14.512Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 224/502] Γ£ô A-37806_12L Complete_Burnside Avenue Station.pdf chunks=288
+{"timestamp":"2026-08-03T21:00:22.647Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 225/502] Γ£ô Burnside Drum Samples 5-15-2026.pdf chunks=16
+
+ΓöÇΓöÇ 225/502 | Γ£ô224 ~0 Γ£ù1 | 0.14 files/s | etaΓëê0.5h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:00:43.801Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 226/502] Γ£ô A37806_PRDC12-006R09 - APP-EAN - Environmental Anticipatory Boring Program.pdf chunks=942
+{"timestamp":"2026-08-03T21:01:04.812Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 227/502] Γ£ô Compact-Track-Loaders-G-Series-DKAGCTLL.pdf chunks=37
+{"timestamp":"2026-08-03T21:01:08.206Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 228/502] Γ£ô A37806 SWP-022 - Communication Systems Upgrades - Rev.0 - 6.27.25.pdf chunks=21
+{"timestamp":"2026-08-03T21:01:12.083Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 229/502] Γ£ô Hand tools Cut Sheets ( Gridner & Chop Saw ).pdf chunks=3
+{"timestamp":"2026-08-03T21:01:14.797Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 230/502] Γ£ô Submittal Cover Sheet.pdf chunks=3
+{"timestamp":"2026-08-03T21:01:17.776Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 231/502] Γ£ô Variable speed electic shear.pdf chunks=7
+{"timestamp":"2026-08-03T21:01:20.929Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 232/502] Γ£ô Grindert Instruction-Manual.PDF chunks=75
+{"timestamp":"2026-08-03T21:01:26.817Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 233/502] Γ£ô 450-Series-Articulating-Boom-Specs.pdf chunks=7
+{"timestamp":"2026-08-03T21:01:45.404Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 234/502] Γ£ô Walkbehind Saw.pdf chunks=3
+{"timestamp":"2026-08-03T21:01:47.989Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 235/502] Γ£ô Submittal Cover Sheet.pdf chunks=3
+{"timestamp":"2026-08-03T21:01:50.602Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 236/502] Γ£ô A37806_01 35 10_GEN-007R02 - AAN - SWP-004 - Right of Way (ROW).pdf chunks=12
+{"timestamp":"2026-08-03T21:01:54.453Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 237/502] Γ£ô A37806_01 35 10_GEN-005R01 - SWP-003 - Borings.pdf chunks=30
+{"timestamp":"2026-08-03T21:01:57.734Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 238/502] Γ£ô CDSR 2026-04-17 NYCT A-37806 NL OCIP 2 (Myrtle Ave).pdf chunks=8
+{"timestamp":"2026-08-03T21:02:00.460Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 239/502] Γ£ô CDSR 2026-05-26 NYCT A-37806 NL OCIP 2 (Myrtle Ave).pdf chunks=8
+{"timestamp":"2026-08-03T21:02:03.549Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 240/502] Γ£ô CDSR 2026-07-20 NYCT A-37806 NL OCIP 2 (Myrtle Ave).pdf chunks=11
+{"timestamp":"2026-08-03T21:02:06.320Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 241/502] Γ£ô CDSR 2026-7-19  NYCT A-37806  (Myrtle Ave Jamaica Line) A.G. OCIP2   .pdf chunks=9
+{"timestamp":"2026-08-03T21:02:09.510Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 242/502] Γ£ô Project Safety Assessment Inspection_ A-37806 _ ADA Package 6 _ Myrtle Ave Station.pdf chunks=34
+{"timestamp":"2026-08-03T21:02:12.907Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 243/502] Γ£ô Nahon Torres Extra Shift 2026-06-27.pdf chunks=3
+{"timestamp":"2026-08-03T21:02:19.713Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 244/502] Γ£ô A37806_Volume_12_State_Historic_Preserv._Office_Documents.pdf chunks=238
+{"timestamp":"2026-08-03T21:02:26.556Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 245/502] Γ£ô Letter_A37806_RFP_Addendum_02.pdf chunks=9
+{"timestamp":"2026-08-03T21:02:29.403Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 246/502] Γ£ô A37806_RFP Addendum 1 Letter.pdf chunks=11
+{"timestamp":"2026-08-03T21:02:32.152Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 247/502] Γ£ô MASONRY AECOM 081325.pdf chunks=5
+{"timestamp":"2026-08-03T21:02:34.944Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 248/502] Γ£ô Correction invoice 118350.pdf chunks=3
+{"timestamp":"2026-08-03T21:02:37.512Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 249/502] Γ£ô Invoice 11569.pdf chunks=3
+{"timestamp":"2026-08-03T21:02:40.326Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"225 APTF MLJ 
+CONTRACTING.pdf","droppedGarbage":2,"kept":0}
+{"timestamp":"2026-08-03T21:02:40.348Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 250/502] Γ£ô 225 APTF MLJ CONTRACTING.pdf chunks=2
+
+ΓöÇΓöÇ 250/502 | Γ£ô249 ~0 Γ£ù1 | 0.15 files/s | etaΓëê0.5h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:02:43.026Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 251/502] Γ£ô 4A0WY6D 212J0WY6D1025-1.pdf chunks=3
+{"timestamp":"2026-08-03T21:02:45.489Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 252/502] Γ£ô invoice updated 9.17.25.pdf chunks=3
+{"timestamp":"2026-08-03T21:02:48.805Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 253/502] Γ£ô MTA A37806 - Invoice Package 1.pdf chunks=43
+{"timestamp":"2026-08-03T21:02:52.785Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 254/502] Γ£ô MTA Inv 40187564 - Burnside.pdf chunks=24
+{"timestamp":"2026-08-03T21:02:56.299Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 255/502] Γ£ô MTA Invoice 40185436 - Myrtle.pdf chunks=9
+{"timestamp":"2026-08-03T21:02:59.763Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 256/502] Γ£ô MTA INVOICE 40182444 - Ave I.pdf chunks=12
+{"timestamp":"2026-08-03T21:03:03.129Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 257/502] Γ£ô MTA Invf 40187428 - Myrtle - Check Request.pdf chunks=29
+{"timestamp":"2026-08-03T21:03:06.210Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 258/502] Γ£ô PO M017-0128 All Points Ave i (Revised).pdf chunks=20
+{"timestamp":"2026-08-03T21:03:09.244Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 259/502] Γ£ô M017-CCTV-4-A.pdf chunks=5
+{"timestamp":"2026-08-03T21:03:11.856Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 260/502] Γ£ô 19624.pdf chunks=3
+{"timestamp":"2026-08-03T21:03:14.790Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 261/502] Γ£ô I7038413.pdf chunks=7
+{"timestamp":"2026-08-03T21:03:17.850Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 262/502] Γ£ô 511873.pdf chunks=5
+{"timestamp":"2026-08-03T21:03:20.285Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 263/502] Γ£ô 516974.pdf chunks=4
+{"timestamp":"2026-08-03T21:03:22.849Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 264/502] Γ£ô 518493.pdf chunks=4
+{"timestamp":"2026-08-03T21:03:25.657Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 265/502] Γ£ô 2510-705264.pdf chunks=3
+{"timestamp":"2026-08-03T21:03:28.224Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 266/502] Γ£ô 9654161182.pdf chunks=4
+{"timestamp":"2026-08-03T21:03:31.111Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 267/502] Γ£ô Check Request 7.30.2026.pdf chunks=10
+{"timestamp":"2026-08-03T21:03:34.436Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 268/502] Γ£ô MTA INVOICE 40182444 - Ave I.pdf chunks=12
+{"timestamp":"2026-08-03T21:03:38.147Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 269/502] Γ£ô MTA Invoice 40189006 - Burnside.pdf chunks=6
+{"timestamp":"2026-08-03T21:03:41.846Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 270/502] Γ£ô MTA Invoice 40189006 - Burnside.pdf chunks=6
+{"timestamp":"2026-08-03T21:03:44.866Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"SI-147788.pdf","droppedGarbage":2,"kept":1}
+{"timestamp":"2026-08-03T21:03:44.892Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 271/502] Γ£ô SI-147788.pdf chunks=3
+{"timestamp":"2026-08-03T21:03:47.615Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"SI-148011.pdf","droppedGarbage":1,"kept":0}
+{"timestamp":"2026-08-03T21:03:47.643Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 272/502] Γ£ô SI-148011.pdf chunks=2
+{"timestamp":"2026-08-03T21:03:49.900Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 273/502] Γ£ô 202546925.pdf chunks=3
+{"timestamp":"2026-08-03T21:03:52.888Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 274/502] Γ£ô 202547112.pdf chunks=3
+{"timestamp":"2026-08-03T21:03:55.350Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 275/502] Γ£ô 2134550.pdf chunks=3
+
+ΓöÇΓöÇ 275/502 | Γ£ô274 ~0 Γ£ù1 | 0.16 files/s | etaΓëê0.4h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:03:57.675Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 276/502] Γ£ô 3125.pdf chunks=3
+{"timestamp":"2026-08-03T21:04:00.717Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 277/502] Γ£ô T&M Ticket 12.23.25 day shift.pdf chunks=3
+{"timestamp":"2026-08-03T21:04:03.180Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 278/502] Γ£ô Lumber Quotes.pdf chunks=3
+{"timestamp":"2026-08-03T21:04:06.571Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 279/502] Γ£ô 2025-03-06 Burnside Ave VECP Presentation Meeting Minutes.pdf chunks=28
+{"timestamp":"2026-08-03T21:04:09.448Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 280/502] Γ£ô WTA 3936 - Myrtle  2026-07.18-02.20 - (J1) D (S).pdf chunks=7
+{"timestamp":"2026-08-03T21:04:12.843Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 281/502] Γ£ô A-37806 - TA Reconciliation - May 2026.pdf chunks=20
+{"timestamp":"2026-08-03T21:04:17.304Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 282/502] Γ£ô Week 10 2026 Approved Service Plans.pdf chunks=194
+{"timestamp":"2026-08-03T21:04:23.903Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 283/502] Γ£ô Week 12 2026 Approved Service Plans.pdf chunks=171
+{"timestamp":"2026-08-03T21:04:30.967Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 284/502] Γ£ô Week 13 2026 Approved Service Plans.pdf chunks=170
+{"timestamp":"2026-08-03T21:04:37.536Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 285/502] Γ£ô Week 25 2026 Approved Service Plans.pdf chunks=152
+{"timestamp":"2026-08-03T21:04:43.049Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 286/502] Γ£ô SP A-23-06 - 06.02.26 - MTR - Tk P2-P3-PM 10a-2p (POWER ON).pdf chunks=5
+{"timestamp":"2026-08-03T21:04:45.563Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 287/502] Γ£ô SP A-25-15 - 06.20-06.21.26 - MTR - Sa 4a-Su10p Tks P2-PM - MLJTC2 GO.pdf chunks=5
+{"timestamp":"2026-08-03T21:04:48.046Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 288/502] Γ£ô SP A-25-19 - 06.20-06.21.26 - MTR - Sa 4a-Su10p Tks P2-PM - MLJTC2 GO.pdf chunks=5
+{"timestamp":"2026-08-03T21:04:50.545Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 289/502] Γ£ô SP B-06-05 - 02.03-02.06.26 Ave I 10a-3p Tk B2.pdf chunks=4
+{"timestamp":"2026-08-03T21:04:53.220Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 290/502] Γ£ô SP B-06-18 - 02.07-02.08.26 Ave I 4a-10p Tk B2.pdf chunks=4
+{"timestamp":"2026-08-03T21:04:56.185Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 291/502] Γ£ô SP B-08-01 - 02.18-02.20.26 Ave I 9.30a-3.30p Tk B2.pdf chunks=3
+{"timestamp":"2026-08-03T21:04:59.138Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 292/502] Γ£ô SP B-09-57 - REVISED.pdf chunks=5
+{"timestamp":"2026-08-03T21:05:01.823Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 293/502] Γ£ô SP B-14-61 - 04.04-04.05.26 - Myrtle - Sa 4a-S,10p Tk J3-J4 - MLJTC2 GO.pdf chunks=5
+{"timestamp":"2026-08-03T21:05:04.672Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 294/502] Γ£ô SP B-25-52 - 06.16-06.19.26 - Myrtle - 9.30-3.30p Tk J2 Not in our limits but if we have flagging need PB.pdf chunks=4
+{"timestamp":"2026-08-03T21:05:07.323Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 295/502] Γ£ô 37806-AVI-001 ΓÇô Detail View.pdf chunks=3
+{"timestamp":"2026-08-03T21:05:09.897Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 296/502] Γ£ô 37806-BUR-001 ΓÇô Detail View.pdf chunks=3
+{"timestamp":"2026-08-03T21:05:12.230Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 297/502] Γ£ô Spec-Sheet - String Light & Victor Split Knob.pdf chunks=3
+{"timestamp":"2026-08-03T21:05:14.636Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 298/502] Γ£ô Spec-Sheet for Zip Ties.pdf chunks=3
+{"timestamp":"2026-08-03T21:05:17.243Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 299/502] Γ£ô A37806_01 35 10_GEN-007R02 - APP - SWP-004 - Right of Way (ROW).pdf chunks=16
+{"timestamp":"2026-08-03T21:05:20.363Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 300/502] Γ£ô A37806_01 40 10_GEN-091R01 - APP - CWP-031- Platform Replacement.pdf chunks=53
+
+ΓöÇΓöÇ 300/502 | Γ£ô299 ~0 Γ£ù1 | 0.16 files/s | etaΓëê0.3h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:05:26.480Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 301/502] Γ£ô A37806_01 35 10_GEN-061R01 - APP - SWP-020 - Painting.pdf chunks=49
+{"timestamp":"2026-08-03T21:05:30.503Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 302/502] Γ£ô 2855_001_PB Request for GO# 1250-26__MOW TRACK MAINTENANCE_Approved.pdf chunks=3
+{"timestamp":"2026-08-03T21:05:34.783Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 303/502] Γ£ô A-37806_J-TRACK-13A-020R00 - RWNC - Skeletonized Track at Thru Span.pdf chunks=8
+{"timestamp":"2026-08-03T21:05:37.648Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 304/502] Γ£ô Inspection Request_rev.pdf chunks=4
+{"timestamp":"2026-08-03T21:05:40.328Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 305/502] Γ£ô MA float path 10.7..25.pdf chunks=13
+{"timestamp":"2026-08-03T21:05:43.702Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 306/502] Γ£ô Middletown Actual 7.29.25.pdf chunks=50
+{"timestamp":"2026-08-03T21:05:47.488Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 307/502] Γ£ô NA 7.31.25.pdf chunks=41
+{"timestamp":"2026-08-03T21:05:51.374Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 308/502] Γ£ô NA Platform111725.pdf chunks=9
+{"timestamp":"2026-08-03T21:05:54.397Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 309/502] Γ£ô MA Longest Path 12.30.25.pdf chunks=10
+{"timestamp":"2026-08-03T21:05:58.530Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 310/502] Γ£ô 25.12.01 A37806-MTACD-MLJTC2-L-0127 - Change Proposal Request Norwood Avenue SOGR.pdf chunks=47
+{"timestamp":"2026-08-03T21:06:01.975Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 311/502] Γ£ô A37806 Org Chart r8 2025-04-09 - Quality.pdf chunks=4
+{"timestamp":"2026-08-03T21:06:04.615Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 312/502] Γ£ô Comment letter-MTA A-37806 Design Built Norwood Station.pdf chunks=5
+{"timestamp":"2026-08-03T21:06:07.437Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 313/502] Γ£ô TC-MLJ-027 Contract A37806 - Notice of Change 020 - Myrtle Ave Signal Stop Light Relocation.pdf chunks=5
+{"timestamp":"2026-08-03T21:06:10.585Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 314/502] Γ£ô MLJTC2-MTACD-0001 - DBE Utilization Plan.pdf chunks=27
+{"timestamp":"2026-08-03T21:06:14.350Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 315/502] Γ£ô MLJTC2-MTACD-0135 - NOC-028 - Avenue I Replacement of Existing Con Edison Reserve Service.pdf chunks=31
+{"timestamp":"2026-08-03T21:06:17.708Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 316/502] Γ£ô MLJTC2-MTACD-0165 - Follow up on NOC-028 - Avenue I Replacement of Existing Con Edison Reserve Service.pdf chunks=4
+{"timestamp":"2026-08-03T21:06:21.230Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 317/502] Γ£ô MLJTC2-MTACD-0170 - NOC-034 - Myrtle Ave Additional Street Light Pole and Foundation.pdf chunks=16
+{"timestamp":"2026-08-03T21:06:25.079Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 318/502] Γ£ô 25.12.03 A37806-MTACD-MLJTC2-L-0131 - Change Proposal Request PSLAN Reconfiguration at Avenue I.pdf chunks=16
+{"timestamp":"2026-08-03T21:06:28.829Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 319/502] Γ£ô 26.05.08 A37806-MTACD-MLJTC2-L-0209 - Change 16 CPR Norwood Ave Sewer and Water House Connections UPDATED.pdf chunks=30
+{"timestamp":"2026-08-03T21:06:31.846Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 320/502] Γ£ô A37806_PRDC12-002R03 - RWNC - Waste Management Plan.pdf chunks=11
+{"timestamp":"2026-08-03T21:06:36.540Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 321/502] Γ£ô A37806_PRDC11-016R00 - APP - TC-SB-Myrtle-MR097-02 - Myrtle Ave Hold Light Bulletin.pdf chunks=27
+{"timestamp":"2026-08-03T21:06:40.160Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 322/502] Γ£ô A37806_PRDC11-017R00 - APP - TC-B1-Avenue I-MR246-03 - B1 Track Work Signal Bulletin.pdf chunks=23
+{"timestamp":"2026-08-03T21:06:43.469Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 323/502] Γ£ô A37806_PRDC06_MYR-001R01 - RWC - Myrtle Ave Normal Service Load Letter.pdf chunks=25
+{"timestamp":"2026-08-03T21:06:46.836Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 324/502] Γ£ô A37806_PRDC06_MDT-002R00 - RWC - Middletown Road Reserve Service Load Letter.pdf chunks=17
+{"timestamp":"2026-08-03T21:06:50.035Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 325/502] Γ£ô A37806_PRDC06_BUR-001R00 - RWC - Burnside Ave Normal Service Load Letter.pdf chunks=3
+
+ΓöÇΓöÇ 325/502 | Γ£ô324 ~0 Γ£ù1 | 0.17 files/s | etaΓëê0.3h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:06:53.288Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 326/502] Γ£ô A37806_PRDC06_BUR-002R00 - RWC - Burnside Ave Reserve Service Load Letter 11.11.25.pdf chunks=18
+{"timestamp":"2026-08-03T21:07:02.438Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 327/502] Γ£ô A37806_PRDC06_AVI-003R04 - APP - Avenue I Short Circuit and Protective Device Coordination Study.pdf chunks=184
+{"timestamp":"2026-08-03T21:07:17.814Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 328/502] Γ£ô A37806_PRDC06_AVI-003R04 - Avenue I Short Circuit and Protective Device Coordination Study.pdf chunks=175
+{"timestamp":"2026-08-03T21:07:24.455Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 329/502] Γ£ô 2025-06-30 - Middletown - Materials.pdf chunks=14
+{"timestamp":"2026-08-03T21:07:27.918Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 330/502] Γ£ô A37806_PRDC04-003R00 - FIO - Norwood Avenue Test Pits.pdf chunks=17
+{"timestamp":"2026-08-03T21:07:31.023Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"A37806_PRDC04-015R00 - AAR - MFM Trench SOE 
+Plan.pdf","droppedGarbage":1,"kept":21}
+{"timestamp":"2026-08-03T21:07:31.049Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 331/502] Γ£ô A37806_PRDC04-015R00 - AAR - MFM Trench SOE Plan.pdf chunks=23
+{"timestamp":"2026-08-03T21:07:35.785Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 332/502] Γ£ô A37806_PRDC04-025R02 - FIO - Norwood SOE Plan-MTA.pdf chunks=3
+{"timestamp":"2026-08-03T21:07:42.017Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 333/502] Γ£ô A37806_PRDC04-040R02 - RWC - Avenue I Foundation SOE-MTA.pdf chunks=3
+{"timestamp":"2026-08-03T21:07:44.774Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 334/502] Γ£ô A37806_PRDC02-015R00 - RWNC - Stone (MFM)-MTA.pdf chunks=7
+{"timestamp":"2026-08-03T21:07:47.449Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 335/502] Γ£ô A37806_PRDC02-037R00 - NET - ConEd Type II Fill (EROC).pdf chunks=9
+{"timestamp":"2026-08-03T21:07:50.205Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 336/502] Γ£ô A37806_PRDC02-041R00 - AAN - NYCDOT Clean Fill.pdf chunks=6
+{"timestamp":"2026-08-03T21:07:52.740Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 337/502] Γ£ô A37806_PRDC01-005R04 - R&R - Myrtle Ave Master Lease Submission 05.27.26.pdf chunks=11
+{"timestamp":"2026-08-03T21:07:57.048Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 338/502] Γ£ô A37806_33 71 19_MYR-001R00 - FIO -  Approved Con Ed Layout & EO-MTA.pdf chunks=73
+{"timestamp":"2026-08-03T21:08:02.107Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 339/502] Γ£ô A37806_33 14 15_GEN-002R00 - RWNC - Ductile Iron Pipe Fittings-MTA.pdf chunks=77
+{"timestamp":"2026-08-03T21:08:06.174Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 340/502] Γ£ô A37806_33 14 15_GEN-004R00 - ORIG - DEP Standard Cast In Place Base.pdf chunks=6
+{"timestamp":"2026-08-03T21:08:08.930Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 341/502] Γ£ô A37806_33 14 15_GEN-005R01 - RWNC - DEP Standard Precast 4FT Dia Manhole-MTA.pdf chunks=10
+{"timestamp":"2026-08-03T21:08:11.892Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 342/502] Γ£ô A37806_32 16 00_GEN-006R00 - NET - NYCDOT Concrete Mix Extra-HES.pdf chunks=3
+{"timestamp":"2026-08-03T21:08:14.364Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 343/502] Γ£ô A37806_21 12 00_NOR-001R01 - NET - Norwood Fire Standpipe Relocation Around Elevators Drawings.pdf chunks=6
+{"timestamp":"2026-08-03T21:08:17.653Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 344/502] Γ£ô A37806_14 24 00_GEN-009R00 - AAN - Cast-in-Place Concrete Wall Embed.pdf chunks=6
+{"timestamp":"2026-08-03T21:08:20.866Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 345/502] Γ£ô A37806_08 71 00_GEN-001R01 - FIO - D&D Door Hardware Schedule-MTA.pdf chunks=3
+{"timestamp":"2026-08-03T21:08:26.158Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 346/502] Γ£ô A37806_08 71 00_GEN-002R01 - D&D Door Hardware Cut Sheets.pdf chunks=16
+{"timestamp":"2026-08-03T21:08:29.152Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 347/502] Γ£ô A37806_07 42 13_GEN-002R00 - FIO - Alucobond EasyFix Clips Product Data Sheet MTA.pdf chunks=11
+{"timestamp":"2026-08-03T21:08:32.619Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 348/502] Γ£ô A37806_06 60 00_GEN-002R00 - AAN - Rubbing Board for Avenue I Myrtle Ave and Norwood Ave.pdf chunks=9
+{"timestamp":"2026-08-03T21:08:36.285Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 349/502] Γ£ô A37806_05 50 00_GEN-001R00 - AAN - Thick Abrasive Cast Aluminum Stair Treads Product Data.pdf chunks=3
+{"timestamp":"2026-08-03T21:08:39.235Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 350/502] Γ£ô A37806_05 12 00_BUR-040R01 - ORIG - BR5-BR5B_SOGR Beam BR5 Tk J4 Bents 229-230.pdf chunks=16
+
+ΓöÇΓöÇ 350/502 | Γ£ô349 ~0 Γ£ù1 | 0.17 files/s | etaΓëê0.2h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:08:43.205Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 351/502] Γ£ô A37806_05 12 00_BUR-014R00 - RWC - BR8-BR8B & BR10-BR10B_Steel Rep. Bent 233-234, 235-236-Trk J4-MTA.pdf chunks=39
+{"timestamp":"2026-08-03T21:08:46.779Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 352/502] Γ£ô MLJTC2_A37806 Submittal Cover Sheet_editable.pdf chunks=3
+{"timestamp":"2026-08-03T21:08:55.199Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 353/502] Γ£ô A37806_05 12 00_AVI-001R00 - AAR - North-Bound Anchor Bolts and Structural Steel.pdf chunks=3
+{"timestamp":"2026-08-03T21:09:03.772Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 354/502] Γ£ô A37806_05 12 00_AVI-001R01 - AAR - North-Bound Anchor Bolts and Structural Steel.pdf chunks=187
+{"timestamp":"2026-08-03T21:09:10.428Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 355/502] Γ£ô A37806_05 12 00_AVI-003R01 - FIO - Ave I North ADA Platform Steel Drawings-MTA.pdf chunks=13
+{"timestamp":"2026-08-03T21:09:13.563Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 356/502] Γ£ô A37806_05 12 00_AVI-004R01 - AAN - Ave I SB Stair Anchor Bolt Drawings.pdf chunks=13
+{"timestamp":"2026-08-03T21:09:18.737Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 357/502] Γ£ô A37806_05 12 00_AVI-005R01 - AAN - Avenue I NB Pick Plan.pdf chunks=30
+{"timestamp":"2026-08-03T21:09:23.840Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 358/502] Γ£ô A37806_05 12 00_AVI-012R02 - AAN - Seiko NB and SB Canopy Framing.pdf chunks=35
+{"timestamp":"2026-08-03T21:09:29.708Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 359/502] Γ£ô A37806_05 12 00_AVI-015R00 - AAN - Avenue I SB Pick Plan.pdf chunks=20
+{"timestamp":"2026-08-03T21:09:33.422Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 360/502] Γ£ô A37806_03 20 00_NOR-001R00 - AAR - Norwood Ave Foundation Rebar Shop Drawings.pdf chunks=38
+{"timestamp":"2026-08-03T21:09:36.731Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 361/502] Γ£ô A37806_03 20 00_AVI-001R03 - FIO - Ave I South Foundation Rebar Shop Drawings-DOR.pdf chunks=21
+{"timestamp":"2026-08-03T21:09:40.585Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 362/502] Γ£ô A37806_03 20 00_AVI-002R00 - AAN - Ave I North Foundation Rebar Shop Drawings.pdf chunks=3
+{"timestamp":"2026-08-03T21:09:43.365Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 363/502] Γ£ô A37806_03 20 00_AVI-002R02 - FIO - Ave I North Foundation Rebar Shop Drawings-MTA.pdf chunks=31
+{"timestamp":"2026-08-03T21:09:47.749Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 364/502] Γ£ô A37806_01 40 10_GEN-001R01 - R&R - Quality Management Plan.pdf chunks=128
+{"timestamp":"2026-08-03T21:09:53.147Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 365/502] Γ£ô A37806_01 40 10_GEN-006R00 - R&R - NCR Template & Log.pdf chunks=12
+{"timestamp":"2026-08-03T21:09:56.420Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 366/502] Γ£ô A37806_01 40 10_GEN-015R02 - APP - CWP-001- Selective Demolition.pdf chunks=23
+{"timestamp":"2026-08-03T21:09:59.405Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 367/502] Γ£ô A37806_01 40 10_GEN-016R00 - R&R - CWP-002-Utility Relocation.pdf chunks=13
+{"timestamp":"2026-08-03T21:10:02.871Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 368/502] Γ£ô A37806_01 40 10_GEN-054R01 - ORIG - QWP-015 State Of Good Repairs.pdf chunks=35
+{"timestamp":"2026-08-03T21:10:06.317Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 369/502] Γ£ô A37806_01 40 10_GEN-090R01 - AEAN - QWP-012 REV01 - Miscellaneous Metals.pdf chunks=43
+{"timestamp":"2026-08-03T21:10:10.237Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 370/502] Γ£ô A37806_01 40 10_GEN-091R00 - R&R - CWP-031- Platform Replacement.pdf chunks=38
+{"timestamp":"2026-08-03T21:10:16.542Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 371/502] Γ£ô A37806_01 35 10_AVI-117R01 - SWP-016-AVI Elevator Steel Enclosure (Day).pdf chunks=110
+{"timestamp":"2026-08-03T21:10:22.022Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 372/502] Γ£ô A37806_01 35 10_GEN-007R02 - APP - SWP-004 - Right of Way (ROW).pdf chunks=16
+{"timestamp":"2026-08-03T21:10:27.875Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 373/502] Γ£ô A37806_01 35 10_GEN-014R01 - AEAN - SWP-024 - Confined Space.pdf chunks=63
+{"timestamp":"2026-08-03T21:10:59.229Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 374/502] Γ£ô A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf chunks=84
+{"timestamp":"2026-08-03T21:11:03.766Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 375/502] Γ£ô A37806_01 35 10_GEN-077R00 - ORIG - Safety Coordinator - Stephen Lee.pdf chunks=18
+
+ΓöÇΓöÇ 375/502 | Γ£ô374 ~0 Γ£ù1 | 0.17 files/s | etaΓëê0.2h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:11:07.025Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 376/502] Γ£ô A37806_01 35 10_GEN-116R01 - APP - SWP-052 Mezzanine Stair Barricade.pdf chunks=26
+{"timestamp":"2026-08-03T21:11:16.387Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 377/502] Γ£ô A37806_01 35 10_MYR-102R04 - ORG - SWP-047 - Platform Canopy Demo  Install at Myrtle Ave.pdf chunks=462
+{"timestamp":"2026-08-03T21:11:31.538Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 378/502] Γ£ô A37806_01 33 10_MYR-006R00 - FIO - DOT Permits Exp. 11.07.25 & 11.21.25.pdf chunks=904
+{"timestamp":"2026-08-03T21:11:51.384Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 379/502] Γ£ô A37806_01 33 10_MDT-006R00 - FIO - Temporary Sidewalk Middletown.pdf chunks=7
+{"timestamp":"2026-08-03T21:11:54.882Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 380/502] Γ£ô A37806_01 33 10_MDT-006R01 - FIO - Temporary Sidewalk Middletown.pdf chunks=8
+{"timestamp":"2026-08-03T21:11:57.776Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 381/502] Γ£ô A37806_01 33 10_MDT-008R00 - FIO - DOT Permits Exp. 10.02.25.pdf chunks=11
+{"timestamp":"2026-08-03T21:12:04.632Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 382/502] Γ£ô A37806_01 32 10_GEN-017R02 - APP-EAN - Design Build Baseline Schedule.pdf chunks=466
+{"timestamp":"2026-08-03T21:12:15.536Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 383/502] Γ£ô A37806_01 30 20_GEN-011R00 - FIO - Survey Kickoff Meeting Minutes  3.20.250.pdf chunks=35
+{"timestamp":"2026-08-03T21:12:18.483Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 384/502] Γ£ô MLJTC2_A37806 Submittal Cover Sheet_editable.pdf chunks=3
+{"timestamp":"2026-08-03T21:12:21.558Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 385/502] Γ£ô A37806_01 30 20_MDT-083R00 - FIO - MDT FACP_RFI130_FACP Location Coord_20251027.pdf chunks=8
+{"timestamp":"2026-08-03T21:12:25.405Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 386/502] Γ£ô A37806_01 10 30_MYR-004R01 - NET - Myrtle Overpass Deck & Formwork.pdf chunks=42
+{"timestamp":"2026-08-03T21:12:35.035Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 387/502] Γ£ô A37806_01 10 20_GEN-021R00 - EDU01A, C (FINAL - 100) Utility Relocations at MYR and NOR.pdf chunks=37
+{"timestamp":"2026-08-03T21:12:38.227Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 388/502] Γ£ô 03 10 00 Concrete Formwork and Accessories.pdf chunks=17
+{"timestamp":"2026-08-03T21:12:40.921Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 389/502] Γ£ô 31 50 00 Protection of Existing Structures_REV0.pdf chunks=16
+{"timestamp":"2026-08-03T21:12:43.691Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 390/502] Γ£ô 08 91 16 Fixed Wall Louvers.pdf chunks=17
+{"timestamp":"2026-08-03T21:12:47.039Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 391/502] Γ£ô 22 07 19 Plumbing Piping Insulation.pdf chunks=50
+{"timestamp":"2026-08-03T21:12:50.549Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 392/502] Γ£ô 22 11 19 Domestic Water Piping Specialties.pdf chunks=19
+{"timestamp":"2026-08-03T21:12:53.689Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 393/502] Γ£ô 26 27 13 Electricity Metering.pdf chunks=14
+{"timestamp":"2026-08-03T21:12:56.508Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 394/502] Γ£ô 4.13 Sidewalk, Concrete.pdf chunks=33
+{"timestamp":"2026-08-03T21:12:59.836Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 395/502] Γ£ô 6.34 Chain Link Fence.pdf chunks=8
+{"timestamp":"2026-08-03T21:13:02.537Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 396/502] Γ£ô 6.34A Temporary Chain Link Fence.pdf chunks=7
+{"timestamp":"2026-08-03T21:13:05.480Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 397/502] Γ£ô 6.75 Grinding Existing Asphaltic Concrete Wearing Course.pdf chunks=12
+{"timestamp":"2026-08-03T21:13:08.333Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 398/502] Γ£ô 6.91 Reflective Cracking Membrane (18ΓÇ¥ Wide).pdf chunks=5
+{"timestamp":"2026-08-03T21:13:10.986Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 399/502] Γ£ô 9.99 Flashing Arrow Boards.pdf chunks=10
+{"timestamp":"2026-08-03T21:13:17.845Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 400/502] Γ£ô A37806_01 10 20_NOR-072R02 - ORIG - EDU01C (FINAL - 100) - Utility Relocations at NOR.pdf chunks=53
+
+ΓöÇΓöÇ 400/502 | Γ£ô399 ~0 Γ£ù1 | 0.17 files/s | etaΓëê0.2h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:13:21.653Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 401/502] Γ£ô A37806_01 10 20_NOR-075R01 - R&R - EDU06C - Norwood Ave Track Best Fit Profile.pdf chunks=22
+{"timestamp":"2026-08-03T21:13:25.139Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 402/502] Γ£ô IC Comments P Pages from A37806_01 10 20_NOR-052R00 - DU03 - (FINAL 100PC) - Norwood.pdf chunks=19
+{"timestamp":"2026-08-03T21:13:28.219Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 403/502] Γ£ô Sample - Oil Cooler Damper Control Panel Eletrical Schematic & Details-Default-0001 (4).pdf chunks=6
+{"timestamp":"2026-08-03T21:13:31.246Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 404/502] Γ£ô IC Comments EI Pages from A37806_01 10 20_MYR-050R01 - R&R - DU05 (FINAL - 100) Myrtle Avenue Station-4.pdf chunks=22
+{"timestamp":"2026-08-03T21:13:50.205Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 405/502] Γ£ô A37806_01 10 20_BUR-042R00 - R&R - EDU07 - (FINAL 100) - SOGR at Burnside Avenue.pdf chunks=422
+{"timestamp":"2026-08-03T21:15:10.327Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 406/502] Γ£ô A37806_01 10 20_BUR-062R00 - R&R - EDU01D Burnside Proposed Utility Amp01.pdf chunks=3854
+{"timestamp":"2026-08-03T21:16:44.134Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 407/502] Γ£ô 07 27 13 Air Barriers REV1.pdf chunks=19
+{"timestamp":"2026-08-03T21:16:47.474Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 408/502] Γ£ô 08 47 00 - Glazed Elevator Hoistway Enclosures REV 1.pdf chunks=40
+{"timestamp":"2026-08-03T21:16:50.766Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 409/502] Γ£ô 10 29 00 Bird Deterrent Systems REV1.pdf chunks=16
+{"timestamp":"2026-08-03T21:16:53.647Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 410/502] Γ£ô 21 05 48 Vibration and Seismic Controls for Fire Suppression Piping and Equipment_REV01.pdf chunks=16
+{"timestamp":"2026-08-03T21:16:56.763Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 411/502] Γ£ô 23 00 10 Summary of Work REV 1.pdf chunks=6
+{"timestamp":"2026-08-03T21:16:59.868Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 412/502] Γ£ô 23 05 29 Hangers and Supports REV1.pdf chunks=12
+{"timestamp":"2026-08-03T21:17:02.708Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 413/502] Γ£ô 23 09 13 Instrumentation and Controls for Station HVAC Systems REV1.pdf chunks=17
+{"timestamp":"2026-08-03T21:17:05.699Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 414/502] Γ£ô 32 17 23 Pavement Markings REV1.pdf chunks=8
+{"timestamp":"2026-08-03T21:17:08.765Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 415/502] Γ£ô 33 71 19 Electrical Underground Ductbanks and Manholes REV 2.pdf chunks=26
+{"timestamp":"2026-08-03T21:18:31.310Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 416/502] Γ£ô DU05 (FINAL - 100) Myrtle Avenue Station Submission Set.pdf chunks=867
+{"timestamp":"2026-08-03T21:20:21.525Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 417/502] Γ£ô DU04 90% Remaining Work.pdf chunks=911
+{"timestamp":"2026-08-03T21:20:43.311Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 418/502] Γ£ô Verizon Specs 2DD 8-24-22 (1).pdf chunks=28
+{"timestamp":"2026-08-03T21:20:46.781Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 419/502] Γ£ô 304963.pdf chunks=3
+{"timestamp":"2026-08-03T21:21:45.840Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"A37806_RFP_Addendum_04_Book_01_of_12.pdf","droppe
+dGarbage":32,"kept":2786}
+{"timestamp":"2026-08-03T21:21:46.043Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 420/502] Γ£ô A37806_RFP_Addendum_04_Book_01_of_12.pdf chunks=2787
+{"timestamp":"2026-08-03T21:23:11.638Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 421/502] Γ£ô A37806_Volume 05_PRDC 07 Communications_Rev. 1.pdf chunks=303
+{"timestamp":"2026-08-03T21:23:31.315Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"A37806_Volume_02_DB_Agreement_General_Provisions 
+(Add #8).pdf","droppedGarbage":33,"kept":867}
+{"timestamp":"2026-08-03T21:23:31.431Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 422/502] Γ£ô A37806_Volume_02_DB_Agreement_General_Provisions (Add #8).pdf chunks=869
+{"timestamp":"2026-08-03T21:23:53.071Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 423/502] Γ£ô Verizon Wingback Daily Report 3.10.pdf chunks=5
+{"timestamp":"2026-08-03T21:23:55.952Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 424/502] Γ£ô EP - Civil _Burnside_Ave_Option_Work_2025.01.21.pdf chunks=4
+{"timestamp":"2026-08-03T21:24:52.932Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 425/502] Γ£ô Myrtle.pdf chunks=715
+
+ΓöÇΓöÇ 425/502 | Γ£ô424 ~0 Γ£ù1 | 0.14 files/s | etaΓëê0.2h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:25:12.980Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 426/502] Γ£ô Mincon Bluebook 2024 - 06 Drill through.pdf chunks=6
+{"timestamp":"2026-08-03T21:25:15.656Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 427/502] Γ£ô 05 50 00 Metal Fabrications.pdf chunks=31
+{"timestamp":"2026-08-03T21:25:19.656Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 428/502] Γ£ô 06 10 00 Rough Carpentry.pdf chunks=24
+{"timestamp":"2026-08-03T21:25:22.791Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 429/502] Γ£ô 09 90 00 Painting and Finishing.pdf chunks=51
+{"timestamp":"2026-08-03T21:25:27.518Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 430/502] Γ£ô A37806_Volume_03_Elevator_Maint_Agreement_Technical_Specs.pdf chunks=232
+{"timestamp":"2026-08-03T21:25:35.888Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 431/502] Γ£ô Verizon_04.21.26_Invoice_AVE I.pdf chunks=3
+{"timestamp":"2026-08-03T21:25:38.403Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 432/502] Γ£ô National Grid_07.17.26_Utility Relocation_MYR_AVEI.pdf chunks=3
+{"timestamp":"2026-08-03T21:25:41.170Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 433/502] Γ£ô M017-A37806-NORWOOD.pdf chunks=5
+{"timestamp":"2026-08-03T21:25:43.872Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 434/502] Γ£ô Con Ed_05.29.2026_Invoice_BS.pdf chunks=24
+{"timestamp":"2026-08-03T21:25:48.573Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 435/502] Γ£ô 20250616_BUR_SOGR_J4 TRACK DRAFT.PDF chunks=54
+{"timestamp":"2026-08-03T21:25:52.959Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 436/502] Γ£ô Structural Steel.pdf chunks=24
+{"timestamp":"2026-08-03T21:27:07.894Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 437/502] Γ£ô Spec Sheets.pdf chunks=3878
+{"timestamp":"2026-08-03T21:28:36.448Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 438/502] Γ£ô 28 31 00  Fire Alarm System.pdf chunks=32
+{"timestamp":"2026-08-03T21:28:40.299Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 439/502] Γ£ô 20250710_DU03_90%_Drawings_Mechanical-HRM.pdf chunks=25
+{"timestamp":"2026-08-03T21:28:44.315Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 440/502] Γ£ô 20250414_DU03_ADV_Drawings_Fire Alarm.pdf chunks=46
+{"timestamp":"2026-08-03T21:29:05.060Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 441/502] Γ£ô 20250414_DU03_ADV_Drawings_Architectural.pdf chunks=137
+{"timestamp":"2026-08-03T21:29:25.948Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 442/502] Γ£ô 20250925_DU03_100%_Drawings_Arch-SSA.pdf chunks=150
+{"timestamp":"2026-08-03T21:29:32.885Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 443/502] Γ£ô 20250925_DU03_100%_Drawings_Street Lighting-AECOM.pdf chunks=6
+{"timestamp":"2026-08-03T21:29:36.418Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 444/502] Γ£ô 13 34 80 Utility Enclosures.pdf chunks=3
+{"timestamp":"2026-08-03T21:29:42.105Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 445/502] Γ£ô 32 11 00 Subbase courses.pdf chunks=3
+{"timestamp":"2026-08-03T21:29:48.045Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 446/502] Γ£ô 90 00 00 Division 9 PAINTING AND FINISHING.pdf chunks=3
+{"timestamp":"2026-08-03T21:29:54.673Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 447/502] Γ£ô 20250911_DU01_90%_Dwgs_Fire Protection-HRM_CR.pdf chunks=62
+{"timestamp":"2026-08-03T21:29:59.799Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 448/502] Γ£ô sewer_Map 1.pdf chunks=5
+{"timestamp":"2026-08-03T21:30:03.047Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 449/502] Γ£ô A37806_PRDC06_MYR-002R00 - RWC - Myrtle Avenue Reserve Service Load Letter 08.07.25.pdf chunks=164
+{"timestamp":"2026-08-03T21:30:09.119Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 450/502] Γ£ô 4.pdf chunks=3
+
+ΓöÇΓöÇ 450/502 | Γ£ô449 ~0 Γ£ù1 | 0.13 files/s | etaΓëê0.1h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:30:12.579Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 451/502] Γ£ô Burnside.pdf chunks=12
+{"timestamp":"2026-08-03T21:30:16.122Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 452/502] Γ£ô Norwood Ave.pdf chunks=6
+{"timestamp":"2026-08-03T21:30:19.332Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 453/502] Γ£ô Attachments.pdf chunks=5
+{"timestamp":"2026-08-03T21:30:22.481Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 454/502] Γ£ô CCTV_C52072-MR97 Myrtle Ave-MS1- CCTV Conduit Shop Drawings_Ver1 1_Ver1.pdf chunks=3
+{"timestamp":"2026-08-03T21:30:25.450Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"20251019_DU04_100%_Calc 
+Validation_Mechanical_ns.pdf","droppedGarbage":1,"kept":32}
+{"timestamp":"2026-08-03T21:30:25.593Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 455/502] Γ£ô 20251019_DU04_100%_Calc Validation_Mechanical_ns.pdf chunks=34
+{"timestamp":"2026-08-03T21:30:28.797Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 456/502] Γ£ô Middletown Rd_20250226.pdf chunks=4
+{"timestamp":"2026-08-03T21:30:31.472Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 457/502] Γ£ô NYCT Ducts_20260603.pdf chunks=4
+{"timestamp":"2026-08-03T21:30:34.446Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 458/502] Γ£ô A37806 Plumbing Myrtle-R02 20241029.pdf chunks=17
+{"timestamp":"2026-08-03T21:30:37.279Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 459/502] Γ£ô A37806 SL & TS Concept Dwgs- Civil- Norwood-R02 20241118.pdf chunks=4
+{"timestamp":"2026-08-03T21:30:39.859Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 460/502] Γ£ô 22 05 18 Escutcheons for Plumbing Piping REV1.pdf chunks=9
+{"timestamp":"2026-08-03T21:30:42.536Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 461/502] Γ£ô 22 05 29 Hangers and Supports for Plumbing PipingREV 1.pdf chunks=19
+{"timestamp":"2026-08-03T21:30:45.214Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 462/502] Γ£ô 26 05 53 Identification for Electrical SystemsREV1.pdf chunks=20
+{"timestamp":"2026-08-03T21:30:48.063Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 463/502] Γ£ô 26 09 23 Lighting Control Devices REV1.pdf chunks=13
+{"timestamp":"2026-08-03T21:30:50.737Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 464/502] Γ£ô 28 31 00  Fire Alarm System rev1.pdf chunks=65
+{"timestamp":"2026-08-03T21:30:54.834Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 465/502] Γ£ô 31 00 00 Earthwork REV 1.pdf chunks=52
+{"timestamp":"2026-08-03T21:30:58.566Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 466/502] Γ£ô 09 90 00 Painting and Finishing.pdf chunks=67
+{"timestamp":"2026-08-03T21:31:02.349Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 467/502] Γ£ô 21 05 53 Fire Suppression Identification_REV01.pdf chunks=8
+{"timestamp":"2026-08-03T21:31:05.008Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 468/502] Γ£ô 33 81 26 Communications undergound duct, manholes and handholes.pdf chunks=10
+{"timestamp":"2026-08-03T21:31:07.628Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 469/502] Γ£ô 03 53 00 - Concrete Topping Slabs.pdf chunks=24
+{"timestamp":"2026-08-03T21:31:10.695Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 470/502] Γ£ô 05 30 00 Steel Decking.pdf chunks=29
+{"timestamp":"2026-08-03T21:31:13.906Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 471/502] Γ£ô 07 61 13 Standing-Seam Metal Roof.pdf chunks=34
+{"timestamp":"2026-08-03T21:31:17.215Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 472/502] Γ£ô 07 62 00 Sheet Metal Flashing and Trim.pdf chunks=15
+{"timestamp":"2026-08-03T21:31:20.077Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 473/502] Γ£ô 09 06 14 Tactile Detectable Warning Tiles at Platform.pdf chunks=13
+{"timestamp":"2026-08-03T21:31:22.873Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 474/502] Γ£ô 22 05 48.13 Vibration Controls for Plumbing Piping and Equipment.pdf chunks=14
+{"timestamp":"2026-08-03T21:31:25.779Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 475/502] Γ£ô 23 00 10 Summary of Work.pdf chunks=6
+
+ΓöÇΓöÇ 475/502 | Γ£ô474 ~0 Γ£ù1 | 0.14 files/s | etaΓëê0.1h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:31:28.540Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 476/502] Γ£ô 26 28 16 Enclosed Switches and Circuit Breakers.pdf chunks=26
+{"timestamp":"2026-08-03T21:31:31.836Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 477/502] Γ£ô 27 00 00 Communications Systems.pdf chunks=56
+{"timestamp":"2026-08-03T21:31:36.017Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 478/502] Γ£ô 27 05 00 Common Work Results for Communications Systems.pdf chunks=42
+{"timestamp":"2026-08-03T21:31:39.299Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 479/502] Γ£ô 27 05 00 Miscellaneous Equipment and Provisions.pdf chunks=28
+{"timestamp":"2026-08-03T21:31:42.440Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 480/502] Γ£ô 27 11 00 COMMUNICATIONS EQUIPMENT ROOM FITTINGS.pdf chunks=17
+{"timestamp":"2026-08-03T21:31:45.530Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 481/502] Γ£ô 27 23 13 VARIOUS TELEPHONE RELATED EQUIPMENT.pdf chunks=47
+{"timestamp":"2026-08-03T21:31:48.826Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 482/502] Γ£ô 4.09 Curb, Concrete, Steel Faced.pdf chunks=15
+{"timestamp":"2026-08-03T21:31:51.578Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 483/502] Γ£ô 07 84 13 Penetration Firestopping REV 1.pdf chunks=25
+{"timestamp":"2026-08-03T21:31:54.491Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 484/502] Γ£ô 07 92 00 Joint Sealants REV 1.pdf chunks=21
+{"timestamp":"2026-08-03T21:31:57.565Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 485/502] Γ£ô 07 95 13 Expansion Joint Cover Assemblies REV 1.pdf chunks=14
+{"timestamp":"2026-08-03T21:32:00.444Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 486/502] Γ£ô 21 05 53 Fire Suppression Identification_REV01.pdf chunks=8
+{"timestamp":"2026-08-03T21:32:03.045Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 487/502] Γ£ô 23 00 50 Basic Mechanical Materials and Methods REV1.pdf chunks=20
+{"timestamp":"2026-08-03T21:32:05.785Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 488/502] Γ£ô 26 05 53 Identification for Electrical SystemsREV1.pdf chunks=20
+{"timestamp":"2026-08-03T21:32:08.688Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 489/502] Γ£ô 26 05 95 Heat Tracing REV1.pdf chunks=21
+{"timestamp":"2026-08-03T21:32:11.510Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 490/502] Γ£ô 32 12 16 Asphaltic Concrete Pavement-REV2.pdf chunks=9
+{"timestamp":"2026-08-03T21:32:14.169Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 491/502] Γ£ô A37806_Notice of Award_NTP - MLJTC2 - ADA Package 6 - Final.pdf chunks=6
+{"timestamp":"2026-08-03T21:32:21.852Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 492/502] Γ£ô Concept Drawings_Glazing Scope.pdf chunks=143
+{"timestamp":"2026-08-03T21:32:28.022Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 493/502] Γ£ô A37806 SL & TS Concept Dwgs- Civil-R01 Myrtle 20241118.pdf chunks=4
+{"timestamp":"2026-08-03T21:32:30.668Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 494/502] Γ£ô A37806 SL & TS Concept Dwgs- Civil- Ave I-R01 20241118.pdf chunks=4
+{"timestamp":"2026-08-03T21:32:33.210Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 495/502] Γ£ô A37806 SL & TS Concept Dwgs- Civil- Burnside - Option Work-R01 20241118.pdf chunks=4
+{"timestamp":"2026-08-03T21:32:41.173Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 496/502] Γ£ô Surveys - Topo and utilities.pdf chunks=108
+{"timestamp":"2026-08-03T21:32:51.899Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 497/502] Γ£ô A37806_Volume_04_Division_1_General_Requirements.pdf chunks=742
+{"timestamp":"2026-08-03T21:33:13.472Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 498/502] Γ£ô A37806_Volume_12_State_Historic_Preserv._Office_Documents.pdf chunks=238
+{"timestamp":"2026-08-03T21:33:29.429Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 499/502] Γ£ô A37806_RFP_Addendum_03.pdf chunks=1037
+{"timestamp":"2026-08-03T21:33:52.138Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 500/502] Γ£ô A37806_RFP Addendum 1 Letter.pdf chunks=11
+
+ΓöÇΓöÇ 500/502 | Γ£ô499 ~0 Γ£ù1 | 0.14 files/s | etaΓëê0.0h ΓöÇΓöÇ
+
+{"timestamp":"2026-08-03T21:33:55.473Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 501/502] Γ£ô A37806 Struct Ave I 20241003.pdf chunks=25
+{"timestamp":"2026-08-03T21:34:08.809Z","level":"warn","event":"indexing-pipeli
+ne.summary.llm-failed","error":"OpenAI error: 429"}
+[w1 502/502] Γ£ô ATC Submission Response_MLJTC2_A37806-ATC2.0.pdf chunks=37
+
+========== STREAM INDEX SUMMARY ==========
+{
+  "projectId": "145b3dcf-272e-4c45-9e19-953f20f25bb9",
+  "shard": {
+    "k": 2,
+    "n": 10
+  },
+  "concurrency": 1,
+  "totalTargets": 502,
+  "indexed": 501,
+  "skipped": 0,
+  "errors": 1,
+  "elapsedSeconds": 3581.6
+}
+==========================================
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.

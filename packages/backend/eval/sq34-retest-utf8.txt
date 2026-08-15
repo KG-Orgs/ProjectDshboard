@@ -1,0 +1,62 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" ".\\eval\\mlj017-smoke-v2-simple-pkg6gen-batch-input.json" "--ids" "sq34,sq35"
+
+[tier2:ask-batch] project: 145b3dcf-272e-4c45-9e19-953f20f25bb9
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 2
+{"timestamp":"2026-07-24T07:06:56.294Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents","contracts"],"sourceCount":1,"nodeCount":8,"estimatedContextTokens":1521,"specialistAgents":[{"agent":"doc_agent","domains":["documents","contracts"],"sourceCount":1,"nodeCount":4,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":4,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":1,"nodeCount":4,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":592,"retrievalMs":95,"mergeMs":1,"agentMs":2403,"totalMs":3095},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":1,"fallback":0,"mixed":0,"none":0},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq34]
+  In GEN-042R00, the A37806 & C49321R Coordination Meeting what was discussed?
+========================================================================
+
+--- ANSWER ---
+
+## A37806 & C49321R Coordination Meeting Discussion
+
+- **Previous Meeting Review:** Discussion included the meeting held on 4/9/2025 (p. 5).
+- **Safe-Span Shielding Removal Delay:** Ahern reported "Safe-Span" shielding removal, previously scheduled for October 2025, is now January 2026 (p. 5).
+- **Painting Operations:** Ahern confirmed painting at Myrtle Avenue Station will finish soon, but cables for safe span remain (p. 5).
+- **MLJTC2 Construction Impact:** MLJTC2 discussed potential impacts on Sewer CCTV Survey, sewer installation, and demo shielding due to existing shielding (p. 7).
+- **Shielding Accommodation:** Ahern offered to remove shield panels and spread support cables for MLJTC2's vertical clearance needs, requesting 1+ weeks' notice (p. 7).
+- **Access to Shielding:** Ahern offered MLJTC2 access to installed shielding for work, contingent on a signed agreement (p. 7).
+- **Schedule Impact Review:** MLJTC2 will review their GO forecast and schedule to assess impacts from Ahern's shielding (p. 7).
+- **Action Items:**
+    - Ahern to send MLJTC2 a draft agreement for shielding access (p. 8).
+    - Naik/TYLin to send MLJTC2 the GO forecast for Contract C34921R (p. 8).
+    - MLJTC2 to notify Ahern of required shielding/cable removal (p. 8).
+    - PMC to coordinate regular progress update meetings (p. 8).
+
+--- SOURCES ---
+
+- A37806_01 30 20_GEN-042R00 - FIO - A37806 & C49321R Coordination Meeting Minutes 09.03.25.pdf
+  pages: 1, 2, 3, 4
+
+--- CITATIONS ---
+
+- A37806_01 30 20_GEN-042R00 - FIO - A37806 & C49321R Coordination Meeting Minutes 09.03.25.pdf chunk=5 (p. 4) rel=6.000
+- A37806_01 30 20_GEN-042R00 - FIO - A37806 & C49321R Coordination Meeting Minutes 09.03.25.pdf chunk=6 (p. 4) rel=6.000
+
+--- META --- elapsed=3098ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq35]
+  What was discussed in the September 3, 2025 coordination meeting?
+========================================================================
+
+--- ANSWER ---
+
+## More context needed
+- Your question asks what is mentioned in that document but doesn't specify a topic.
+- To answer precisely, tell me what you're looking for ΓÇö for example: parties involved, dates, costs, scope, action items, approvals, or a specific subject.
+
+**Possible matching file:** 09 a37806 utility coordination september 2025
+- Try asking: _In the 09 a37806 utility coordination september 2025, what [specific topic]?_
+
+--- SOURCES ---
+
+- 09 A37806 Utility Coordination_September 2025.docx
+
+--- META --- elapsed=2161ms domains=documents cacheHit=false

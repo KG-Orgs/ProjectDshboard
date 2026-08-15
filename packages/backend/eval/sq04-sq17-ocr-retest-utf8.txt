@@ -1,0 +1,109 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" ".\\eval\\mlj017-smoke-v2-simple-pkg6gen-batch-input.json" "--ids" "sq04,sq13,sq14,sq15,sq16,sq17"
+
+[tier2:ask-batch] project: 145b3dcf-272e-4c45-9e19-953f20f25bb9
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 6
+
+========================================================================
+[sq04]
+  In the MTACD-MLJTC2-L-0024 sub-contractor approval letter, what subcontractor is approved, what is their contract value, and what scope are they approved to perform?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-03-19 mtacd-mljtc2-l-0024 sub-contractor approval 50 states engineering, corp that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0024 Sub-Contractor Approval 50 States Engineering, Corp. $632,640.00.pdf
+
+--- META --- elapsed=2657ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq13]
+  In the MTACD-MLJTC2-L-0017 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-03-19 mtacd-mljtc2-l-0017 subcontractor approval mase fx $109,450 00 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0017 Subcontractor Approval MASE FX $109,450.00.pdf
+
+--- META --- elapsed=1830ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq14]
+  In the MTACD-MLJTC2-L-0028 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-03-26 mtacd-mljtc2-l-0028 sub-contractor approval titanium linx consulting, inc that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-03-26 MTACD-MLJTC2-L-0028 Sub-Contractor Approval Titanium Linx Consulting, Inc..pdf
+
+--- META --- elapsed=1679ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq15]
+  In the MTACD-MLJTC2-L-0049 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-06-10 mtacd-mljtc2-l-0049 sub-contractor approval ΓÇô mcvac environmental services, that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-06-10 MTACD-MLJTC2-L-0049 Sub-Contractor Approval ΓÇô McVac Environmental Services, Inc..pdf
+
+--- META --- elapsed=1592ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq16]
+  In the MTACD-MLJTC2-L-0083 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-08-08 mtacd-mljtc2-l-0083 - sub-contractor approval ΓÇô american geophysics that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-08-08 MTACD-MLJTC2-L-0083 - Sub-Contractor Approval ΓÇô American Geophysics Inc..pdf
+
+--- META --- elapsed=1504ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq17]
+  In the MTACD-MLJTC2-L-0093 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-08-25 mtacd-mljtc2-l-0093 - sub-contractor approval ΓÇô tri-state civil that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-08-25 MTACD-MLJTC2-L-0093 - Sub-Contractor Approval ΓÇô Tri-State Civil Construction LLC.pdf
+
+--- META --- elapsed=1488ms domains=contracts, subcontractor cacheHit=false

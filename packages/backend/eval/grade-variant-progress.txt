@@ -1,0 +1,103 @@
+[grade] run: mlj017-97-variant-run.jsonl — 97 question(s)
+[grade] benchmark: mlj017-97-expected.json — 97 expectation(s)
+[grade] grading 97 question(s), concurrency 4
+[grade] (1/97) sq02 UNGRADED (production `partial`)
+[grade] (2/97) sq03 UNGRADED (production `not_found`)
+[grade] (3/97) sq05 UNGRADED (production `complete`)
+[grade] (4/97) sq04 PASS (production `complete`)
+[grade] (5/97) sq06 PARTIAL (production `complete`) — MISSING_FACT
+[grade] (6/97) sq09 FAIL (production `not_found`) — FALSE_NOT_FOUND, RETRIEVAL_FAILURE
+[grade] (7/97) sq10 FAIL (production `not_found`) — WRONG_DOCUMENT
+[grade] (8/97) sq07 PARTIAL (production `complete`) — MISSING_FACT
+[grade] (9/97) sq08 FAIL (production `complete`) — MISSING_FACT, CITATION_MISMATCH
+[grade] (10/97) sq01 PASS (production `complete`)
+[grade] (11/97) sq11 PARTIAL (production `complete`) — WRONG_FACT
+[grade] (12/97) sq12 FAIL (production `not_found`) — MISSING_FACT, CITATION_MISMATCH
+[grade] (13/97) sq16 FAIL (production `not_found`) — FALSE_NOT_FOUND
+[grade] (14/97) sq15 PASS (production `complete`)
+[grade] (15/97) sq13 PARTIAL (production `complete`) — MISSING_FACT
+[grade] (16/97) sq19 FAIL (production `not_found`) — FALSE_NOT_FOUND, VISUAL_EVIDENCE_MISSED
+[grade] (17/97) sq14 PASS (production `complete`)
+[grade] (18/97) sq17 PASS (production `complete`)
+[grade] (19/97) sq21 FAIL (production `not_found`) — MISSING_FACT, CITATION_MISMATCH, VISUAL_EVIDENCE_MISSED
+[grade] (20/97) sq23 FAIL (production `not_found`) — FALSE_NOT_FOUND, VISUAL_EVIDENCE_MISSED
+[grade] (21/97) sq24 UNGRADED (production `partial`)
+[grade] (22/97) sq18 PARTIAL (production `complete`) — MISSING_FACT, VISUAL_EVIDENCE_MISSED
+[grade] (23/97) sq22 FAIL (production `deterministic`) — WRONG_FACT, CITATION_MISMATCH, VISUAL_EVIDENCE_MISSED, ANSWER_FORMAT_FAILURE
+[grade] (24/97) sq26 FAIL (production `partial`) — MISSING_FACT, CITATION_MISMATCH
+[grade] (25/97) sq25 FAIL (production `complete`) — WRONG_FACT, CITATION_MISMATCH, VISUAL_EVIDENCE_MISSED
+[grade] (26/97) sq27 FAIL (production `deterministic`) — MISSING_FACT, CITATION_MISMATCH, ANSWER_FORMAT_FAILURE
+[grade] (27/97) sq30 UNGRADED (production `not_found`)
+[grade] (28/97) sq20 FAIL (production `not_found`) — MISSING_FACT, CITATION_MISMATCH, VISUAL_EVIDENCE_MISSED
+[grade] (29/97) sq29 PASS (production `complete`)
+[grade] (30/97) sq28 FAIL (production `deterministic`) — MISSING_FACT, CITATION_MISMATCH, ANSWER_FORMAT_FAILURE
+[grade] (31/97) sq35 UNGRADED (production `not_found`)
+[grade] (32/97) sq31 PASS (production `partial`)
+[grade] (33/97) sq33 PASS (production `complete`)
+[grade] (34/97) sq34 PASS (production `complete`)
+[grade] (35/97) sq39 UNGRADED (production `complete`)
+[grade] (36/97) sq37 FAIL (production `deterministic`) — MISSING_FACT, CITATION_MISMATCH, ANSWER_FORMAT_FAILURE
+[grade] (37/97) sq40 PARTIAL (production `partial`) — MISSING_FACT
+[grade] (38/97) sq42 UNGRADED (production `not_found`)
+[grade] (39/97) sq43 UNGRADED (production `complete`)
+[grade] (40/97) sq44 UNGRADED (production `partial`)
+[grade] (41/97) sq45 UNGRADED (production `deterministic`)
+[grade] (42/97) sq46 UNGRADED (production `not_found`)
+[grade] (43/97) sq47 UNGRADED (production `deterministic`)
+[grade] (44/97) sq48 UNGRADED (production `not_found`)
+[grade] (45/97) sq49 UNGRADED (production `deterministic`)
+[grade] (46/97) sq36 PASS (production `complete`)
+[grade] (47/97) sq41 PASS (production `partial`)
+[grade] (48/97) sq54 PASS (production `partial`)
+[grade] (49/97) sq55 PARTIAL (production `complete`) — MISSING_FACT, VISUAL_EVIDENCE_MISSED
+[grade] (50/97) sq58 UNGRADED (production `complete`)
+[grade] (51/97) sq38 PARTIAL (production `complete`) — MISSING_FACT
+[grade] (52/97) sq60 UNGRADED (production `not_found`)
+[grade] (53/97) sq61 UNGRADED (production `deterministic`)
+[grade] (54/97) sq62 UNGRADED (production `complete`)
+[grade] (55/97) sq57 PARTIAL (production `complete`) — MISSING_FACT
+[grade] (56/97) sq56 FAIL (production `deterministic`) — MISSING_FACT, CITATION_MISMATCH, VISUAL_EVIDENCE_MISSED, ANSWER_FORMAT_FAILURE
+[grade] (57/97) sq63 FAIL (production `complete`) — MISSING_FACT
+[grade] (58/97) sq65 FAIL (production `partial`) — WRONG_FACT, CITATION_MISMATCH
+[grade] (59/97) sq67 UNGRADED (production `not_found`)
+[grade] (60/97) sq64 FAIL (production `partial`) — WRONG_FACT, MISSING_FACT, CITATION_MISMATCH
+[grade] (61/97) sq59 PASS (production `complete`)
+[grade] (62/97) sq70 UNGRADED (production `not_found`)
+[grade] (63/97) sq66 PARTIAL (production `partial`) — MISSING_FACT
+[grade] (64/97) sq68 PARTIAL (production `partial`) — MISSING_FACT
+[grade] (65/97) sq69 FAIL (production `complete`) — WRONG_FACT
+[grade] (66/97) sq72 PARTIAL (production `partial`) — MISSING_FACT
+[grade] (67/97) sq71 PARTIAL (production `complete`) — MISSING_FACT
+[grade] (68/97) sq76 UNGRADED (production `complete`)
+[grade] (69/97) sq73 FAIL (production `partial`) — MISSING_FACT
+[grade] (70/97) sq74 PASS (production `deterministic`)
+[grade] (71/97) sq78 FAIL (production `deterministic`) — WRONG_FACT, MISSING_FACT, CITATION_MISMATCH, ANSWER_FORMAT_FAILURE
+[grade] (72/97) sq75 PARTIAL (production `partial`) — MISSING_FACT
+[grade] (73/97) sq79 FAIL (production `deterministic`) — WRONG_FACT, ANSWER_FORMAT_FAILURE
+[grade] (74/97) sq80 FAIL (production `deterministic`) — MISSING_FACT, CITATION_MISMATCH, ANSWER_FORMAT_FAILURE
+[grade] (75/97) sq77 PARTIAL (production `partial`) — MISSING_FACT
+[grade] (76/97) sq84 PARTIAL (production `complete`) — MISSING_FACT
+[grade] (77/97) sq85 UNGRADED (production `not_found`)
+[grade] (78/97) sq86 UNGRADED (production `not_found`)
+[grade] (79/97) sq83 PARTIAL (production `deterministic`) — MISSING_FACT
+[grade] (80/97) sq82 PARTIAL (production `complete`) — MISSING_FACT
+[grade] (81/97) sq89 UNGRADED (production `partial`)
+[grade] (82/97) sq90 UNGRADED (production `complete`)
+[grade] (83/97) sq81 PARTIAL (production `deterministic`) — MISSING_FACT
+[grade] (84/97) sq87 FAIL (production `deterministic`) — MISSING_FACT, CITATION_MISMATCH, ANSWER_FORMAT_FAILURE
+[grade] (85/97) sq91 FAIL (production `complete`) — WRONG_FACT
+[grade] (86/97) sq94 FAIL (production `source_mismatch`) — FALSE_NOT_FOUND
+[grade] (87/97) sq95 UNGRADED (production `partial`)
+[grade] (88/97) sq88 FAIL (production `deterministic`) — MISSING_FACT, CITATION_MISMATCH, ANSWER_FORMAT_FAILURE
+[grade] (89/97) sq93 PASS (production `not_found`)
+[grade] (90/97) sq92 PASS (production `complete`)
+[grade] (91/97) sq96 PASS (production `complete`)
+[grade] (92/97) sq100 UNGRADED (production `deterministic`)
+[grade] (93/97) sq101 UNGRADED (production `source_mismatch`)
+[grade] (94/97) sq99 PASS (production `complete`)
+[grade] (95/97) sq97 PARTIAL (production `partial`) — MISSING_FACT
+[grade] (96/97) sq98 PARTIAL (production `partial`) — MISSING_FACT
+[grade] (97/97) sq102 FAIL (production `not_found`) — MISSING_FACT, CITATION_MISMATCH
+[grade] PASS 18 · PARTIAL 21 · FAIL 29 · UNGRADED 29 (of 97)
+[grade] grades:  C:\Users\georg\ProjectDshboard\packages\backend\eval\mlj017-97-variant-grades.jsonl
+[grade] report:  C:\Users\georg\ProjectDshboard\packages\backend\eval\mlj017-97-variant-independent-grade-report.md

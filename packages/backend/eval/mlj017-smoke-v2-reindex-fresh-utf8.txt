@@ -1,0 +1,2533 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" "C:\\Users\\georg\\ProjectDshboard\\packages\\backend\\eval\\mlj017-smoke-v2-simple-pkg6gen-batch-input.json"
+
+[tier2:ask-batch] project: 145b3dcf-272e-4c45-9e19-953f20f25bb9
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 97
+
+========================================================================
+[sq01]
+  In GEN-042R00, what subcontractor is being reviewed for approval, what type of work experience do they describe in their application, and are any active contracts listed?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 volume 05 prdc 01 general rev 1 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_Volume 05_PRDC 01 General_Rev. 1.pdf
+
+--- META --- elapsed=2154ms domains=contracts, documents, subcontractor cacheHit=false
+{"timestamp":"2026-07-22T21:21:46.259Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_HYBRID_ENABLED","enabled":true,"canaryConfigured":false,"reason":"project_in_canary_or_open_rollout"}
+{"timestamp":"2026-07-22T21:26:21.987Z","level":"info","event":"retrieval.hybrid.metrics","profile":"balanced","categoryRestricted":false,"categories":[],"vectorCandidates":72,"lexicalCandidates":0,"mergedCandidates":72}
+{"timestamp":"2026-07-22T21:26:21.994Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_RERANK_ENABLED","enabled":false,"reason":"global_flag_disabled"}
+{"timestamp":"2026-07-22T21:26:23.244Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["contracts"],"sourceCount":8,"nodeCount":10,"estimatedContextTokens":727,"specialistAgents":[{"agent":"doc_agent","domains":["contracts"],"sourceCount":8,"nodeCount":4,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":3,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":4,"nodeCount":4,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":276200,"retrievalMs":276199,"mergeMs":1,"agentMs":1126,"totalMs":277332},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":6,"fallback":0,"mixed":0,"none":2},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq02]
+  What scope of work and pricing is in Island Pavement Cutting Co's subcontract
+========================================================================
+
+--- ANSWER ---
+
+## Island Pavement Cutting Co. Subcontract Details
+
+- **Scope:** Transformer pit rehabilitation for secondary containment, including spray application of an 80 mil Bridge Preservation┬« System. (rfi 0177, p. 9)
+- **Contract Value:** $1,829,462 (rfi 0177, p. 9)
+- **Location:** 5 Boroughs of NY (rfi 0177, p. 9)
+- **Square Footage:** 146,356 SF (rfi 0177, p. 9)
+- **Status:** 100% Complete (rfi 0177, p. 9)
+
+--- SOURCES ---
+
+- NYC DEP Standard Sewer_WaterSpecifications_2022-08-08.pdf
+  pages: 518, 519
+- NYCDEPStandard Sewer_WaterSpecifications_2022-08-08.pdf
+  pages: 518, 519
+- NYC DOT Standard Highway Specifications_2022-05-16.pdf
+  pages: 435, 434
+- A37806_RFI-0177 - CLO - Thru-Span Spray Applied WP_PMC Response 01-22-26.pdf
+  pages: 9, 13, 15
+- 2025.05.29 Atlantic Signed Contract.pdf
+  pages: 24, 23
+- 2025.02.24 Tri-State Subcontract.docx
+- Subcontract MLJ - Crossroads.docx
+- M017_MLJ_Mid American_Subcontract_Executed_20250408.pdf
+  pages: 22
+
+--- META --- elapsed=277333ms domains=contracts cacheHit=false
+{"timestamp":"2026-07-22T21:26:23.555Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_HYBRID_ENABLED","enabled":true,"canaryConfigured":false,"reason":"project_in_canary_or_open_rollout"}
+{"timestamp":"2026-07-22T21:27:31.773Z","level":"info","event":"retrieval.hybrid.metrics","profile":"balanced","categoryRestricted":true,"categories":["contract","rfi","correspondence"],"vectorCandidates":24,"lexicalCandidates":4,"mergedCandidates":28}
+{"timestamp":"2026-07-22T21:27:31.781Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_RERANK_ENABLED","enabled":false,"reason":"global_flag_disabled"}
+{"timestamp":"2026-07-22T21:27:32.771Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["contracts"],"sourceCount":8,"nodeCount":8,"estimatedContextTokens":566,"specialistAgents":[{"agent":"doc_agent","domains":["contracts"],"sourceCount":7,"nodeCount":4,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":3,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":1,"nodeCount":3,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":68616,"retrievalMs":68615,"mergeMs":1,"agentMs":907,"totalMs":69526},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":6,"fallback":0,"mixed":0,"none":2},"interpretation":{"intent":"contract_notice","confidence":0.78,"source":"rules"}}
+
+========================================================================
+[sq03]
+  What joint sealing and pavement cutting contract work does Island Pavement Cutting Co list?
+========================================================================
+
+--- ANSWER ---
+
+## Island Pavement Cutting Co. Contract Work
+
+- Installation of Bridge Preservation┬« Articulous Joints and Evazote Joint systems (p. 15).
+- Cleaning and patching of concrete masonry unit walls and joints, plenums, and airshafts (p. 15).
+- Transformer pit rehabilitation for secondary containment (p. 9).
+- Spray application of an 80 mil Bridge Preservation┬« System (p. 9).
+- Waterproofing work at Myrtle Avenue and Avenue I stations (p. 4).
+
+--- SOURCES ---
+
+- A37806_RFI-0177 - CLO - Thru-Span Spray Applied WP_PMC Response 01-22-26.pdf
+  pages: 9, 4, 15
+- A-37806 - ADA Upgrades Package 6 NYCT - Waterproofing - D-star.msg
+- A-37806 - ADA Upgrades Package 6 NYCT - Track waterproofing.msg
+- A37806_Volume_02_DB_Agreement_General_Provisions.pdf
+  pages: 358
+- A37806_RFP_Addendum_04_Book_01_of_12.pdf
+  pages: 475
+- A37806_RFP Addendum 8_Post Proposal.pdf
+  pages: 363
+- A37806_Volume_02_DB_Agreement_General_Provisions (Add #8).pdf
+  pages: 361
+- Utilities_Akela_P6.pdf
+  pages: 3
+
+--- META --- elapsed=69526ms domains=contracts cacheHit=false
+
+========================================================================
+[sq04]
+  In the MTACD-MLJTC2-L-0024 sub-contractor approval letter, what subcontractor is approved, what is their contract value, and what scope are they approved to perform?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-03-19 mtacd-mljtc2-l-0024 sub-contractor approval 50 states engineering, corp that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0024 Sub-Contractor Approval 50 States Engineering, Corp. $632,640.00.pdf
+
+--- META --- elapsed=1879ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq05]
+  In A37806 Phasing Plan GEN-001R05, what are the major project phases described and their key milestones or constraints?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 ada p6 - communication ps lan agenda that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806 ADA P6 - Communication PS LAN Agenda_20250930.docx
+
+--- META --- elapsed=1459ms domains=contracts, scheduling, documents cacheHit=false
+
+========================================================================
+[sq06]
+  In the A37806 RFP Addendum 02 Pre-Proposal Slideshow, what ADA accessibility scheme and project information is presented?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in pre-proposal slideshow a37806 rfp addendum 02 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- Pre-Proposal Slideshow_A37806_RFP_Addendum_02.pdf
+
+--- META --- elapsed=1341ms domains=documents cacheHit=false
+{"timestamp":"2026-07-22T21:27:39.935Z","level":"info","event":"chat.coordinator.specialist_split_signal","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["contracts","documents","subcontractor"],"nodeCount":0,"sourceCount":1,"reasons":["domain_specific_tools_likely_needed"]}
+{"timestamp":"2026-07-22T21:27:39.935Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["contracts","documents","subcontractor"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["contracts","documents","subcontractor"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"cost_agent","domains":["contracts","subcontractor"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":414,"retrievalMs":99,"mergeMs":0,"agentMs":777,"totalMs":2481},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"contract_notice","confidence":0.78,"source":"rules"}}
+
+========================================================================
+[sq07]
+  In GEN-027R00 Subcontractor Approval Forms for Crossroads JV LLC, what does the Contract Specific Responsibility Form require of significant subcontractors?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- No relevant information was found in the retrieved context regarding the requirements of the Contract Specific Responsibility Form for significant subcontractors in GEN-027R00 Subcontractor Approval Forms for Crossroads JV LLC.
+- **Next step:** Please provide the document "GEN-027R00 Subcontractor Approval Forms for Crossroads JV LLC" for review.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_GEN-027R00 - R&R - Subcontractor Approval Forms - Crossroads JV, LLC.pdf
+
+--- META --- elapsed=2482ms domains=contracts, documents, subcontractor cacheHit=false
+{"timestamp":"2026-07-22T21:27:42.018Z","level":"info","event":"chat.coordinator.specialist_split_signal","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["contracts","subcontractor"],"nodeCount":0,"sourceCount":1,"reasons":["domain_specific_tools_likely_needed"]}
+{"timestamp":"2026-07-22T21:27:42.019Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["contracts","subcontractor"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["contracts","subcontractor"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"cost_agent","domains":["contracts","subcontractor"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":95,"retrievalMs":95,"mergeMs":0,"agentMs":623,"totalMs":2082},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq08]
+  In GEN-027R00 Subcontractor Approval Forms for Crossroads JV LLC, what is the ownership percentage and partner breakdown for this joint venture?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- I need the document "GEN-027R00 Subcontractor Approval Forms for Crossroads JV LLC" to answer this question.
+- The requested information is not available in the current project snapshot or retrieved context.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_GEN-027R00 - R&R - Subcontractor Approval Forms - Crossroads JV, LLC.pdf
+
+--- META --- elapsed=2083ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq09]
+  In the M017_IMP Draft Subcontract, what payment provisions from the prime contract are specifically excluded from the incorporated subcontract documents?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in m017 imp draft subcontract 20251024 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- M017_IMP_Draft Subcontract_20251024.docx
+
+--- META --- elapsed=1666ms domains=contracts, documents, communication cacheHit=false
+
+========================================================================
+[sq10]
+  In the M017_IMP Draft Subcontract, what does the entire agreement clause say about how prior oral or written agreements between the parties are treated?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in m017 imp draft subcontract 20251024 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- M017_IMP_Draft Subcontract_20251024.docx
+
+--- META --- elapsed=1565ms domains=contracts, documents, communication cacheHit=false
+
+========================================================================
+[sq11]
+  In Transmittal 0014 for MTA Personnel and PMC Supplies, what items were submitted and what was their review status when returned?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 transmittal 0014 - mta personnel and pmc that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806 Transmittal 0014 -  MTA Personnel and PMC Supplies.pdf
+
+--- META --- elapsed=2219ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq12]: What is in the Myrtle Ave Reserve Service Load Letter?
+========================================================================
+
+--- ANSWER ---
+
+## More context needed
+- Your question asks what is mentioned in that document but doesn't specify a topic.
+- To answer precisely, tell me what you're looking for ΓÇö for example: parties involved, dates, costs, scope, action items, approvals, or a specific subject.
+
+**Possible matching file:** myr reserve service heic
+- Try asking: _In the myr reserve service heic, what [specific topic]?_
+
+--- SOURCES ---
+
+- MYR_Reserve service.HEIC
+
+--- META --- elapsed=1539ms domains=documents cacheHit=false
+
+========================================================================
+[sq13]
+  In the MTACD-MLJTC2-L-0017 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-03-19 mtacd-mljtc2-l-0017 subcontractor approval mase fx $109,450 00 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0017 Subcontractor Approval MASE FX $109,450.00.pdf
+
+--- META --- elapsed=1594ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq14]
+  In the MTACD-MLJTC2-L-0028 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-03-26 mtacd-mljtc2-l-0028 sub-contractor approval titanium linx consulting, inc that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-03-26 MTACD-MLJTC2-L-0028 Sub-Contractor Approval Titanium Linx Consulting, Inc..pdf
+
+--- META --- elapsed=1576ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq15]
+  In the MTACD-MLJTC2-L-0049 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-06-10 mtacd-mljtc2-l-0049 sub-contractor approval ΓÇô mcvac environmental services, that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-06-10 MTACD-MLJTC2-L-0049 Sub-Contractor Approval ΓÇô McVac Environmental Services, Inc..pdf
+
+--- META --- elapsed=1638ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq16]
+  In the MTACD-MLJTC2-L-0083 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-08-08 mtacd-mljtc2-l-0083 - sub-contractor approval ΓÇô american geophysics that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-08-08 MTACD-MLJTC2-L-0083 - Sub-Contractor Approval ΓÇô American Geophysics Inc..pdf
+
+--- META --- elapsed=1564ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq17]
+  In the MTACD-MLJTC2-L-0093 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-08-25 mtacd-mljtc2-l-0093 - sub-contractor approval ΓÇô tri-state civil that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-08-25 MTACD-MLJTC2-L-0093 - Sub-Contractor Approval ΓÇô Tri-State Civil Construction LLC.pdf
+
+--- META --- elapsed=1500ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq18]
+  In the AVI-002R01 Ave I North Foundation Rebar Shop Drawings, what rebar sizes and reinforcement details are shown for the elevator pit foundation mat?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 03 20 00 avi-002r00 - aan - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_03 20 00_AVI-002R00 - AAN - Ave I North Foundation Rebar Shop Drawings 02.03.26.pdf
+
+--- META --- elapsed=1651ms domains=documents cacheHit=false
+
+========================================================================
+[sq19]
+  In the AVI-002R01 Ave I North Foundation Rebar Shop Drawings, what is the submittal number, NYCT/MTA review status, and which spec section does it reference?
+========================================================================
+
+--- ANSWER ---
+
+## Section 6.3 Requirements Summary (a37806 03 20 00 avi-002r01 - fio -)
+- Reviewed indexed section evidence from page(s): 4, 5.
+- Key requirements captured from the section:
+- 43'-8 1/2" T/ OPNG 1 1 1 COATED REBAR EPOXY U.O.N.
+- REP01ELEVATOR PIT REINFORCEMENT DETAILS (NORTH) AVENUE I STATION PACKAGE 6 BROOKLYN KM#25-067 - - GB 12/02/2025 0 12/02/2025 FOR APPROVAL 1 02/11/2026 AAN PER EOR MARKUPS (DTD.01.06.2026) & REVISED PER UPDATED SET (DTD.01.23.2026) & SK-044 (DTD.02.02.2026)...
+- GB 12/02/2025 0 12/02/2025 FOR APPROVAL 1 02/11/2026 AAN PER EOR MARKUPS (DTD.01.06.2026) & REVISED PER UPDATED SET (DTD.01.23.2026) & SK-044 (DTD.02.02.2026) REV_1 ATLANTIC REINFORCING CONCRETE FOR FIELD USE PLEASE READ THIS DRAWING IN CONJUNCTION WITH FOU...
+- AVI-CS-601 (DTD.01.23.2026) SEE DETAIL A MF2 12'-0" X 12'-0" X 3'-0" 1 CONCRETE EXPOSED TO EARTH OR WEATHER = 2" CONCRETE CAST AGAINST AND PERMANENTLY - EXPOSED TO EARTH = 3" 2.
+- ENCASEMENT (TYP) FOR REINF REFER DWG REP01 (TYP) W14X90 W14X90 W14X90 W14X90 W14X90 W14X90 W14X90 W14X90 2x3 #4T3820 @10" TIES 2x2x3 #4T1220 @10" TIES COLUMN MARK SIZE (L X W) CP2 42" X 24" CONCRETE PILASTER SCHEDULE:- REF.
+
+Evidence: a37806 03 20 00 avi-002r01 - fio - (p. 4, 5).
+
+--- SOURCES ---
+
+- A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundation Rebar Shop Drawings-MTA.pdf
+  pages: 4, 5
+
+--- CITATIONS ---
+
+- A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundation Rebar Shop Drawings-MTA.pdf chunk=11 (p. 4) rel=1.000
+- A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundation Rebar Shop Drawings-MTA.pdf chunk=15 (p. 5) rel=1.000
+- A37806_03 20 00_AVI-002R01 - FIO - Ave I North Foundation Rebar Shop Drawings-MTA.pdf chunk=16 (p. 5) rel=1.000
+
+--- META --- elapsed=239ms domains=documents cacheHit=false
+
+========================================================================
+[sq20]
+  In BUR-009R00 for the EL539 Burnside elevator cab and entrance drawings, what glazing spec items are referenced in the submittal?
+========================================================================
+
+--- ANSWER ---
+
+## BUR009R00
+- I found a37806 14 24 00 bur-009r00 - aan -, but I do not have indexed text for a precise answer.
+- Re-run indexing on that file, then ask again.
+
+--- SOURCES ---
+
+- A37806_14 24 00_BUR-009R00 - AAN - EL539 Cab and Entrance Drawings.pdf
+
+--- META --- elapsed=173ms domains=documents cacheHit=false
+
+========================================================================
+[sq21]
+  In BUR-009R00 for the EL539 Cab and Entrance Drawings, what is the NYCT/MTA review status and which spec section does this submittal cover?
+========================================================================
+
+--- ANSWER ---
+
+## BUR009R00
+- I found a37806 14 24 00 bur-009r00 - fio -, but I do not have indexed text for a precise answer.
+- Re-run indexing on that file, then ask again.
+
+--- SOURCES ---
+
+- A37806_14 24 00_BUR-009R00 - FIO - EL539 Cab and Entrance Drawings-MTA.pdf
+
+--- META --- elapsed=180ms domains=documents cacheHit=false
+
+========================================================================
+[sq22]
+  In BUR-001R00 Burnside Avenue Staircase Enclosure Shop Drawings, what is the review status of this submittal.
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in mljtc2 aecom atc 1 burnside avenue drawings that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- MLJTC2_AECOM_ATC_1_Burnside Avenue Drawings.pdf
+
+--- META --- elapsed=1352ms domains=documents cacheHit=false
+{"timestamp":"2026-07-22T21:28:01.784Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["documents"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":407,"retrievalMs":110,"mergeMs":0,"agentMs":830,"totalMs":1304},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq23]
+  In BUR-001R00 Burnside Avenue Staircase Enclosure Shop Drawings, was the submittal approved and were there any comments?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- I need the "BUR-001R00 Burnside Avenue Staircase Enclosure Shop Drawings" submittal document to answer this question.
+- The retrieved context does not contain information about its approval status or comments.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_08 45 25_BUR-001R00 - AAR - Burnside Avenue Staircase Enclosure Shop Drawings.pdf
+
+--- META --- elapsed=1304ms domains=documents cacheHit=false
+{"timestamp":"2026-07-22T21:28:02.096Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_HYBRID_ENABLED","enabled":true,"canaryConfigured":false,"reason":"project_in_canary_or_open_rollout"}
+{"timestamp":"2026-07-22T21:29:03.071Z","level":"info","event":"retrieval.hybrid.metrics","profile":"balanced","categoryRestricted":false,"categories":[],"vectorCandidates":72,"lexicalCandidates":96,"mergedCandidates":168}
+{"timestamp":"2026-07-22T21:29:03.079Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_RERANK_ENABLED","enabled":false,"reason":"global_flag_disabled"}
+{"timestamp":"2026-07-22T21:29:05.065Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents"],"sourceCount":8,"nodeCount":10,"estimatedContextTokens":808,"specialistAgents":[{"agent":"doc_agent","domains":["documents"],"sourceCount":8,"nodeCount":4,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":61516,"retrievalMs":61516,"mergeMs":0,"agentMs":1763,"totalMs":63281},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":8,"fallback":0,"mixed":0,"none":0},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq24]
+  What specification requirements govern controlled fills and excavation near the elevator?
+========================================================================
+
+--- ANSWER ---
+
+## Controlled and Uncontrolled Fills Requirements
+
+-   Applies to all project areas requiring filling and backfilling under controlled and uncontrolled conditions (PRDC 04-Structural, Section 4.11.1.A, p. 434).
+-   "Fill" or "filling" means placement of soil, stone, or fractured rock materials (PRDC 04-Structural, Section 4.11.1.A, p. 434).
+-   Three types of tests determine fill compaction adequacy: field density, gradation, and moisture content (PRDC 14 ΓÇô Testing and Commissioning, Section 14.4.6.A.1, p. 1063).
+-   Rock Tunnel Excavation sections (4.10 and 14.4.5) are explicitly marked "NOT USED" (PRDC 04-Structural, p. 434; PRDC 14 ΓÇô Testing and Commissioning, p. 1063).
+
+**Note:** No specific requirements for excavation *near the elevator* were found in the provided context. The general fill requirements apply to "all areas of the Project."
+
+--- SOURCES ---
+
+- A-37806 PRDC CONFORMED 25.01.09.pdf
+  pages: 434
+- A37806 PRDC CONFORMED 25.01.09.pdf
+  pages: 434, 1063
+- 20250109 A37806 - PRDC Conformed.pdf
+  pages: 434
+- A37806_Volume_05_Project_Requirements_and_Design_Criteria_CONFORMED.pdf
+  pages: 434, 1063
+- A-37806 PRDC CONFORMED 25.01.09 - Starting Submittals.pdf
+  pages: 434, 1063
+- A37806_Volume_05_Project_Requirements_and_Design_Criteria_CONFORMED (25.01.09).pdf
+  pages: 434
+- 31 25 00 Erosion and Sediment Controls.pdf
+  pages: 2
+- EDU02 Foundations and Structural Steel-100.pdf
+  pages: 65
+
+--- CITATIONS ---
+
+- EDU02 Foundations and Structural Steel-100.pdf chunk=196 (p. 65) rel=0.997
+
+--- META --- elapsed=63281ms domains=documents cacheHit=false
+{"timestamp":"2026-07-22T21:29:07.671Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["documents"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":383,"retrievalMs":111,"mergeMs":0,"agentMs":737,"totalMs":2605},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq25]
+  In GEN-001R02 Elevator Walls Formwork Drawing, what is the NYCT/MTA submittal designation ΓÇö is it for approval, information only, or designer review?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- The retrieved context does not contain information about the NYCT/MTA submittal designation for GEN-001R02 Elevator Walls Formwork Drawing.
+- **Next step:** Please provide the relevant document (e.g., submittal log, transmittal, or the drawing itself) for analysis.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_03 10 00_GEN-001R02 - RWC - Elevator Walls Formwork Drawing - MTA.pdf
+
+--- META --- elapsed=2606ms domains=documents cacheHit=false
+{"timestamp":"2026-07-22T21:29:07.963Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_HYBRID_ENABLED","enabled":true,"canaryConfigured":false,"reason":"project_in_canary_or_open_rollout"}
+{"timestamp":"2026-07-22T21:29:38.980Z","level":"info","event":"retrieval.hybrid.metrics","profile":"balanced","categoryRestricted":false,"categories":[],"vectorCandidates":72,"lexicalCandidates":1,"mergedCandidates":72}
+{"timestamp":"2026-07-22T21:29:38.982Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_RERANK_ENABLED","enabled":false,"reason":"global_flag_disabled"}
+{"timestamp":"2026-07-22T21:29:40.004Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents","contracts"],"sourceCount":8,"nodeCount":10,"estimatedContextTokens":810,"specialistAgents":[{"agent":"doc_agent","domains":["documents","contracts"],"sourceCount":1,"nodeCount":1,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":8,"nodeCount":4,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":8,"nodeCount":4,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":31392,"retrievalMs":31392,"mergeMs":0,"agentMs":938,"totalMs":32332},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":7,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq26]
+  What pest control services are billed in Invoice 11707, which locations were serviced?
+========================================================================
+
+--- ANSWER ---
+
+## Invoice 11707 Pest Control Services
+
+- Pest control services were provided by Joe's Pest Control (p. 1).
+- Services were rendered at "Middletown Stations" (p. 1).
+- Service dates: 2/5/2026 (Order 8780), 2/12/2026 (Order 3029), 2/19/2026 (Order 3086) (p. 1).
+
+--- SOURCES ---
+
+- Invoice 11707.pdf
+  pages: 1
+- Invoice 11569.pdf
+  pages: 1
+- Invoice 11626.pdf
+  pages: 1
+- Correction invoice 118350.pdf
+  pages: 1
+- ADAP6 - Leveling Sheet  - Pest Control 031825.pdf
+  pages: 1
+- M017_MLJ_Leveling Sheet_Pest Control_20250318.pdf
+  pages: 1
+- 3125.pdf
+  pages: 1
+- Subcontract MLJ - Joes Pest Control.docx
+
+--- META --- elapsed=32332ms domains=documents, contracts cacheHit=false
+{"timestamp":"2026-07-22T21:29:40.242Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_HYBRID_ENABLED","enabled":true,"canaryConfigured":false,"reason":"project_in_canary_or_open_rollout"}
+{"timestamp":"2026-07-22T21:30:37.049Z","level":"info","event":"retrieval.hybrid.metrics","profile":"balanced","categoryRestricted":false,"categories":[],"vectorCandidates":72,"lexicalCandidates":35,"mergedCandidates":106}
+{"timestamp":"2026-07-22T21:30:37.052Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_RERANK_ENABLED","enabled":false,"reason":"global_flag_disabled"}
+{"timestamp":"2026-07-22T21:30:38.622Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents","contracts"],"sourceCount":8,"nodeCount":10,"estimatedContextTokens":848,"specialistAgents":[{"agent":"doc_agent","domains":["documents","contracts"],"sourceCount":6,"nodeCount":4,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":2,"nodeCount":2,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":2,"nodeCount":2,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":57128,"retrievalMs":57128,"mergeMs":0,"agentMs":1490,"totalMs":58618},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":8,"fallback":0,"mixed":0,"none":0},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq27]
+  What services are billed in Invoice 11830 for the Middletown station locations, and what are the April 2026 service order numbers?
+========================================================================
+
+--- ANSWER ---
+
+## Invoice 11830 Services and April 2026 Service Orders
+
+- Invoice 11830 is for services provided by Joes Pest Control at Middletown Stations (p. 1).
+- Services were provided on:
+    - April 2, 2026 (Service Order 3421) (p. 1)
+    - April 9, 2026 (Service Order 3488) (p. 1)
+    - April 16, 2026 (Service Order 3548) (p. 1)
+    - April 23, 2026 (Service Order 3645) (p. 1)
+    - April 26, 2026 (Service Order 3557) (p. 1)
+
+--- SOURCES ---
+
+- Correction invoice 118350.pdf
+  pages: 1
+- Invoice 11569.pdf
+  pages: 1
+- Crossroads Projection Package 04-29-26.pdf
+  pages: 24
+- Crossroads Projection Package 04-30-26.pdf
+  pages: 24
+- A37806_Volume 01_Instructions to Proposers.pdf
+  pages: 84
+- A37806_RFP_Addendum_02.pdf
+  pages: 87
+- ITP_A37806_RFP_Addendum_02.pdf
+  pages: 84
+- A37806_RFP_Addendum_02_Combined.pdf
+  pages: 87
+
+--- CITATIONS ---
+
+- Correction invoice 118350.pdf chunk=2 (p. 1) rel=0.970
+
+--- META --- elapsed=58618ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq28]
+  In Lockton Invoice 0849812, what are the remittance instructions and how should payment be submitted?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025 lockton invoice 0849812 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025 Lockton Invoice 0849812.pdf
+
+--- META --- elapsed=2182ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq29]
+  In Lockton Invoice 0849812, what is the total invoiced amount?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025 lockton invoice 0849812 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025 Lockton Invoice 0849812.pdf
+
+--- META --- elapsed=2034ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq30]
+  In the Backup for Invoice#01, what lead abatement T&M work did Crossroads JV perform at Burnside Station on December 6, 2025 ΓÇö what were the ticket number, labor hours, and rates?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in backup for invoice#01 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- Backup for Invoice#01.pdf
+
+--- META --- elapsed=1737ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq31]
+  In the Backup for Invoice#01, what lead abatement T&M work did Crossroads JV perform at Burnside Station on December 7, 2025 ΓÇö what were the ticket number, labor hours, and rates?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in backup for invoice#01 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- Backup for Invoice#01.pdf
+
+--- META --- elapsed=1624ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq33]
+  In Invoice#01 dated December 31, 2025, what retainage amounts and net payment due are shown on the G703 continuation sheet?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 2025-10-21 eagle business machine inv# 129318 $43 55 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 2025-10-21 Eagle Business Machine Inv# 129318 $43.55 (M017 99-1530).pdf
+
+--- META --- elapsed=1576ms domains=documents, cost cacheHit=false
+{"timestamp":"2026-07-22T21:30:48.952Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents","contracts"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["documents","contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":349,"retrievalMs":115,"mergeMs":0,"agentMs":757,"totalMs":1175},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq34]
+  In GEN-042R00, the A37806 & C49321R Coordination Meeting what was discussed?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- The requested document, "GEN-042R00, the A37806 & C49321R Coordination Meeting," was not found in the retrieved context.
+- **Next step:** Please provide the document or confirm its availability in the project files.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_01 30 20_GEN-042R00 - FIO - A37806 & C49321R Coordination Meeting Minutes 09.03.25.pdf
+
+--- META --- elapsed=1175ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq35]
+  What was discussed in the September 3, 2025 coordination meeting?
+========================================================================
+
+--- ANSWER ---
+
+## More context needed
+- Your question asks what is mentioned in that document but doesn't specify a topic.
+- To answer precisely, tell me what you're looking for ΓÇö for example: parties involved, dates, costs, scope, action items, approvals, or a specific subject.
+
+**Possible matching file:** a37806 01 35 70 gen-009r00 - fio -
+- Try asking: _In the a37806 01 35 70 gen-009r00 - fio -, what [specific topic]?_
+
+--- SOURCES ---
+
+- A37806_01 35 70_GEN-009R00 - FIO - Utility Coordination - September 2025.pdf
+
+--- META --- elapsed=2079ms domains=documents cacheHit=false
+
+========================================================================
+[sq36]
+  In A37806 Kick Off Pre-Work Conference, what does the document state?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 presentation comm kick-off 09 16 2025 r2 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806 Presentation Comm Kick-off 09.16.2025_R2.pptx
+
+--- META --- elapsed=1181ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq37]
+  In A37806 Kick Off Pre-Work Conference, what does the document state about project milestones and work sequencing?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 presentation comm kick-off 09 16 2025 r2 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806 Presentation Comm Kick-off 09.16.2025_R2.pptx
+
+--- META --- elapsed=1084ms domains=scheduling, communication cacheHit=false
+
+========================================================================
+[sq38]
+  In the July 24, 2025 Monthly Job Progress Meeting, which MLJ Contracting and TC Electric staff attended and presented?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 31 30 gen-007r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 31 30_GEN-007R00 - FIO - Monthly Progress Report - July 2025.pdf
+
+--- META --- elapsed=1578ms domains=contracts cacheHit=false
+
+========================================================================
+[sq39]
+  In the July 24, 2025 Monthly Job Progress Meeting, which external consultants from firms such as T.Y. Lin attended?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 31 30 gen-007r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 31 30_GEN-007R00 - FIO - Monthly Progress Report - July 2025.pdf
+
+--- META --- elapsed=1535ms domains=documents cacheHit=false
+
+========================================================================
+[sq40]
+  In the May 28, 2026 Monthly Job Progress Meeting Minutes, what is the current status of CPR-003 Revision 2 and the open Burnside Avenue DOT Option Work item?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 31 30 gen-024r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 31 30_GEN-024R00 - FIO - Monthly Progress Report - May 2026.pdf
+
+--- META --- elapsed=1461ms domains=communication cacheHit=false
+
+========================================================================
+[sq41]
+  In the May 28, 2026 Monthly Job Progress Meeting, how many Grade Operations have been completed across the project stations, and how are they distributed across Myrtle, Burnside, and Avenue I?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 31 30 gen-024r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 31 30_GEN-024R00 - FIO - Monthly Progress Report - May 2026.pdf
+
+--- META --- elapsed=1489ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq42]
+  In the SDI-MLJ Bi-weekly Meeting Agenda from December 19, 2025, what are the open SDI coordination action items and their target completion dates?
+========================================================================
+
+--- ANSWER ---
+
+## SDI Coordination Action Items
+- (p. 4) SDI to obtain general OCIP and sub approval for surveyor by 12/22/2025.
+- (p. 4) SDI/MLJ to complete general SWPs, QWPs, and CWPs by 01/14/2026.
+- (p. 4) SDI/MLJ to complete the general Quality Management Plan by 01/14/2026.
+- (p. 4) SDI to provide the general Mullion Material Sample by 01/09/2026.
+- (p. 4) SDI to provide the general Roofing Material Sample by 12/26/2025.
+- (p. 4) SDI to address general Roofing Material Lead Times by 12/17/2025.
+- (p. 4) SDI to provide Middletown Rd Elevator EL541 Enclosure Shop Drawing Status by 12/22/2025.
+- (p. 4) SDI to provide Middletown Rd Roofing Shop Drawing Status for Elevator Towers by 12/22/2025.
+- (p. 4) SDI to provide Middletown Rd Roofing Shop Drawing Status for Platform Extension.
+- (p. 4) SDI to detail around the existing signal tray at Avenue I by 12/19/2025.
+
+--- SOURCES ---
+
+- SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx
+
+--- CITATIONS ---
+
+- SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx chunk=0 (p. ?) rel=1.000
+- SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx chunk=2 (p. ?) rel=1.000
+- SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx chunk=4 (p. ?) rel=1.000
+- SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx chunk=5 (p. ?) rel=1.000
+
+--- META --- elapsed=3771ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq43]
+  In the SDI-MLJ Bi-weekly Meeting Agenda from December 19, 2025, what is the status of OCIP approval and subcontractor approval for the surveyor?
+========================================================================
+
+--- ANSWER ---
+
+## OCIP and Surveyor Approval Status
+- (p. 1) OCIP approval is pending from MTA.
+- (p. 1, 2) Surveyor approval is targeted for December 22, 2025, and SDI is responsible for this.
+
+--- SOURCES ---
+
+- SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx
+
+--- CITATIONS ---
+
+- SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx chunk=0 (p. ?) rel=1.000
+- SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx chunk=5 (p. ?) rel=1.000
+- SDI - MLJ Bi-weekly Meeting Draft Agenda - 12.19.2025.docx chunk=2 (p. ?) rel=1.000
+
+--- META --- elapsed=2212ms domains=contracts, subcontractor cacheHit=false
+{"timestamp":"2026-07-22T21:31:06.893Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_HYBRID_ENABLED","enabled":true,"canaryConfigured":false,"reason":"project_in_canary_or_open_rollout"}
+{"timestamp":"2026-07-22T21:32:06.084Z","level":"info","event":"retrieval.hybrid.metrics","profile":"balanced","categoryRestricted":false,"categories":[],"vectorCandidates":72,"lexicalCandidates":56,"mergedCandidates":127}
+{"timestamp":"2026-07-22T21:32:06.086Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_RERANK_ENABLED","enabled":false,"reason":"global_flag_disabled"}
+{"timestamp":"2026-07-22T21:32:07.324Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents"],"sourceCount":8,"nodeCount":10,"estimatedContextTokens":755,"specialistAgents":[{"agent":"doc_agent","domains":["documents"],"sourceCount":7,"nodeCount":4,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":59676,"retrievalMs":59676,"mergeMs":0,"agentMs":1124,"totalMs":61980},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":2,"fallback":0,"mixed":0,"none":6},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq44]: What current permits are submitted for Burnside Ave.
+========================================================================
+
+--- ANSWER ---
+
+## Current Burnside Ave Permits
+
+-   **Request for new DOT Permits**: "4-23-26 sig req new dot permits - burnside" (NODE 3)
+    -   Document Purpose: Request for new Department of Transportation permits.
+    -   Key topics: Occupancy of Roadway.
+    -   Date: 4/23/26.
+
+--- SOURCES ---
+
+- A37806_27 10 01_BUR-024R01 - APP - Burnside Ave NBP Comm Equipment Removal and Circuit Disconnection.pdf
+  pages: 1
+- 0.A37806 CWP-031 Platform Demo and Replacement_Rev1.docx
+- A37806 Monthly Job Progress Meeting Minutes 2025-07-24.docx
+- 4-23-26 SIG REQ NEW DOT PERMITS - Burnside Ave Station [26195.MLJ.DOT5].pdf
+- QWP-007 - Water Proofing.docx
+- A37806 Burnside Ave (100_ Design)_marked up.pdf
+  pages: 26
+- QWP-005R00-Controlled and Uncontrolled Fills-Part 1.docx
+- QWP-005R00-Concrete Part 1..docx
+
+--- META --- elapsed=61980ms domains=documents cacheHit=false
+
+========================================================================
+[sq45]: What current permits are submitted for Ave I.
+========================================================================
+
+--- ANSWER ---
+
+## AVI Permit Submittals
+The following permit-related submittal files are on record for AVI:
+
+- a37806 01 33 10 avi-001r00 - fio -
+- a37806 01 33 10 avi-002r00 - fio -
+
+--- SOURCES ---
+
+- A37806_01 33 10_AVI-001R00 - FIO - DOT Permits Exp. 05.30.25.pdf
+- A37806_01 33 10_AVI-002R00 - FIO - Tree Work Permits.pdf
+
+--- META --- elapsed=1816ms domains=documents cacheHit=false
+{"timestamp":"2026-07-22T21:32:10.655Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_HYBRID_ENABLED","enabled":true,"canaryConfigured":false,"reason":"project_in_canary_or_open_rollout"}
+{"timestamp":"2026-07-22T21:32:41.773Z","level":"info","event":"retrieval.hybrid.metrics","profile":"balanced","categoryRestricted":false,"categories":[],"vectorCandidates":72,"lexicalCandidates":1,"mergedCandidates":73}
+{"timestamp":"2026-07-22T21:32:41.777Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_RERANK_ENABLED","enabled":false,"reason":"global_flag_disabled"}
+{"timestamp":"2026-07-22T21:32:43.073Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents"],"sourceCount":8,"nodeCount":9,"estimatedContextTokens":757,"specialistAgents":[{"agent":"doc_agent","domains":["documents"],"sourceCount":5,"nodeCount":4,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":31500,"retrievalMs":31500,"mergeMs":0,"agentMs":1174,"totalMs":33932},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":2,"fallback":0,"mixed":0,"none":6},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq46]: What current permits are submitted for Myrtle Ave.
+========================================================================
+
+--- ANSWER ---
+
+## Myrtle Ave Permits
+
+- **DOT Permits Exp. 11.07.25 & 11.21.25**: Issued 10/17/2025, valid until 11/21/2025. Permit type: 0112P - RAPID TRANSIT CONSTRUCT/ALTERATION (Node 3, 6).
+- **DOT Permits Exp. 3-08 & 3-13-26**: New and renewed permits (Node 5).
+- **New DOT Permits Exp. 11/21/25**: Issued 9/5/2025, valid until 11/21/2025 (Node 7).
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-070R07 - R&R - SWP-007 - Installation of Platform Barricade.pdf
+- A37806_01 33 10_MYR-006R00 - FIO - DOT Permits Exp. 11.07.25 & 11.21.25.pdf
+- A37806_01 33 10_MYR-004R01 - FIO - Myrtle Ave MPT Plans.pdf
+- 7.a DOT PERMITS EXP 3-08 & 3-13-26.pdf
+- DOT PERMITS EXP 11-07 & 11-21-25 AMENDED (Myrtle Ave Station).pdf
+- A37806_01 40 10_GEN-023R02 - QWP-005 Excavation_Ver7.pdf
+  pages: 7
+- DOT PERMITS EXP 11-21-25 NEW (Myrtle Ave Station).pdf
+- A37806_PRDC01-005R04 - AEAN - Myrtle Ave Master Lease Submission.pdf
+  pages: 9
+
+--- META --- elapsed=33932ms domains=documents cacheHit=false
+
+========================================================================
+[sq47]: What current permits are submitted for Middletown Ave.
+========================================================================
+
+--- ANSWER ---
+
+## MDT Permit Submittals
+The following permit-related submittal files are on record for MDT:
+
+- 25 10 28 a37806-mtacd-mljtc2-l-0117 - delay ins submission
+- 25 10 28 mtacd-mljtc2-l-0117 - delay ins submission
+- a37806 01 33 10 mdt-001r00 - fio -
+- a37806 01 33 10 mdt-003r00 - fio -
+- a37806 01 33 10 mdt-004r00 - fio -
+- a37806 01 33 10 mdt-005r00 - fio -
+- a37806 01 33 10 mdt-005r00 - orig -
+- a37806 01 33 10 mdt-007r00 - fio -
+- a37806 01 33 10 mdt-008r00 - fio -
+- a37806 01 33 10 mdt-009r00 - fio -
+- a37806 01 33 10 mdt-010r00 - fio- dot
+- a37806 01 33 10 mdt-011r00 - fio -
+- a37806 01 33 10 mdt-012r00- fio- dot permits
+- a37806 01 33 10 mdt-013r00 - fio -
+- a37806 01 33 10 mdt-014r00 - fio -
+- a37806 01 33 10 mdt-015r00 - fio -
+- a37806 01 33 10 mdt-015r00 - fio -
+- a37806 01 33 10 mdt-016r00 - fio -
+- a37806 01 33 10 mdt-016r00 - fio -
+- a37806 01 33 10 mdt-017r00 - fio -
+- a37806 01 33 10 mdt-017r00 - fio -
+- mdt we1 permit 05 20 26 1
+
+--- SOURCES ---
+
+- 25.10.28 A37806-MTACD-MLJTC2-L-0117 - Delay ins Submission of Permit doc. & the RFCD Package for EDU2B Structural & Foundation Work ΓÇô MDT.pdf
+- 25.10.28 MTACD-MLJTC2-L-0117 - Delay ins Submission of Permit documents & the RFCD Package for EDU2B Structural & Foundation Work ΓÇô MDT.pdf
+- A37806_01 33 10_MDT-001R00 - FIO - DOT Permits Exp. 4.30.25.pdf
+- A37806_01 33 10_MDT-003R00 - FIO - DOT Permits Exp. 9.1.25  9.2.25.pdf
+- A37806_01 33 10_MDT-004R00 - FIO - DOT Permits Exp 8.8.2025.pdf
+- A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work Permit.pdf
+- A37806_01 33 10_MDT-005R00 - ORIG - Middletown Tree Work Permit.pdf
+- A37806_01 33 10_MDT-007R00 - FIO - DOT Permits Exp. 10.21.25.pdf
+
+--- META --- elapsed=1750ms domains=documents cacheHit=false
+{"timestamp":"2026-07-22T21:32:46.677Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_HYBRID_ENABLED","enabled":true,"canaryConfigured":false,"reason":"project_in_canary_or_open_rollout"}
+{"timestamp":"2026-07-22T21:33:17.691Z","level":"info","event":"retrieval.hybrid.metrics","profile":"balanced","categoryRestricted":false,"categories":[],"vectorCandidates":72,"lexicalCandidates":1,"mergedCandidates":73}
+{"timestamp":"2026-07-22T21:33:17.694Z","level":"info","event":"feature.rollout.evaluated","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","flag":"RETRIEVAL_RERANK_ENABLED","enabled":false,"reason":"global_flag_disabled"}
+{"timestamp":"2026-07-22T21:33:18.952Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents"],"sourceCount":8,"nodeCount":8,"estimatedContextTokens":807,"specialistAgents":[{"agent":"doc_agent","domains":["documents"],"sourceCount":2,"nodeCount":2,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":31352,"retrievalMs":31352,"mergeMs":0,"agentMs":1164,"totalMs":34127},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":1,"fallback":0,"mixed":0,"none":7},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq48]: What current permits are submitted for Norwood Ave.
+========================================================================
+
+--- ANSWER ---
+
+## Current Norwood Ave Permits
+
+- **1 NEW & AMENDED DOT PERMITS**: Issued, expiration 09/24/2025 (NODE 1).
+- **12 RENEWED PERMITS - NORWOOD AVE**: 8 permits for 1 Fulton St, 4 permits for 2 Fulton St. Issued 3/16/2026, expiration 6/01/2026 (NODE 3).
+- **1 RENEWED DOT PERMITS**: Expiration 1/31/2026. Issued 12/30/2025, valid from 1/1/2026 (NODE 4).
+- **NORWOOD PERMIT 29-DAY HYDRANT #H326736**: (p. 1, NODE 8).
+
+--- SOURCES ---
+
+- norwood 2272025 - GO Markup.pdf
+- 8 - DOT Permits.pdf
+- Check Request for Dep Permits 10.2.2025 R1.pdf
+  pages: 1
+- Permit Filings Estimating - Norwood 2252025.xlsx
+- 12 RENEWED PERMITS - NORWOOD AVE [26195.MLJ.DOT] EXP 6-1-26.pdf
+- DOT PERMITS EXP 1-31-26 RENEWED (Norwood Ave Station).pdf
+- NOR-CG-101-SD-Sht 1.pdf
+- NOR-TP-101-SD.pdf
+
+--- META --- elapsed=34128ms domains=documents cacheHit=false
+
+========================================================================
+[sq49]
+  In MDT-005R00 Middletown Tree Work Permit, what nursery standards must replacement tree materials meet, and what happens to rejected material on site?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 33 10 mdt-005r00 - fio - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 33 10_MDT-005R00 - FIO - Middletown Tree Work Permit.pdf
+
+--- META --- elapsed=1854ms domains=field_ops cacheHit=false
+{"timestamp":"2026-07-22T21:33:23.166Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents","contracts"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["documents","contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":357,"retrievalMs":109,"mergeMs":0,"agentMs":663,"totalMs":2358},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq54]
+  In BUR-081R00 January 2026 Construction Photos, what work is shown in progress on the Burnside Avenue northbound side on January 20, 2026?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- The requested document, "BUR-081R00 January 2026 Construction Photos," was not found in the retrieved context.
+- Therefore, I cannot provide details on the work in progress on the Burnside Avenue northbound side on January 20, 2026.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_01 32 10_BUR-081R00 - FIO - January 2026  Construction Photos.pdf
+
+--- META --- elapsed=2358ms domains=documents, contracts cacheHit=false
+{"timestamp":"2026-07-22T21:33:25.493Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents","contracts"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["documents","contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":98,"retrievalMs":98,"mergeMs":0,"agentMs":826,"totalMs":2327},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq55]
+  In BUR-081R00 January 2026 Construction Photos, what MPT setup and ConEd utility relocation work is documented at the Burnside Avenue northbound side?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- The requested document "BUR-081R00 January 2026 Construction Photos" was not found in the retrieved context.
+- Therefore, I cannot provide information on the MPT setup and ConEd utility relocation work at Burnside Avenue northbound.
+- **Next step:** Please provide the correct document name or ensure it is indexed.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_01 32 10_BUR-081R00 - FIO - January 2026  Construction Photos.pdf
+
+--- META --- elapsed=2327ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq56]
+  In BUR-080R00 Burnside December 2025 Construction Photos, what track shielding work was shown?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in photo apr 02 2025, 8 12 26 am that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- Photo Apr 02 2025, 8 12 26 AM.jpg
+
+--- META --- elapsed=1434ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq57]
+  In BUR-080R00 Burnside December 2025 Construction Photos, what MPT setup and shielding installation preparation is documented on the northbound side?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in photo apr 02 2025, 8 12 26 am that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- Photo Apr 02 2025, 8 12 26 AM.jpg
+
+--- META --- elapsed=1246ms domains=documents, contracts cacheHit=false
+{"timestamp":"2026-07-22T21:33:30.146Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents","contracts"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["documents","contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":110,"retrievalMs":110,"mergeMs":0,"agentMs":714,"totalMs":1972},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq58]
+  In MYR-076R00 Myrtle December 2025 Construction Photos, what ADA accessibility upgrade work is shown in the December 19, 2025 photos at Myrtle Avenue station?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- I need access to the document "MYR-076R00 Myrtle December 2025 Construction Photos" to answer this question.
+- The document is not currently open in the viewer, and no relevant information was retrieved from the project snapshot.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025 Construction Photos.pdf
+
+--- META --- elapsed=1973ms domains=documents, contracts cacheHit=false
+{"timestamp":"2026-07-22T21:33:32.182Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["documents"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":94,"retrievalMs":94,"mergeMs":0,"agentMs":634,"totalMs":2035},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq59]
+  In MYR-076R00 Myrtle December 2025 Construction Photos, what is the submittal designation ΓÇö NYCT/MTA information only, approval, or designer review?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- The submittal designation for MYR-076R00 Myrtle December 2025 Construction Photos is not available in the current project context.
+- **Next step:** Please provide the relevant submittal log or specification section for MYR-076R00.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_01 32 10_MYR-076R00 - FIO - Myrtle December 2025 Construction Photos.pdf
+
+--- META --- elapsed=2035ms domains=documents cacheHit=false
+
+========================================================================
+[sq60]
+  In the May 13, 2025 Burnside Avenue VECP Presentation, what is the value engineering background ΓÇö what submissions were made to MTA and what verbal approval was received from NYC DOT?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in 0050 - a-37808 (76114) - emd - burnside that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- 0050 - A-37808 (76114) - EMD - Burnside Ave - 2025-05.05 & 05.07 (7a-3p).pdf
+
+--- META --- elapsed=1618ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq61]
+  In the Burnside Avenue VECP Presentation, what ADA accessibility upgrade scope is being value-engineered and when was the final presentation delivered?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in ak a37806 volume 08a bx burnside ave option that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- AK_A37806_Volume_08A_BX_Burnside_Ave_Option_Work.pdf
+
+--- META --- elapsed=1215ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq62]
+  In PRO 26-01 Control of Project Nonconforming Items, what does the NCR process flowchart show ΓÇö who are the originator, Contractor QM, PMT QM, and DOR roles?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 ada p6 - myrtle ave - con that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806 ADA P6 - Myrtle Ave -  Con Edison - New Normal and Reserve services at the intersection of Melrose and Broadway_ .msg
+
+--- META --- elapsed=1283ms domains=contracts cacheHit=false
+{"timestamp":"2026-07-22T21:33:38.707Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents","contracts"],"sourceCount":1,"nodeCount":8,"estimatedContextTokens":1426,"specialistAgents":[{"agent":"doc_agent","domains":["documents","contracts"],"sourceCount":1,"nodeCount":4,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":4,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":1,"nodeCount":4,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":352,"retrievalMs":117,"mergeMs":1,"agentMs":839,"totalMs":2408},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":1,"fallback":0,"mixed":0,"none":0},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq63]
+  In GEN-006R01 NCR Template & Log, what data does PRO 26-01 require in the NCR Log for tracking nonconforming items?
+========================================================================
+
+--- ANSWER ---
+
+## NCR Log Data Requirements
+
+PRO 26-01 requires the following data points in the NCR Log for tracking nonconforming items (p. 4, 5):
+
+-   Date
+-   NCR No.
+-   Brief Description of Non-Conformity
+-   Raised By
+-   Date of Issuance
+-   Location
+-   Responsible Party / Subcontractor
+-   Disposition
+-   Verification
+-   Initial Status
+-   Date Closed
+
+--- SOURCES ---
+
+- A37806_01 40 10_GEN-006R01 - AEAN - NCR Template & Log.pdf
+  pages: 4, 2, 3, 5
+
+--- META --- elapsed=2408ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq64]
+  Summarize what is in A37806_RFI-0203 - CLO - Norwood J1 Revised Track Limits R1.pdf
+========================================================================
+
+--- ANSWER ---
+
+## Section 51.56 (a37806 rfi-0203 - clo - norwood j1 revised)
+- Exact indexed section text from page(s): 1, 2, 3, 4.
+
+```text
+DOCUMENT SECTION INDEX (heading ΓåÆ page numbers):
+A37806 ADA PACKAGE 6 [p.3]
+1 Iden╞ƒfied Jamaica (BMT) GOs [pp.4-5]
+3 Ac╞ƒon Items [p.5]
+
+Request For Information - RFI
+A37806 ΓÇô DESIGN BUILD SERVICES FOR ACCESSIBILITY UPGRADES ΓÇô PACKAGE 6
+Page 1 of 2 Rev. 0 5/4/2026
+Subject: Norwood J1 Revised Track Limits RFI # 0203
+Date: 5/4/2026 From: MLJTC2
+Reason for request: ΓÿÆInsufficient Information ΓÿÉEngineering Conflict ΓÿÉAlternate Proposal
+ΓÿÆOther: MTA Change in Direction (Change Proposal Request pending)
+Probable Cost Effect: ΓÿÆIncrease ΓÿÉDecrease ΓÿÉUnknown
+Action Requested: ΓÿÉClarification ΓÿÆDirection ΓÿÉApproval
+Probable Time Effect: ΓÿÆIncrease ΓÿÉDecrease ΓÿÉUnknown
+Priority ΓÿÆHigh ΓÿÉMedium ΓÿÉLow
+Drawing Number: N/A
+Detail Number: N/A
+CSI Code:
+Info. Requested:
+Per direction from MTA on 04/27/2026 MOW Track Construction will be performing the replacement
+of track J2 on its entirety within the Norwood Avenue Station (See attached email). Also, since the
+material for the contractual track J2 work was already procured and delivered, MTA directed MLJTC2
+to extend the limits of track replacement on J1 and use the said material to maintain the overall
+length of trackwork in the contract. Based on this direction, MLJTC2, AECOM and J-Track require the
+following clarifications:
+AECOM
+Track J1
+1. Is there any change to contact rail replacement? Current design shows replacement from Sta
+411+04 to Sta 420+04.
+2. Confirm limits of heat trace to be installed on J1.
+3. Define limits of track J1 replacement. Platform limits are from Sta. 411+51.56 to
+
+rent design shows replacement from Sta
+411+04 to Sta 420+04.
+2. Confirm limits of heat trace to be installed on J1.
+3. Define limits of track J1 replacement. Platform limits are from Sta. 411+51.56 to Sta.
+416+50.68, please confirm these limits can be followed for the track replacement.
+4. Track J1 best fit needs to be prepared in conjunction with Track J2 best fit(to be designed by
+MTA) to ensure top of structural slab at platform is consistent across the length of the
+platform. This also needs to be coordinated with elevator and stair landings and door
+openings.
+a. We request a schedule on when Track J2 best fit will be complete so it can be
+coordinated with the current design.
+Track J2
+1. Confirm MTA will design the contact rail replacement based on track limits.
+2. Confirm heat trace will be design by MTA.
+3. Confirm best fit of J2 will be done by MTA.
+MLJ Notes
+1. Can the work within the Norwood Avenue Station happen first? Currently we are scheduled
+to perform SOGR/Trackwork on J1/Platform Replacement between June and October, any
+
+Request For Information - RFI
+A37806 ΓÇô DESIGN BUILD SERVICES FOR ACCESSIBILITY UPGRADES ΓÇô PACKAGE 6
+Page 2 of 2 Rev. 0 5/4/2026
+track replacement performed by MTA on J2 within the Norwood Avenue Station will directly
+interfere with our work.
+2. The existing traction power on tract J2 at approximately 416+00 has already been tempted
+out and new jumpers installed. Is this work part of the MTA track replacement or a separate
+contract?
+TCE
+1. Please clarify if Traction power work at Track J2 is removed from ADA Package 6 contract.
+2. Please provide limit for traction power scope on Track J1. Current design shows replacement
+from Sta. 411+04 to Sta. 420+04.
+J-Track
+During the survey of the J1 track, it was identified that existing Pandrol plates extend to
+approximately Sta. 417+55 (approximately 105 track feet towards Jamaica Center on the J1 platform)
+and beyond this point, F21 plates are already in place however it is feasible to terminate the
+trackwork at the end of the platform, but due to the 7/8ΓÇ¥ thickness difference between the proposed
+F21 plates (1.75ΓÇ¥) and the existing Pandrol plates (0.93ΓÇ¥), a shimmed runoff would be required to
+achieve a smooth elevation transition if work is terminated at the platform.
+Please note that at this point in time the extend of the delay or cost implications with the extension
+beyond the end of the platform are not known. Due to the significan
+
+s terminated at the platform.
+Please note that at this point in time the extend of the delay or cost implications with the extension
+beyond the end of the platform are not known. Due to the significant schedule impact, MLJTC2
+recommends NYCT Track Engineering address any scope beyond contractual limits.
+Recommendations
+Disclaimer:
+Notes:
+Attachments Provided ΓÿÆYes ΓÿÉNo
+
+1
+Ksenofon Gjerko
+From: Jose Paredes <jose.paredes@tylin.com>
+Sent: Monday, April 27, 2026 1:46 PM
+To: Ksenofon Gjerko; Ravi Jain; Andrew Voss
+Cc: Wilson, Michael; Afua.Safo-Asante; Rony, Mohammed; Jack Czyzewski; Mekh Gurung;
+Dorra Kridis
+Subject: RE: A37806 Norwood Avenue (BMT) Survey Limits Week Of 4/20/26
+Good afternoon, Ksenofon.
+Please see below official direction from MOW Track Engineering. We will obtain better dates for the Track
+J2 in-house trackwork and get back to you.
+A37806 ADA Package 6 - Norwood Avenue BMT Track J1 and Track J2 Replacement Limits
+Update on Trackwork Limits at A-37806 Norwood Avenue Station ΓÇô Jamaica Line (BMT) Trks J1 & J2
+Track J1 (Jamaica-bound):
+Due to trackwork on Track J2 being reassigned to in-house forces, the limits previously specified
+for Track J2 in the Draft Scope of Required Trackwork , will be realigned to Track J1. As a result, Track J1
+will now undergo trackwork /panel replacement on the entire length of the platform.
+Track J2 (Manhattan-bound):
+Trackwork will be performed by in-house forces and is currently scheduled to take place from May
+through October 2026
+Jose Paredes, P.E.
+CONSTRUCTION COMPLIANCE MANAGER
+A37806 ADA PACKAGE 6
+From: Ksenofon Gjerko <kgjerko@mljcontracting.com>
+Sent: Thursday, April 23, 2026 2:41 PM
+To: Jose Paredes <jose.paredes@tylin.com>; rjain <rjain@mljcontracting.com>; Andrew Voss
+<AVoss@mljcontracting.
+
+rom: Ksenofon Gjerko <kgjerko@mljcontracting.com>
+Sent: Thursday, April 23, 2026 2:41 PM
+To: Jose Paredes <jose.paredes@tylin.com>; rjain <rjain@mljcontracting.com>; Andrew Voss
+<AVoss@mljcontracting.com>
+Cc: Wilson, Michael <michael.wilson@mtacd.org>; Afua.Safo-Asante <afua.safo-asante@mtacd.org>; Rony, Mohammed
+<mohammed.rony@mtacd.org>; Jack Czyzewski <jczyzewski@naikgroup.com>; Mekh Gurung
+<mgurung@naikgroup.com>; Dorra Kridis <dorra.kridis@tylin.com>
+Subject: RE: A37806 Norwood Avenue (BMT) Survey Limits Week Of 4/20/26
+Jose,
+Today we finished the survey based on the two scenarios you provided us on Friday.
+Our first track GO is on 6/20/2026 which is now 7 weeks away. We need a direction on this to properly
+prepare and coordinate our work.
+ATTACHMENT 1
+
+1
+Contract: A37806 ADA Package 6
+MTA C&D PCEO: Michael Wilson, Senior Director, Program CEO, MTA C&D ΓÇô Sta╞ƒons Business Unit
+Program Management Consultant: Naik TYLin Joint Venture
+Design-Builder: MLJTC2 (Design-Builder) and AECOM (Designer-of-Record)
+Field Mee╞ƒng: A37806 ADA Package 6 Norwood Avenue (BMT) ΓÇô MOW Track Construc╞ƒon Days
+Walkthrough
+Prepared By: Jose Paredes
+Field Mee╞ƒng Date: May 12, 2026
+Field Mee╞ƒng A╞⌐endees: See A╞⌐ached A╞⌐endance Sheet
+Field Mee╞ƒng Notes
+Item
+No Discussion
+1 Iden╞ƒfied Jamaica (BMT) GOs
+1. Week 20 5/16/2026
+2. Week 25 6/20/2026
+3. Week 26 6/27/2026
+4. Week 28 7/11/2026
+5. Week 30 7/25/2026
+6. Week 32 8/8/2026
+7. Week 33 8/15/2026
+8. Week 36 9/5/2026
+9. Week 37 9/12/2026
+10. Week 40 10/3/2023
+∩é╖ MOW Track Construc╞ƒon Days stated that they own Week 20 (5/16/26); Week 26 (6/27/26);
+Week 30 (7/25/26); Week 32 (8/8/26) and Week 33 (8/15/16)
+∩é╖ Project Team to find out who owns Week 25, 28, 36, 37 and 40.
+2 General Discussion
+∩é╖ MOW defined the scope as ΓÇ£81 track panel replacementΓÇ¥, N/O Crescent Sta╞ƒon to N/O
+Cleveland Sta╞ƒon.
+∩é╖ MOW will allow the Project to PB on Week 20.
+∩é╖ During Week 20, MOW will be working on the Jamaica side of Track J2; therefore, Project will
+only be allowed to install MOU lights on both sides of Track J1, and the Manha╞⌐an side of Track
+J2. Project Team will also be allowed to perform the Track J1 and J2 50 States survey within t
+```
+
+--- SOURCES ---
+
+- A37806_RFI-0203 - CLO - Norwood J1 Revised Track Limits R1.pdf
+  pages: 1, 2, 3, 4
+
+--- META --- elapsed=228ms domains=documents cacheHit=false
+
+========================================================================
+[sq65]
+  In J-TRACK-13A-041R00 Material I&T Request for 100-8 6-hole joint bar, what is the inspection item description, what quantity is requested, and what ASTM standard governs the material?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a-37806 j-track-13a-041r00 - app - material i&t request that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A-37806_J-TRACK-13A-041R00 - APP - Material I&T Request 100-8 (6 Hole) Joint Bar 36'' (Qty.59 Pairs).PDF
+
+--- META --- elapsed=1600ms domains=field_ops, documents cacheHit=false
+
+========================================================================
+[sq66]
+  In RFI-0115 for the Myrtle Avenue Louver Exhaust Face Velocity issue, what exhaust velocity problem is described and what spec section or direction is referenced?
+========================================================================
+
+--- ANSWER ---
+
+## Section 5.8 Requirements Summary (a37806 rfi-0115 - louver exhaust face velocity)
+- Reviewed indexed section evidence from page(s): 1, 2, 3, 4.
+- Key requirements captured from the section:
+- DESIGN [p.1] ELEVATOR MACHINE [p.1] WITHIN THE [p.2] ACCESSIBILITY UPGRADES AT FIVE STATIONS WITH COMPONENT UPGRADES AT ONE [pp.3-19] ATTACHMENT 1 AVENUE I DRAWING EXCERPTS [p.3] ENLARGED SOUTHBOUND EMR HVAC PLAN [p.4] TEMPERATURE SETPOINT IS ADJUSTABLE.
+- These louvers will use significant interior wall space needed for equipment and conduit, as well as on the exterior walls which causes a large disruption to the exterior finish of the station.
+- Tion to the exterior finish of the station.
+- T.4 is to limit the velocity of exhaust air to occupied areas, and that it is acceptable to size discharge louvers on the exterior walls of the EMRs in accordance with manufacturer specifications and good engineering practice in lieu of the 400 FPM limit.
+- DESIGNED BY CHECKED BY .../ PROJECT 12750 CONTRACT A-37806 ACCESSIBILITY UPGRADES AT FIVE STATIONS WITH COMPONENT UPGRADES AT ONE DESIGN-BUILD SERVICES FOR ADA UPGRADES PACKAGE 6 REVISION APPROVED DATE DESCRIPTION REVISIONS & DEVELOPMENT CONSTRUCTION & DEVE...
+- DESIGNED BY CHECKED BY .../ADA Upgrades P6 DB/A37806-DB/Avenue I/Models & Drawings/mec/hvac/Sheets/A37806-AVI-MH-402.dgn PROJECT 12750 CONTRACT A-37806 ACCESSIBILITY UPGRADES AT FIVE STATIONS WITH COMPONENT UPGRADES AT ONE DESIGN-BUILD SERVICES FOR ADA UPGR...
+- SIDE ACCESS DOOR 54X18 EXHAUST DUCT WITH N ENLARGED SOUTHBOUND EMR HVAC PLAN 0 1 2 4 FT 1/2" 0 1 2 4 FT 1/2" EF-1 ACCESS DOOR DUCT WITH 10X10 BOTTOM 54X22 OIL COOLER DISCHARGE AIR LOUVER 48X22 OUTDOOR WITH WMS 18X18 OED FD-4 FD-2 EF-1 CONTROL PANEL EUH-1 TH...
+- T, MOTORIZED ΓÇóWHEN ROOM TEMPERATURE EXCEEDS TEMPERATURE SETPOINT IS ADJUSTABLE.
+
+Evidence: a37806 rfi-0115 - louver exhaust face velocity (p. 1, 2, 3).
+
+--- SOURCES ---
+
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf
+  pages: 1, 2, 3, 4
+
+--- CITATIONS ---
+
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf chunk=2 (p. 1) rel=1.000
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf chunk=3 (p. 1) rel=1.000
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf chunk=4 (p. 2) rel=1.000
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf chunk=5 (p. 3) rel=1.000
+- A37806_RFI-0115 - Louver Exhaust Face Velocity.pdf chunk=7 (p. 4) rel=1.000
+
+--- META --- elapsed=231ms domains=documents cacheHit=false
+
+========================================================================
+[sq67]
+  In RFI098 for the Ave I Conductor Board at Station 489+00, what is the issue with the conductor board on the northbound platform at Track B2 and what drawing is referenced?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 ada p6 rfi098 ave i conductor board that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+00.pdf
+
+--- META --- elapsed=1610ms domains=documents cacheHit=false
+
+========================================================================
+[sq68]
+  In RFI098 for the Ave I Conductor Board, what figures are provided showing the conductor board conditions at Station 489+00 and approximately Station 490+00?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 ada p6 rfi098 ave i conductor board that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_ADA P6_RFI098 Ave I Conductor Board at STA 489+00.pdf
+
+--- META --- elapsed=1621ms domains=documents cacheHit=false
+
+========================================================================
+[sq69]
+  In A37806 RFI096, what are the northbound and southbound platform stair and exit configurations shown on the referenced drawings?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 rfi-0042 - clo - coordination with contract that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_RFI-0042 - CLO - Coordination with Contract W47032 ΓÇô PS LAN system _Norwood ONLY.pdf
+
+--- META --- elapsed=1198ms domains=documents cacheHit=false
+
+========================================================================
+[sq70]
+  In A37806 RFI096, what ADA upgrade drawing and platform detail is referenced for the McDonald Avenue station?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 rfi-0042 - clo - coordination with contract that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_RFI-0042 - CLO - Coordination with Contract W47032 ΓÇô PS LAN system _Norwood ONLY.pdf
+
+--- META --- elapsed=1167ms domains=documents cacheHit=false
+
+========================================================================
+[sq71]
+  In MYR-002R00 Myrtle Avenue Demo Shield Drawings, what construction details and shielding elements are shown in the enlarged section views, and what platform-level steel connections are specified?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in mljtc2 aecom atc 2 myrtle avenue drawings that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- MLJTC2_AECOM_ATC_2_Myrtle Avenue Drawings.pdf
+
+--- META --- elapsed=1248ms domains=documents cacheHit=false
+
+========================================================================
+[sq72]
+  In drawing MYR-A-444A, what stainless steel panel and signage details are shown for the EL1121/EL1122 elevator enclosures at Myrtle Avenue station?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in myrtle expansion joint pages from 8 03 - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- Myrtle Expansion Joint Pages from 8.03 - Archive Drawings.pdf
+
+--- META --- elapsed=1537ms domains=documents cacheHit=false
+
+========================================================================
+[sq73]
+  In RFI-0116 for the Myrtle Avenue PS LAN followup, what telecommunications coordination issue is addressed and what direction was given to the contractor?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 rfi-0042 - clo - coordination with contract that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_RFI-0042 - CLO - Coordination with Contract W47032 ΓÇô PS LAN system _Myrtle ONLY.pdf
+
+--- META --- elapsed=1610ms domains=contracts, documents cacheHit=false
+
+========================================================================
+[sq74]
+  In RFI-009 for Myrtle Avenue UPS Backup Requirements, what UPS capacity is required to support existing and new communications systems, including the future use reserve?
+========================================================================
+
+--- ANSWER ---
+
+## Section 7.5 Requirements Summary (806-rfi-009 - myrtle avenue ups backup requirements)
+- Reviewed indexed section evidence from page(s): 1.
+- Key requirements captured from the section:
+- "Design-Builder to replace an existing UPS power plant system to support the full load from both existing and new communications systems, plus an additional 40% or higher of its capacity available for future use.
+- "The communications systems require UPS backup so that both the existing and new systems can operate at full load (IMMEDIATELY UPON LOSS OF INPUT POWER TO UPS) or the following duration.
+
+Evidence: 806-rfi-009 - myrtle avenue ups backup requirements (p. 1).
+
+--- SOURCES ---
+
+- 806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 806-RFI-009 - Myrtle Avenue UPS Backup Requirements.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=178ms domains=documents cacheHit=false
+
+========================================================================
+[sq75]
+  In GEN-096R04 SWP-016 for Elevator Steel and Enclosure, what is the submittal package response due date and what spec section 01 35 10 information is on the cover sheet?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in swp 016 - elevator steel & enclosure (day) that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-096R02 - SWP-016- Elevator Steel & Enclosure (Day) 1 of 3.pdf
+
+--- META --- elapsed=207ms domains=documents cacheHit=false
+
+========================================================================
+[sq76]: Summarize SWP-016
+========================================================================
+
+--- ANSWER ---
+
+## SWP-016 Summary
+
+-   **Purpose:** Safe Work Plan for Elevator Steel & Enclosure construction activities at the Middletown site. (p. 1)
+-   **Scope:** ADA Upgrades Package 6 under contract A37806, focusing on crane operations. (p. 1)
+-   **Contractor:** MLJ is both the General Contractor and performing contractor. (p. 1)
+-   **Key Revisions:** Revision 4 dated 06/02/2026, superseding Revision 3 dated 03/10/2026. (p. 1)
+
+--- SOURCES ---
+
+- SWP 016 + Attachment.pdf
+  pages: 1, 2, 3, 4
+
+--- CITATIONS ---
+
+- SWP 016 + Attachment.pdf chunk=2 (p. 1) rel=1.000
+- SWP 016 + Attachment.pdf chunk=3 (p. 2) rel=1.000
+- SWP 016 + Attachment.pdf chunk=7 (p. 3) rel=1.000
+- SWP 016 + Attachment.pdf chunk=10 (p. 4) rel=1.000
+- SWP 016 + Attachment.pdf chunk=13 (p. 5) rel=1.000
+- SWP 016 + Attachment.pdf chunk=16 (p. 6) rel=1.000
+- SWP 016 + Attachment.pdf chunk=20 (p. 7) rel=1.000
+- SWP 016 + Attachment.pdf chunk=24 (p. 8) rel=1.000
+
+--- META --- elapsed=1302ms domains=documents, contracts cacheHit=false
+{"timestamp":"2026-07-22T21:33:56.224Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["contracts"],"sourceCount":1,"nodeCount":8,"estimatedContextTokens":2200,"specialistAgents":[{"agent":"doc_agent","domains":["contracts"],"sourceCount":1,"nodeCount":3,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":3,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":1,"nodeCount":3,"durationMs":0}],"contradictions":[{"kind":"contract_notice_risk_escalation","severity":"warning"}],"telemetry":{"routeMs":333,"retrievalMs":133,"mergeMs":0,"agentMs":2085,"totalMs":3773},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":1,"fallback":0,"mixed":0,"none":0},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq77]
+  In GEN-041R01 SWP-011 for Platform Concrete Demo, what dust control and silica exposure prevention measures apply to saw cutting and demolition operations?
+========================================================================
+
+--- ANSWER ---
+
+## Dust and Silica Control Measures
+
+- **Approved Dust Control Plan:** Implement and adhere to the approved Dust Control Plan for mitigation and control of dust, including respiratory protection (p. 22, 23).
+- **Wet Methods:** Utilize wetting, HEPA-Vac, or green dust methods to control dust hazards (p. 22). Use wet methods for sweeping (green dust or water) to mitigate dust clouds during cleanup (p. 24).
+- **Water Supply for Saws:** Connect a water hose to the demo saw prior to operation, ensuring a direct water supply or pressurized water tank is available (p. 23).
+- **Silica Exposure Prevention (1926.1153 Table 1):** Use wet methods or vacuuming to control airborne dust emissions (p. 22).
+- **Respiratory Protection:** Employees must use N95 dust masks or ┬╜-face respirators (p. 22). All workers conducting demolition must be medically cleared and fit-tested for respiratory protection (p. 22). Follow respiratory protection in accordance with 1926.1153 Table 1 (p. 22).
+- **Visible Dust Protocol:** Stop work and correct the source of dust generation if any visible dust is observed outside the barricaded area (p. 23).
+- **Lead Paint Protocol:** All painted surfaces are considered to contain lead; implement lead placard protocols (e.g., 3P containment, respiratory protection) (p. 22). Follow lead removal procedure before cutting painted steel (p. 23).
+- **IDA (Indeco Dust Abatement) System:** This system uses a high-pressure water spray from nozzles to prevent dust from harming tools and operators, complying with OSHA directives (p. 43).
+- **OSHA Silica Fact Sheet:** Follow Attachment #1-2, the OSHA Silica Fact Sheet (p. 7).
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf
+  pages: 22, 21, 23, 24
+
+--- CITATIONS ---
+
+- A37806_01 35 10_GEN-041R05 - AEAN - SWP-011 - Platform Concrete Demo.pdf chunk=33 (p. 23) rel=9.000
+
+--- META --- elapsed=3773ms domains=contracts cacheHit=false
+
+========================================================================
+[sq78]: Summarize SWP-011
+========================================================================
+
+--- ANSWER ---
+
+## SWP-013 Summary
+
+- This document is Safe Work Procedure (SWP-013, Revision 002).
+- It details the installation of platform barriers.
+- The primary activity is by MLJTC2 under Contract A-37135.
+- It includes step-by-step risk prevention and mitigation comments.
+
+--- SOURCES ---
+
+- SWP-013 Installation of Platform Barrier Revision 002.pdf
+
+--- CITATIONS ---
+
+- SWP-013 Installation of Platform Barrier Revision 002.pdf chunk=0 (p. ?) rel=1.000
+
+--- META --- elapsed=1108ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq79]: Summarize SWP-032
+========================================================================
+
+--- ANSWER ---
+
+## SWP-032 Summary
+
+-   **Purpose:** Safe Work Plan (SWP) for general formwork installation, rebar placement, and concrete pouring. (p. 1)
+-   **Project:** A37806 - Design-Build Services for ADA Upgrades Package 6. (p. 1)
+-   **Key Sections:** General Information, Competent Person(s) Assigned, and detailed Step Risk Prevention/Mitigation. (p. 1-3)
+-   **Safety Focus:** Covers hazards from worksite entry, tool usage, material delivery, and specific tasks like rebar bending. (p. 3-8)
+
+--- SOURCES ---
+
+- A37806 SWP-032- General formwork, rebar and concrete -R4.pdf
+  pages: 1, 2, 3, 4
+
+--- CITATIONS ---
+
+- A37806 SWP-032- General formwork, rebar and concrete -R4.pdf chunk=2 (p. 1) rel=1.000
+- A37806 SWP-032- General formwork, rebar and concrete -R4.pdf chunk=4 (p. 2) rel=1.000
+- A37806 SWP-032- General formwork, rebar and concrete -R4.pdf chunk=5 (p. 3) rel=1.000
+- A37806 SWP-032- General formwork, rebar and concrete -R4.pdf chunk=8 (p. 4) rel=1.000
+- A37806 SWP-032- General formwork, rebar and concrete -R4.pdf chunk=11 (p. 5) rel=1.000
+- A37806 SWP-032- General formwork, rebar and concrete -R4.pdf chunk=13 (p. 6) rel=1.000
+- A37806 SWP-032- General formwork, rebar and concrete -R4.pdf chunk=15 (p. 7) rel=1.000
+- A37806 SWP-032- General formwork, rebar and concrete -R4.pdf chunk=17 (p. 8) rel=1.000
+
+--- META --- elapsed=1385ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq80]
+  What does the August 20, 2025 transmittal letter from Michael Wilson say about the approval status of the SWP-032 safe work plan under spec 01 35 10?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in swp 032 - general formwork, rebar and concrete that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806 SWP-032- General formwork, rebar and concrete -R4.pdf
+
+--- META --- elapsed=305ms domains=documents cacheHit=false
+{"timestamp":"2026-07-22T21:34:01.598Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["contracts"],"sourceCount":1,"nodeCount":8,"estimatedContextTokens":2372,"specialistAgents":[{"agent":"doc_agent","domains":["contracts"],"sourceCount":1,"nodeCount":3,"durationMs":0},{"agent":"sched_agent","domains":["contracts"],"sourceCount":1,"nodeCount":3,"durationMs":0},{"agent":"cost_agent","domains":["contracts"],"sourceCount":1,"nodeCount":3,"durationMs":0}],"contradictions":[{"kind":"schedule_delay_without_cost_exposure","severity":"warning"},{"kind":"contract_notice_risk_escalation","severity":"warning"}],"telemetry":{"routeMs":108,"retrievalMs":107,"mergeMs":1,"agentMs":1196,"totalMs":2575},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":1,"fallback":0,"mixed":0,"none":0},"interpretation":{"intent":"contract_notice","confidence":0.78,"source":"rules"}}
+
+========================================================================
+[sq81]
+  In GEN-116R00 SWP-052 for Mezzanine Stair Barricade at Burnside, what restricted work hours apply, what combustible materials storage rules are in effect, and how much advance notice is required before closing a staircase?
+========================================================================
+
+--- ANSWER ---
+
+## Restricted Work Hours
+
+- Material movement is prohibited between 6:00 AM and 9:30 AM. (p. 8)
+- Material movement is prohibited between 3:00 PM and 8:00 PM. (p. 8)
+
+## Combustible Materials Storage Rules
+
+- No flammable/combustible materials shall be stored inside enclosures. (p. 8)
+- Barricades will be built of fire-rated wood with visible stamps. (p. 8)
+- A 20 lb. ABC rated fire extinguisher will be mounted behind the barricade. (p. 8)
+
+## Staircase Closure Advance Notice
+
+- Two weeks' notice (posting signs) is required before long-term closure of a staircase. (p. 8)
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-116R01 - APP - SWP-052 Mezzanine Stair Barricade.pdf
+  pages: 8, 3, 6, 9
+
+--- CITATIONS ---
+
+- A37806_01 35 10_GEN-116R01 - APP - SWP-052 Mezzanine Stair Barricade.pdf chunk=14 (p. 8) rel=10.000
+
+--- META --- elapsed=2575ms domains=contracts cacheHit=false
+
+========================================================================
+[sq82]
+  In GEN-116R00 SWP-052 for Mezzanine Stair Barricade at Burnside, what worksite entry and personnel safety requirements apply, including PPE and evacuation procedures?
+========================================================================
+
+--- ANSWER ---
+
+## Section 3.28 (swp 052 mezzanine stair barricade)
+- Exact indexed section text from page(s): 6, 7, 8.
+
+```text
+SAFE WORK PLAN SWP ΓÇô 052 - BUR
+SWP 052 ΓÇô Installation & Removal of Mezzanine Stair Barricades - Burnside Rev. 1 02/24/2026
+2. continued be permitted in the swing radius of any equipment
+while the equipment is in operation
+ΓÇó First aid kits & eyewash station will always be
+on site
+ΓÇó Review of NYCT zero tolerance for Drug/alcohol
+& Tobacco policy
+ΓÇó All workers shall be protected from falls greater
+than 6' by a guardrail system (fall prevention) or
+an OSHA- compliant PFAS (Personal Fall Arrest
+System for Fall Protection with a climbing or
+rescue type helmet with chin strap and side
+impact protection.)
+5. Usage of Tools, Hand,
+& Power Generator,
+Extension Cords,
+Electrical Drills, Sawzall
+and Table Saw
+ΓÇó Electrical Hazards
+ΓÇó Defective tools
+ΓÇó Eye injuries
+ΓÇó Worker Strain
+ΓÇó Fall Hazards
+ΓÇó Fire
+ΓÇó Spills
+ΓÇó Slips/Trips/Falls
+ΓÇó Tools must have proper insulation and be inspected
+daily for damage ΓÇô damage tools shall be removed
+from service immediately and tagged Do Not Use
+ΓÇó Extension cords must be inspected daily for damage,
+and a proper grounding plug
+ΓÇó GFCI'S will be used with all electrical tools to prevent
+electrical shocks, burns, or electrocution
+ΓÇó All machine guards shall be installed and in use as
+required.
+ΓÇó Inspect hand & power tools before use to ensure safe
+operation.
+ΓÇó Wooden handles of tools kept free of splinters or
+cracks
+ΓÇó All ladders will be inspected for damage prior t
+
+and in use as
+required.
+ΓÇó Inspect hand & power tools before use to ensure safe
+operation.
+ΓÇó Wooden handles of tools kept free of splinters or
+cracks
+ΓÇó All ladders will be inspected for damage prior to use.
+Three points of contact always while ladders are in
+use. All ladders over 6' will be footed or lashed. Ladder
+permit and ladder inspection tag, as per the ladder
+permitting program (3.28), to be used in compliance
+with Division 1 01 35 10 Construction Safety
+Requirements.
+ΓÇó Proper use of portable ladders and any work done over
+6' or the potential to fall more than 6' will be done with
+a fall arrest system in place tied off to the proper
+anchor point. Any employee required to wear a
+personal fall arrest device will have fall protection
+training
+ΓÇó At above ground stations, Gas Placard is not required- only GPE
+inspection. All GPE inspections will be performed as per the OSS GPE
+Guidelines.
+ΓÇó 20-lb (type 10A120BC) ABC fire extinguisher to be within 20-feet of any
+refueling operation.
+ΓÇó Refueling only to be done by personnel with the FDNY CoF S93/S94
+certifications.
+ΓÇó All handles and guards for tools will be in place.
+ΓÇó All tools and equipment shall be used according to manufacturers
+recommendations.
+
+SAFE WORK PLAN SWP ΓÇô 052 - BUR
+SWP 052 ΓÇô Installation & Removal of Mezzanine Stair Barricades - Burnside Rev. 1 02/24/2026
+6. Use of Ladders ΓÇó Slip / Trips / Falls ΓÇó Use fully open A frame ladders. Ensure ladders
+are set up on a level and firm surface.
+ΓÇó Ladders will be used in accordance with
+manufacturersΓÇÖ labels as it relates to allowable
+weights and working heights
+ΓÇó Face ladders when climbing and descending.
+ΓÇó Do not climb with materials; use hauling line.
+ΓÇó Ladders must have manufacturers rating label
+clearly legible and visible.
+ΓÇó Ladders to be clearly marked with company name.
+- Safety Advisory 19-02: Ladder Safety
+ΓÇó - Ladder Inspections Logs will be available as per request
+7. Working in Hot
+Weather/Cold Weather
+ΓÇó Heat Stress, Heat
+Exhaustion, Heat
+Stroke
+ΓÇó Hypothermia, Frostbite
+ΓÇó Cold water shall be provided. Loose-fitting and light-
+colored clothing is recommended. Workers shall
+take breaks throughout the day as necessary in
+extreme temperatures
+ΓÇó Select proper clothing for cold, wet, and windy
+conditions. Layer clothing to adjust to changing
+environmental temperatures. Wear a hat and
+gloves, in addition to underwear that will keep
+water away from the skin (polypropylene).
+ΓÇó Drink warm, sweet beverages (sugar water, sports-
+type drinks). Avoid drinks with caffeine (coffee, tea,
+ΓÇó or hot chocolate).
+ΓÇó Heat Stroke is a true medical emergency, call 911.
+ΓÇó Hypothermia i
+
+e).
+ΓÇó Drink warm, sweet beverages (sugar water, sports-
+type drinks). Avoid drinks with caffeine (coffee, tea,
+ΓÇó or hot chocolate).
+ΓÇó Heat Stroke is a true medical emergency, call 911.
+ΓÇó Hypothermia is a true medical emergency, call 911
+8. Delivery of materials,
+tools, and equipment
+unloading.
+ΓÇó Pedestrian/Employee Struck-
+By
+ΓÇó Slips, Trips & Falls
+ΓÇó Cuts, Scrapes, Lacerations
+ΓÇó Eye injuries
+ΓÇó Worker Strain
+ΓÇó Other injuries
+ΓÇó Running over materials
+ΓÇó Material falling
+ΓÇó Caught in-between
+ΓÇó Back Injury
+ΓÇó All materials will be delivered to the site via motor
+vehicle at the station Entrance or work train. NYCT
+SAFETY BULLETIN 2000-2- Movement cable reels
+and other large items via station stairways during
+deliveries onto transit property.
+ΓÇó Before starting work, a separate area will be
+established to place equipment, which will not be
+placed in an area that will impede the safety of
+pedestrians or workers at the site. This will be done
+with the use of lollipop/safety cones and cone toppers.
+- All employees use proper lifting techniques to avoid
+muscle strains. Sensible lifting anything over 50 pounds,
+use the buddy system.
+ΓÇó See step #1 above regarding PPE requirements.
+ΓÇó MPT set-ups will be in place prior to any movement of equipment.
+ΓÇó All material deliveries will be communicated to the PMC at least 24-hours
+prior.
+9. Installation of Platform
+Barrier
+ΓÇó See Item #ΓÇÖs 1 & 2
+ΓÇó Lacerat
+
+ll be in place prior to any movement of equipment.
+ΓÇó All material deliveries will be communicated to the PMC at least 24-hours
+prior.
+9. Installation of Platform
+Barrier
+ΓÇó See Item #ΓÇÖs 1 & 2
+ΓÇó Laceration
+ΓÇó Property Damage
+ΓÇó Struck By/Flying Objects
+ΓùÅ See attached Stair Barricade Plans
+ΓùÅ Barriers will be constructed in accordance with
+OSS guidelines for temporary subway barriers
+latest revision. The barrier will be inspected daily
+ΓùÅ See Item #ΓÇÖs 1 & 2
+ΓùÅ Plywood used will be fire retardant. Fire retardant stamp to remain
+visible (will be kept on inside of the barrier) and will not be painted over
+so stamp remains visible OSS.Required signage and markings will be
+
+SAFE WORK PLAN SWP ΓÇô 052 - BUR
+SWP 052 ΓÇô Installation & Removal of Mezzanine Stair Barricades - Burnside Rev. 1 02/24/2026
+9. continued ΓÇó Ladder Safety
+ΓÇó Improper construction of
+platform barriers
+before and after work takes place. Lockable,
+inward swinging doors will be installed if
+applicable. The door must be self- closing via
+spring hinge.
+ΓùÅ All ladders will be inspected for damage prior to
+use. Three points of contact at all times while
+ladders are in use. All ladders over 6ΓÇÖ will be
+footed or lashed.
+ΓùÅ Proper use of portable ladders and any work done over
+6ΓÇÖ or the potential to fall more than 6ΓÇÖ will be done with
+a fall arrest system in place tied off to the proper anchor
+point.
+ΓùÅ Use proper lifting techniques
+ΓÇó Work zones with materials shall be delineated so as
+to protect the public and all other personnel.
+in place.
+ΓùÅ There should be no sharp edges (all corners need to be chamfered).
+Corners need to be clearly marked with black and yellow striped tape.
+ΓùÅ See attached approved drawing and details of Track Barrier.
+ΓùÅ As per System Safety Design Guideline for Constructing Temporary
+Enclosure/Structure
+ΓùÅ Structure: See Attachment
+ΓùÅ Saw dust and debris to be cleaned up regularly throughout the shift.
+ΓùÅ Use of Climbers Safety Helmet when necessary
+ΓùÅ Public notices need to be posted before barricades close entries,
+passageways and sections of platform. - Barricades will be pa
+
+y throughout the shift.
+ΓùÅ Use of Climbers Safety Helmet when necessary
+ΓùÅ Public notices need to be posted before barricades close entries,
+passageways and sections of platform. - Barricades will be painted the
+approved federal blue color
+ΓùÅ Post all required direction signs and notifications after enclosure is built
+and painted. - Barricades will be built of fire-rated wood. Fire rated
+stamps to be visible from the inside (not painted).
+ΓùÅ A 20 lb. ABC rated fire extinguisher will be mounted behind the barricade
+and inspected monthly
+ΓùÅ Material will not be moved between the hours of 6:00AM and 9:30 AM
+and 3:00 PM and 8PM. - No flammable/combustible materials shall be
+stored inside enclosures.
+ΓùÅ Two weeksΓÇÖ notice (posting signs) must be given before long term closure
+of a staircase
+ΓùÅ Barricade plans must be submitted to the PCEO and forwarded to the
+station programs for approval.
+10. Erecting Frames,
+Walls & Doors
+ΓÇó Back Injuries
+ΓÇó Flying debris
+ΓÇó Fire
+ΓÇó Use two people to raise panels into place.
+ΓÇó Proper lifting techniques mechanical lifting when
+feasible, will be always used. Do not lift more
+than you can handle.
+ΓÇó Ensure prefabricated panels are stored in the
+laydown area to allow ready access from each
+side.
+ΓÇó Workers shall wear hearing protection when
+using high noise tools (i.e., saws, hammer drills,
+nail gun)
+ΓÇó Workers shall wear a minimum of eye protection
+and ensure that
+```
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-116R01 - APP - SWP-052 Mezzanine Stair Barricade.pdf
+  pages: 6, 7, 8
+
+--- CITATIONS ---
+
+- A37806_01 35 10_GEN-116R01 - APP - SWP-052 Mezzanine Stair Barricade.pdf chunk=9 (p. 6) rel=1.000
+- A37806_01 35 10_GEN-116R01 - APP - SWP-052 Mezzanine Stair Barricade.pdf chunk=10 (p. 6) rel=1.000
+- A37806_01 35 10_GEN-116R01 - APP - SWP-052 Mezzanine Stair Barricade.pdf chunk=11 (p. 7) rel=1.000
+- A37806_01 35 10_GEN-116R01 - APP - SWP-052 Mezzanine Stair Barricade.pdf chunk=12 (p. 7) rel=1.000
+- A37806_01 35 10_GEN-116R01 - APP - SWP-052 Mezzanine Stair Barricade.pdf chunk=14 (p. 8) rel=1.000
+
+--- META --- elapsed=281ms domains=field_ops, documents cacheHit=false
+{"timestamp":"2026-07-22T21:34:03.817Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["field_ops","documents"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["field_ops","documents"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"sched_agent","domains":["field_ops"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":97,"retrievalMs":97,"mergeMs":0,"agentMs":581,"totalMs":1935},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq83]
+  In GEN-021R00 Safety Coordinator submittal for Diego Gonzalez, what are the safety coordinator's responsibilities for PPE enforcement, SDS management, and safe work plan development?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- I need the submittal document GEN-021R00 for Diego Gonzalez to answer this question.
+- The current context does not contain the specific responsibilities for PPE enforcement, SDS management, and safe work plan development.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator - Diego Gonzalez.pdf
+
+--- META --- elapsed=1935ms domains=field_ops, documents cacheHit=false
+
+========================================================================
+[sq84]: Summarize GEN-021R00 Safety Coordinator submittal
+========================================================================
+
+--- ANSWER ---
+
+## GEN021R00
+- I found a37806 01 35 10 gen-021r00 - orig -, but I do not have indexed text for a precise answer.
+- Re-run indexing on that file, then ask again.
+
+--- SOURCES ---
+
+- A37806_01 35 10_GEN-021R00 - ORIG - Safety Coordinator - Diego Gonzalez.pdf
+
+--- META --- elapsed=178ms domains=documents cacheHit=false
+
+========================================================================
+[sq85]
+  In the Schedule Update 5 June 2025, what are the scheduled start and finish dates for the Elevator 541 Enclosure activities, and what activities involve rated glass installation?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 32 10 gen-032r00 - orig - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 32 10_GEN-032R00 - ORIG - Schedule Update 5 - June 2025.pdf
+
+--- META --- elapsed=1580ms domains=documents, contracts cacheHit=false
+
+========================================================================
+[sq86]
+  In the Schedule Update 5 June 2025, what is the planned outage for EL1121 Elevator Enclosure Framing installation and what are the upcoming enclosure activities at Myrtle Avenue?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 01 32 10 gen-032r00 - orig - that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_01 32 10_GEN-032R00 - ORIG - Schedule Update 5 - June 2025.pdf
+
+--- META --- elapsed=1531ms domains=contracts cacheHit=false
+
+========================================================================
+[sq87]
+  In spec section 21 12 00 for Fire-Suppression Standpipes, what are the pipe hanger and support design requirements, including how they must handle expansion joint forces?
+========================================================================
+
+--- ANSWER ---
+
+## Section 2.11 Requirements Summary (21 12 00 - fire-suppression standpipes rev 1)
+- Reviewed indexed section evidence from page(s): 1, 2, 3, 4, 6.
+- Key requirements captured from the section:
+- FIRE DEPARTMENT CONNECTIONS [p.6] 2.12 PIPE HANGERS AND SUPPORTS [p.6] 3.3 INSTALLATION [p.9] 3.4 CLEAN UP [p.11] 3.5 TESTING [p.12].
+- Section 01 33 00 Submittal Procedures 1.3 CITED STANDARDS Unless otherwise noted, the latest edition of the following codes and standards shall govern this work.
+- 393 ΓÇô Standard Specification Indicating Pressure Gauges for Fire- Protection Service 7.
+- ANSI/ AWWA A21.51/ C151 ΓÇô Ductile-Iron Pipe, Centrifugally Cast for Water 4.
+- A865 ΓÇô Standard Specification for Threaded Couplings, Steel, Black or Zinc-Coated (Galvanized) Welded or Seamless G.
+- E list of all components, make, manufacturer, telephone number of local vendor H.
+- Lugged swivel connection and drop clappers for each hose connection inlet.
+
+### 2.11.1. Submittals
+- ADA UPGRADES PACKAGE 6 21 12 00 ΓÇô 1 CONTRACT NO: A37806 FINAL SUBMISSION REV 1 January 14, 2026 SECTION ΓÇô 21 12 00 FIRE-SUPPRESSION STANDPIPES PART 1 ΓÇô GENERAL 1.1 SUMMARY The Contractor shall furnish all labor, materials, tools and equipment, and perform a...
+- The Work shall include but not be limited to the following: A.
+- Addition of new standpipe piping and fire hose valves for new control areas.
+- B.
+- Modification of existing standpipe system to avoid new structures.
+- C.
+- Underwriters Laboratories (UL) 3.
+- SECTION ΓÇô 21 12 00 FIRE-SUPPRESSION STANDPIPES ADA UPGRADES PACKAGE 6 21 12 00 ΓÇô 2 CONTRACT NOTE: A37806 FINAL SUBMISSION REV 1 January 14, 2026 3.
+- Ction Use 10.
+- SECTION ΓÇô 21 12 00 FIRE-SUPPRESSION STANDPIPES ADA UPGRADES PACKAGE 6 21 12 00 ΓÇô 3 CONTRACT NOTE: A37806 FINAL SUBMISSION REV 1 January 14, 2026 1.4 SUBMITTALS A.
+- E list of all components, make, manufacturer, telephone number of local vendor H.
+- SECTION ΓÇô 21 12 00 FIRE-SUPPRESSION STANDPIPES ADA UPGRADES PACKAGE 6 21 12 00 ΓÇô 4 CONTRACT NOTE: A37806 FINAL SUBMISSION REV 1 January 14, 2026 THIS SPACE IS LEFT BLANK INTENTIONALLY.
+- Gregate, and four parts of approved coarse aggregate.
+
+Evidence: 21 12 00 - fire-suppression standpipes rev 1 (p. 1, 2, 3).
+
+--- SOURCES ---
+
+- 21 12 00 - Fire-Suppression Standpipes REV 1.pdf
+  pages: 1, 2, 3, 4, 6
+
+--- META --- elapsed=234ms domains=documents cacheHit=false
+
+========================================================================
+[sq88]
+  In spec section 21 12 00 for Fire-Suppression Standpipes, what pitch requirements apply to piping and how must pipes and hose connections be installed where they cross tracks?
+========================================================================
+
+--- ANSWER ---
+
+## Section 2.11 Requirements Summary (21 12 00 - fire-suppression standpipes rev 1)
+- Reviewed indexed section evidence from page(s): 1, 2, 3, 4, 6.
+- Key requirements captured from the section:
+- FIRE DEPARTMENT CONNECTIONS [p.6] 2.12 PIPE HANGERS AND SUPPORTS [p.6] 3.3 INSTALLATION [p.9] 3.4 CLEAN UP [p.11] 3.5 TESTING [p.12].
+- Section 01 33 00 Submittal Procedures 1.3 CITED STANDARDS Unless otherwise noted, the latest edition of the following codes and standards shall govern this work.
+- 393 ΓÇô Standard Specification Indicating Pressure Gauges for Fire- Protection Service 7.
+- ANSI/ AWWA A21.51/ C151 ΓÇô Ductile-Iron Pipe, Centrifugally Cast for Water 4.
+- A865 ΓÇô Standard Specification for Threaded Couplings, Steel, Black or Zinc-Coated (Galvanized) Welded or Seamless G.
+- E list of all components, make, manufacturer, telephone number of local vendor H.
+- Lugged swivel connection and drop clappers for each hose connection inlet.
+
+### 2.11.1. Submittals
+- ADA UPGRADES PACKAGE 6 21 12 00 ΓÇô 1 CONTRACT NO: A37806 FINAL SUBMISSION REV 1 January 14, 2026 SECTION ΓÇô 21 12 00 FIRE-SUPPRESSION STANDPIPES PART 1 ΓÇô GENERAL 1.1 SUMMARY The Contractor shall furnish all labor, materials, tools and equipment, and perform a...
+- The Work shall include but not be limited to the following: A.
+- Addition of new standpipe piping and fire hose valves for new control areas.
+- B.
+- Modification of existing standpipe system to avoid new structures.
+- C.
+- Underwriters Laboratories (UL) 3.
+- SECTION ΓÇô 21 12 00 FIRE-SUPPRESSION STANDPIPES ADA UPGRADES PACKAGE 6 21 12 00 ΓÇô 2 CONTRACT NOTE: A37806 FINAL SUBMISSION REV 1 January 14, 2026 3.
+- Ction Use 10.
+- SECTION ΓÇô 21 12 00 FIRE-SUPPRESSION STANDPIPES ADA UPGRADES PACKAGE 6 21 12 00 ΓÇô 3 CONTRACT NOTE: A37806 FINAL SUBMISSION REV 1 January 14, 2026 1.4 SUBMITTALS A.
+- E list of all components, make, manufacturer, telephone number of local vendor H.
+- SECTION ΓÇô 21 12 00 FIRE-SUPPRESSION STANDPIPES ADA UPGRADES PACKAGE 6 21 12 00 ΓÇô 4 CONTRACT NOTE: A37806 FINAL SUBMISSION REV 1 January 14, 2026 THIS SPACE IS LEFT BLANK INTENTIONALLY.
+- Gregate, and four parts of approved coarse aggregate.
+
+Evidence: 21 12 00 - fire-suppression standpipes rev 1 (p. 1, 2, 3).
+
+--- SOURCES ---
+
+- 21 12 00 - Fire-Suppression Standpipes REV 1.pdf
+  pages: 1, 2, 3, 4, 6
+
+--- CITATIONS ---
+
+- 21 12 00 - Fire-Suppression Standpipes REV 1.pdf chunk=2 (p. 1) rel=1.000
+- 21 12 00 - Fire-Suppression Standpipes REV 1.pdf chunk=4 (p. 2) rel=1.000
+- 21 12 00 - Fire-Suppression Standpipes REV 1.pdf chunk=5 (p. 2) rel=1.000
+- 21 12 00 - Fire-Suppression Standpipes REV 1.pdf chunk=6 (p. 3) rel=1.000
+- 21 12 00 - Fire-Suppression Standpipes REV 1.pdf chunk=7 (p. 3) rel=1.000
+- 21 12 00 - Fire-Suppression Standpipes REV 1.pdf chunk=8 (p. 4) rel=1.000
+- 21 12 00 - Fire-Suppression Standpipes REV 1.pdf chunk=12 (p. 6) rel=1.000
+
+--- META --- elapsed=195ms domains=documents cacheHit=false
+
+========================================================================
+[sq89]
+  In BUR-042R01 EDU07 SOGR at Burnside Avenue, what requirements apply to water leaks observed during painting and scraping, and where is lead abatement required?
+========================================================================
+
+--- ANSWER ---
+
+## BUR042R01
+- I found a37806 01 10 20 bur-042r01 - aan -, but I do not have indexed text for a precise answer.
+- Re-run indexing on that file, then ask again.
+
+--- SOURCES ---
+
+- A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) - SOGR at Burnside Avenue.pdf
+
+--- META --- elapsed=178ms domains=documents cacheHit=false
+
+========================================================================
+[sq90]
+  In BUR-042R01 EDU07 SOGR at Burnside Avenue, what are the general structural notes and repair standards for structural steel and reinforced concrete?
+========================================================================
+
+--- ANSWER ---
+
+## BUR042R01
+- I found a37806 01 10 20 bur-042r01 - aan -, but I do not have indexed text for a precise answer.
+- Re-run indexing on that file, then ask again.
+
+--- SOURCES ---
+
+- A37806_01 10 20_BUR-042R01 - AAN - EDU07 - (FINAL 100) - SOGR at Burnside Avenue.pdf
+
+--- META --- elapsed=161ms domains=documents cacheHit=false
+
+========================================================================
+[sq91]
+  In Transmittal 212-NOR for the Norwood Avenue transfer girder inspection, what did AECOM transmit to MLJTC2 Project Manager Ravi Jain on April 17, 2026?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in transmittal 212-nor xfer girder inspection that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- Transmittal 212-NOR Xfer Girder inspection.pdf
+
+--- META --- elapsed=1769ms domains=field_ops, documents cacheHit=false
+{"timestamp":"2026-07-22T21:34:12.167Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents","field_ops"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["documents","field_ops"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"sched_agent","domains":["field_ops"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":376,"retrievalMs":108,"mergeMs":0,"agentMs":660,"totalMs":2522},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq92]
+  In NOR-010R00 Norwood Avenue CCTV Inspection Findings, what NYCT review designation is shown on the cover sheet ΓÇö approval, information only, or designer review?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- The requested document, "NOR-010R00 Norwood Avenue CCTV Inspection Findings," was not found in the retrieved context.
+- Please provide the document or specify its location for review.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_33 14 15_NOR-010R00 - RWNC - Norwood Ave CCTV Inspection Findings 11-20-2025 PMC REVIEW.pdf
+
+--- META --- elapsed=2522ms domains=documents, field_ops cacheHit=false
+{"timestamp":"2026-07-22T21:34:15.672Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents","field_ops"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["documents","field_ops"],"sourceCount":1,"nodeCount":0,"durationMs":0},{"agent":"sched_agent","domains":["field_ops"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":99,"retrievalMs":99,"mergeMs":0,"agentMs":1761,"totalMs":3505},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq93]
+  In NOR-010R00 Norwood Avenue CCTV Inspection Findings, which sewer sections were inspected and what are the NYCDEP pipe inspection IDs for those segments?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- I need the document "NOR-010R00 Norwood Avenue CCTV Inspection Findings" to answer this question.
+- It is not currently in the retrieved context.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_33 14 15_NOR-010R00 - RWNC - Norwood Ave CCTV Inspection Findings 11-20-2025 PMC REVIEW.pdf
+
+--- META --- elapsed=3506ms domains=documents, field_ops cacheHit=false
+
+========================================================================
+[sq94]
+  In the EDU05B Electrical Long Lead submittal for Norwood Avenue Station, what does the AECOM calculation cover page show about the project job number, client, and coordination requirements?
+========================================================================
+
+--- ANSWER ---
+
+## EDU5B
+- I found a37806 01 10 20 myr-082r00 - aean -, but I do not have indexed text for a precise answer.
+- Re-run indexing on that file, then ask again.
+
+--- SOURCES ---
+
+- A37806_01 10 20_MYR-082R00 - AEAN - EDU05B (RFCD) - Long Lead Electrical for Myrtle Avenue.pdf
+
+--- META --- elapsed=202ms domains=documents cacheHit=false
+
+========================================================================
+[sq95]
+  In the EDU05B Electrical Long Lead submittal, what panel and circuit data is shown for spec sections 12 14 10, 25 43 18, and 25 41 18 in the load schedule?
+========================================================================
+
+--- ANSWER ---
+
+## Section 1910.7 Requirements Summary (a37806 01 10 20 gen-038r01 - app -)
+- Reviewed indexed section evidence from page(s): 70, 73, 74, 78.
+- Key requirements captured from the section:
+- These tests shall be made prior to connection to equipment and in the presence of the PCEO.
+- Obtain switchboards through one source from a single manufacturer.
+- ManufacturerΓÇÖs written instructions for testing and adjusting overcurrent protective devices 3.
+- The incoming service, current transformer and main circuit disconnect compartment sections shall be completely isolated from the feeder sections of the switchboard, both in the device section and the cable section of the cubicle.
+- The switchboard including the structural members shall be 10 U.S.S gauge sheet steel and outer coverings shall be fabricated from No.
+- Room where they shall be bolted to the structural channels, assembled and bolted together to form a rigid metal enclosure with the only electrical connection being the incoming main conduit and load feeders or feeder bus and bus splice plates.
+- All bus tap connections and joints shall be tightly clamped with fasteners recommended by the switchboard manufacturer.
+- High-Pressure, Butt-Type Contact Switch.
+
+Evidence: a37806 01 10 20 gen-038r01 - app - (p. 70, 73, 74).
+
+--- SOURCES ---
+
+- A37806_01 10 20_GEN-038R01 - APP - EDU05B-BB - (FINAL-100) - Long Lead Electrical (AVI, NOR).pdf
+  pages: 70, 73, 74, 78
+
+--- CITATIONS ---
+
+- A37806_01 10 20_GEN-038R01 - APP - EDU05B-BB - (FINAL-100) - Long Lead Electrical (AVI, NOR).pdf chunk=137 (p. 70) rel=1.000
+- A37806_01 10 20_GEN-038R01 - APP - EDU05B-BB - (FINAL-100) - Long Lead Electrical (AVI, NOR).pdf chunk=143 (p. 73) rel=1.000
+- A37806_01 10 20_GEN-038R01 - APP - EDU05B-BB - (FINAL-100) - Long Lead Electrical (AVI, NOR).pdf chunk=144 (p. 73) rel=1.000
+- A37806_01 10 20_GEN-038R01 - APP - EDU05B-BB - (FINAL-100) - Long Lead Electrical (AVI, NOR).pdf chunk=145 (p. 73) rel=1.000
+- A37806_01 10 20_GEN-038R01 - APP - EDU05B-BB - (FINAL-100) - Long Lead Electrical (AVI, NOR).pdf chunk=146 (p. 74) rel=1.000
+- A37806_01 10 20_GEN-038R01 - APP - EDU05B-BB - (FINAL-100) - Long Lead Electrical (AVI, NOR).pdf chunk=158 (p. 78) rel=1.000
+
+--- META --- elapsed=441ms domains=documents cacheHit=false
+
+========================================================================
+[sq96]
+  In GEN-014R00 Monthly Quality and Certification Report for May 2025, what construction activities and quality survey items are documented for the Ave I station platform under spec section 01 40 10?
+========================================================================
+
+--- ANSWER ---
+
+## GEN014R00
+- I found a37806 01 40 10 gen-014r00 - orig -, but I do not have indexed text for a precise answer.
+- Re-run indexing on that file, then ask again.
+
+--- SOURCES ---
+
+- A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and Certification Report- May 2025.pdf
+
+--- META --- elapsed=193ms domains=documents cacheHit=false
+{"timestamp":"2026-07-22T21:34:18.522Z","level":"info","event":"chat.coordinator.route_summary","projectId":"145b3dcf-272e-4c45-9e19-953f20f25bb9","domains":["documents"],"sourceCount":1,"nodeCount":0,"estimatedContextTokens":0,"specialistAgents":[{"agent":"doc_agent","domains":["documents"],"sourceCount":1,"nodeCount":0,"durationMs":0}],"contradictions":[],"telemetry":{"routeMs":94,"retrievalMs":93,"mergeMs":1,"agentMs":712,"totalMs":2011},"retrievalPolicy":{"activeDocBoostEnabled":true,"citationFallbackEnabled":true,"strictFactualActiveDocMode":true,"sectionProximityBoostEnabled":true,"strictCitationVerificationEnabled":true,"activeDocBoostApplied":false},"sourcePageProvenance":{"exact":0,"fallback":0,"mixed":0,"none":1},"interpretation":{"intent":"general_qa","confidence":0.55,"source":"fallback","fallbackReason":"no_high_confidence_rule_match"}}
+
+========================================================================
+[sq97]
+  In GEN-014R00 Monthly Quality and Certification Report for May 2025, what is the NYCT/MTA submittal designation ΓÇö information only, approval, or designer review?
+========================================================================
+
+--- ANSWER ---
+
+## Answer
+- The retrieved context does not contain information about the NYCT/MTA submittal designation for GEN-014R00 Monthly Quality and Certification Report for May 2025.
+- **Next step:** Please provide the document "GEN-014R00 Monthly Quality and Certification Report for May 2025" or a relevant submittal log.
+- **Note:** I could not validate direct chunk-level evidence for all factual claims in this response.
+
+--- SOURCES ---
+
+- A37806_01 40 10_GEN-014R00 - ORIG - Monthly Quality and Certification Report- May 2025.pdf
+
+--- META --- elapsed=2012ms domains=documents cacheHit=false
+
+========================================================================
+[sq98]
+  In the PRDC12-019R00 SikaGrout 212 product submittal, what application restrictions and surface preparation requirements apply ΓÇö specifically regarding sun, wind, and substrate conditions?
+========================================================================
+
+--- ANSWER ---
+
+## Section 9.5 Requirements Summary (a37806 prdc12-019r00 - sikagrout 212)
+- Reviewed indexed section evidence from page(s): 16, 17, 18.
+- Key requirements captured from the section:
+- 100ΓÇô124 % 124ΓÇô145 % 20ΓÇô40 sec (ASTM C-14371 ASTM C-9392) Product Temperature 65ΓÇô75 ┬░F (18ΓÇô24 ┬░C) Ambient Air Temperature > 45 ┬░F (7 ┬░C) Substrate Temperature > 45 ┬░F (7 ┬░C) Pot Life ~15 minutes As the temperature will affect the pot life, application temper...
+- Γû¬ APPLICATION Within 15 minutes after mixing, place grout into forms in normal manner to avoid air entrapment.
+- An overlay in unconfined spaces Γû¬ Not to be used as a patch repair Γû¬ Avoid application in direct sun and/or strong wind Γû¬ Apply only to sound, prepared substrate Γû¬ Do not add additional water after application as this may cause cracking Γû¬ Protect freshly ap...
+- NO OTHER WARRANTIES EXPRESS OR IMPLIED SHALL APPLY INCLUDING ANY WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+### 9.5.2. Warranty
+- KEEP OUT OF REACH OF CHILDREN ΓÇó NOT FOR INTERNAL CONSUMPTION ΓÇó FOR INDUSTRIAL USE ONLY ΓÇó FOR PROFESSIONAL USE ONLY Prior to each use of any product of Sika Corporation, its subsidiaries or affiliates (ΓÇ£SIKAΓÇ¥), the user must always read and follow the warnin...
+- Nothing contained in any SIKA literature or materials relieves the user of the obligation to read and follow the warnings and instructions for each SIKA product as set forth in the current product label, Product Data Sheet and Safety Data Sheet prior to use...
+- SIKA warrants this product for one year from date of installation to be free from manufacturing defects and to meet the technical properties on the current Product Data Sheet if used as directed within the productΓÇÖs shelf life.
+- User determines suitability of product for intended use and assumes all risks.
+- UserΓÇÖs and/or buyerΓÇÖs sole remedy shall be limited to the purchase price or replacement of this product exclusive of any labor costs.
+- NO OTHER WARRANTIES EXPRESS OR IMPLIED SHALL APPLY INCLUDING ANY WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+Evidence: a37806 prdc12-019r00 - sikagrout 212 (p. 16, 17, 18).
+
+--- SOURCES ---
+
+- A37806_PRDC12-019R00 - SikaGrout 212.pdf
+  pages: 16, 17, 18
+
+--- CITATIONS ---
+
+- A37806_PRDC12-019R00 - SikaGrout 212.pdf chunk=28 (p. 16) rel=1.000
+- A37806_PRDC12-019R00 - SikaGrout 212.pdf chunk=29 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - SikaGrout 212.pdf chunk=30 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - SikaGrout 212.pdf chunk=31 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - SikaGrout 212.pdf chunk=32 (p. 17) rel=1.000
+- A37806_PRDC12-019R00 - SikaGrout 212.pdf chunk=33 (p. 18) rel=1.000
+
+--- META --- elapsed=265ms domains=documents cacheHit=false
+
+========================================================================
+[sq99]
+  In the PRDC12-019R00 SikaGrout 212 product submittal, is SikaGrout-212 USDA certifiable and what does the product data say about packaging size and ASTM C-827 compliance?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 prdc12-019r00 - app - sikagrout 212 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_PRDC12-019R00 - APP - SikaGrout 212.pdf
+
+--- META --- elapsed=2477ms domains=documents cacheHit=false
+
+========================================================================
+[sq100]
+  In the PRDC12-012R02 Lead Placard Package for Burnside, what containment class and cut-line preparation requirements apply to the lead paint abatement work?
+========================================================================
+
+--- ANSWER ---
+
+## PRDC12012R02
+- I found a37806 prdc12-012r02 - orig - lead placard package-burnside, but I do not have indexed text for a precise answer.
+- Re-run indexing on that file, then ask again.
+
+--- SOURCES ---
+
+- A37806_PRDC12-012R02 - ORIG - Lead Placard Package-Burnside.pdf
+
+--- META --- elapsed=159ms domains=documents cacheHit=false
+
+========================================================================
+[sq101]
+  In PRDC12-012R02 Lead Placard Package for Burnside, what is the lead paint abatement classification, the project description, and the abatement contractor shown on the cover sheet?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 prdc12-012r00 - orig - lead placard package-burnside that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_PRDC12-012R00 - ORIG - Lead Placard Package-Burnside.pdf
+
+--- META --- elapsed=2484ms domains=contracts, documents cacheHit=false
+
+========================================================================
+[sq102]
+  In PRDC12-019R00 SikaGrout 212 product submittal, what are the compressive strength values, flowability, and extended working time listed in the product technical data table?
+========================================================================
+
+--- ANSWER ---
+
+I could not find an exact indexed passage in a37806 prdc12-019r00 - app - sikagrout 212 that answers this question.
+No evidence-backed specification text was verified in the retrieved chunks for this request.
+Refine with a section heading or exact phrase and I will search only this file again.
+
+--- SOURCES ---
+
+- A37806_PRDC12-019R00 - APP - SikaGrout 212.pdf
+
+--- META --- elapsed=2451ms domains=documents cacheHit=false

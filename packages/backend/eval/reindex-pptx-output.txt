@@ -1,0 +1,121 @@
+﻿
+> @contractor/backend@0.0.1 tier2:stream C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-stream-index.ts "--corpus" "C:\\Users\\georg\\Iovino Enterprises, LLC\\MLJ-017 Package 6 - General" "--project-id" "145b3dcf-272e-4c45-9e19-953f20f25bb9" "--reindex-zero-chunks" "--filter-ext" "pptx" "--concurrency" "3"
+
+[stream] corpus:      C:\\Users\\georg\\Iovino Enterprises, LLC\\MLJ-017 Package 6 - General
+[stream] project-id:  145b3dcf-272e-4c45-9e19-953f20f25bb9
+[stream] concurrency: 3
+[stream] --reindex-zero-chunks: ON  (forces v2 extractor; re-processes all 0-chunk files)
+[stream] --filter-ext:          pptx  (only these extensions processed)
+[stream] walking corpus...
+[stream] 139 text-eligible files in scope
+[stream] checking already-indexed...
+[stream] zero-chunk files in DB: 70156 (will be re-attempted with v2 extractor if configured)
+[stream] 54 to index | 15098 already done
+
+{"timestamp":"2026-07-17T02:56:54.801Z","level":"info","event":"construction-classifier.llm.used","fileName":"Myrtle_CommunityBriefing_Presentation_7152025.pptx","category":"meeting_minutes"}
+{"timestamp":"2026-07-17T02:56:55.013Z","level":"info","event":"construction-classifier.llm.used","fileName":"A37806 Org Chart r8 2025-06-25 - Quality.pptx","category":"unknown"}
+{"timestamp":"2026-07-17T02:56:55.161Z","level":"info","event":"construction-classifier.llm.used","fileName":"Myrtle_CommunityBriefing_Presentation_8202025.pptx","category":"meeting_minutes"}
+[w1 1/54] Γ£ô A37806 Org Chart r8 2025-06-25 - Quality.pptx chunks=4
+[w2 2/54] Γ£ô Myrtle_CommunityBriefing_Presentation_7152025.pptx chunks=5
+{"timestamp":"2026-07-17T02:57:03.836Z","level":"info","event":"construction-classifier.llm.used","fileName":"A37806 Stair Talk 05.08.2026 (FINAL).pptx","category":"meeting_minutes"}
+[w3 3/54] Γ£ô Myrtle_CommunityBriefing_Presentation_8202025.pptx chunks=5
+[w1 4/54] Γ£ô A37806 Stair Talk 05.08.2026 (FINAL).pptx chunks=8
+{"timestamp":"2026-07-17T02:57:10.150Z","level":"info","event":"construction-classifier.llm.used","fileName":"A37806 Org Chart r10 2025-09-24 - Quality.pptx","category":"unknown"}
+{"timestamp":"2026-07-17T02:57:10.151Z","level":"info","event":"construction-classifier.llm.used","fileName":"A37806 Org Chart r1 2025-01-02.pptx","category":"unknown"}
+[w3 6/54] Γ£ô A37806 Org Chart r10 2025-09-24 - Quality.pptx chunks=4
+{"timestamp":"2026-07-17T02:57:13.407Z","level":"info","event":"construction-classifier.llm.used","fileName":"A37806 Org Chart r3 2025-01-14.pptx","category":"unknown"}
+[w2 5/54] Γ£ô A37806 Org Chart r1 2025-01-02.pptx chunks=4
+[w1 7/54] Γ£ô A37806 Org Chart r3 2025-01-14.pptx chunks=6
+{"timestamp":"2026-07-17T02:57:25.243Z","level":"info","event":"construction-classifier.llm.used","fileName":"A37806 Org Chart r4 2025-01-28.pptx","category":"unknown"}
+{"timestamp":"2026-07-17T02:57:25.244Z","level":"info","event":"construction-classifier.llm.used","fileName":"A37806 Org Chart r7 2025-02-19 - Quality.pptx","category":"unknown"}
+[w2 9/54] Γ£ô A37806 Org Chart r7 2025-02-19 - Quality.pptx chunks=4
+{"timestamp":"2026-07-17T02:57:28.698Z","level":"info","event":"construction-classifier.llm.used","fileName":"A37806 Org Chart r8 2025-04-09 - Quality.pptx","category":"unknown"}
+[w3 8/54] Γ£ô A37806 Org Chart r4 2025-01-28.pptx chunks=4
+[w1 10/54] Γ£ô A37806 Org Chart r8 2025-04-09 - Quality.pptx chunks=4
+{"timestamp":"2026-07-17T02:57:36.385Z","level":"info","event":"construction-classifier.llm.used","fileName":"A37806 Org Chart r8 2025-06-23 - Quality.pptx","category":"unknown"}
+[w2 11/54] Γ£ô A37806 Org Chart r8 2025-06-23 - Quality.pptx chunks=4
+[w3 12/54] Γ£ô A37806 Burnside Ave DEP Original Concept Presentation 2025-08-04.pptx chunks=3
+[w2 14/54] Γ£ô A37806 (M017) Presentation 09.22.2025_MLJ Financials.pptx chunks=4
+[w1 13/54] Γ£ô A37806 Package 6 Safety Kick-Off Meeting Slides 25.03.21.pptx chunks=13
+[w3 15/54] Γ£ô A37806 Presentation 02-11-2025.pptx chunks=11
+[w3 18/54] Γ£ô A37806 MLJTC2 Pre-Construction Meeting R3.pptx chunks=11
+[w1 17/54] Γ£ô A37806 Pre-Work Conference.pptx chunks=15
+[w2 16/54] Γ£ô A37806 Kick Off Pre-Work Conference MASTER FILE - 2.10.25 - Rev. 3.pptx chunks=18
+[w3 19/54] Γ£ô A37806 MLJTC2 Pre-Construction Meeting.pptx chunks=11
+[w1 20/54] Γ£ô A37135 MLJTC2 Pre-Construction Meeting.pptx chunks=10
+[w2 21/54] Γ£ô A37806 Community and Public Outreach Kickoff Slides Shown.pptx chunks=4
+[w3 22/54] Γ£ô A37806 Community and Public Outreach Kickoff.pptx chunks=7
+[w1 23/54] Γ£ô A37806 Presentation 10.06.2025.pptx chunks=4
+[w2 24/54] Γ£ô A37806 Internal Kickoff 2025-01-13.pptx chunks=9
+[w3 25/54] Γ£ô A37806 CIP Platforms MLJTC2.pptx chunks=3
+
+ΓöÇΓöÇ 25/54 | Γ£ô25 ~0 Γ£ù0 | 0.24 files/s | etaΓëê0.0h ΓöÇΓöÇ
+
+[w1 26/54] Γ£ô Burnside Avenue Briefing Presentation v2.pptx chunks=4
+[w2 27/54] Γ£ô Burnside Avenue Briefing Presentation.pptx chunks=5
+[w3 28/54] Γ£ô A37806 Burnside Ave VECP Presentation.pptx chunks=11
+[w1 29/54] Γ£ô A37806 Burnside Ave VECP Presentation_PMC.pptx chunks=10
+[w3 31/54] Γ£ô A37806 Avenue I Alternate Concept.pptx chunks=7
+[w2 30/54] Γ£ô A37806 Burnside Ave VECP Presentation 2025-05-13.pptx chunks=10
+[w3 33/54] Γ£ô Attachment2.pptx chunks=3
+{"timestamp":"2026-07-17T02:59:03.620Z","level":"info","event":"construction-classifier.llm.used","fileName":"How to Report Payroll via WrapX- slides.pptx","category":"report"}
+[w1 32/54] Γ£ô A37806 (M017) Intern Presentation 07.24.2026.pptx chunks=9
+[w2 34/54] Γ£ô How to Report Payroll via WrapX- slides.pptx chunks=5
+{"timestamp":"2026-07-17T02:59:08.917Z","level":"info","event":"construction-classifier.llm.used","fileName":"Non_Conformance_Overview_Presentation (1).pptx","category":"report"}
+node.exe : {"timestamp":"2026-07-17T02:59:09.283Z","level":"warn","event":"inde
+xing-pipeline.chunk-cap.bypassed","fileName":"NATY SIA Kickoff Deck- Shared .pp
+tx","originalChunkCount":6667,"maxChunks":400,"reason":"preserve_full_file_inde
+x_coverage"}
+At C:\nvm4w\nodejs\pnpm.ps1:16 char:5
++     & "$basedir/node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.cjs"  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ({"timestamp":"2...ndex_coverage"} 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+{"timestamp":"2026-07-17T02:59:10.123Z","level":"warn","event":"indexing.chunks
+.garbage_skipped","fileName":"NATY SIA Kickoff Deck- Shared 
+.pptx","droppedGarbage":6667,"kept":0}
+[w1 36/54] Γ£ô Non_Conformance_Overview_Presentation (1).pptx chunks=3
+{"timestamp":"2026-07-17T02:59:13.814Z","level":"info","event":"construction-classifier.llm.used","fileName":"Elevators 101 - MLJTC2 6-26-26.pptx","category":"training"}
+{"timestamp":"2026-07-17T02:59:13.814Z","level":"info","event":"construction-classifier.llm.used","fileName":"NATY SIA Kickoff Deck- Shared .pptx","category":"unknown"}
+[w2 37/54] Γ£ô Elevators 101 - MLJTC2 6-26-26.pptx chunks=28
+[w3 35/54] Γ£ô NATY SIA Kickoff Deck- Shared .pptx chunks=2
+[w1 38/54] Γ£ô A37806 - Close Out Training.pptx chunks=17
+{"timestamp":"2026-07-17T02:59:22.989Z","level":"info","event":"construction-classifier.llm.used","fileName":"Quality Staff.pptx","category":"meeting_minutes"}
+[w3 40/54] Γ£ô A37806 Package 6 Safety Kick-Off Meeting Slides 032125.pptx chunks=13
+[w2 39/54] Γ£ô Quality Staff.pptx chunks=3
+[w1 41/54] Γ£ô Presentation1.pptx chunks=3
+{"timestamp":"2026-07-17T02:59:35.351Z","level":"info","event":"construction-classifier.llm.used","fileName":"A-37140 - Kings Hwy - Steel Installation Overview.pptx","category":"drawing"}
+[w3 42/54] Γ£ô A-37140 - Kings Hwy - Steel Installation Overview.pptx chunks=3
+[w2 43/54] Γ£ô 1000189246 MNR MLJ Preliminary Schedule Presentatiom.pptx chunks=5
+[w1 44/54] Γ£ô Comissioning KickOff Meeting Presentation REV00 [Master].pptx chunks=11
+[w3 45/54] Γ£ô 01 A37806 Presentation Electrical_20250926-R01.pptx chunks=8
+[w1 47/54] Γ£ô 01 A37806 Presentation Electrical_20250926.pptx chunks=5
+[w2 46/54] Γ£ô 01 A37806 Presentation Electrical_20250926-R02.pptx chunks=7
+[w1 49/54] Γ£ô A37806 Design Org.pptx chunks=3
+[w3 48/54] Γ£ô 01 A37806 Presentation Comm Kick-off 09.16.2025_R2.pptx chunks=5
+[w2 50/54] Γ£ô A37806 Oral Presentation - Final Comm.pptx chunks=7
+
+ΓöÇΓöÇ 50/54 | Γ£ô50 ~0 Γ£ù0 | 0.26 files/s | etaΓëê0.0h ΓöÇΓöÇ
+
+{"timestamp":"2026-07-17T03:00:03.296Z","level":"info","event":"construction-classifier.llm.used","fileName":"Burnside Ave_MR-384.pptx","category":"unknown"}
+[w3 52/54] Γ£ô Burnside Ave_MR-384.pptx chunks=3
+{"timestamp":"2026-07-17T03:00:05.810Z","level":"info","event":"construction-classifier.llm.used","fileName":"A-37806 ADA P6 - Norwood Ave. station - Con Ed service_20250625.pptx","category":"drawing"}
+[w1 51/54] Γ£ô A37806 Presentation Comm Kick-off 09.16.2025_R2.pptx chunks=5
+[w2 53/54] Γ£ô A-37806 ADA P6 - Norwood Ave. station - Con Ed service_20250625.pptx chunks=3
+[w3 54/54] Γ£ô Design, Risk, Schedule Presentation Final.pptx chunks=20
+
+========== STREAM INDEX SUMMARY ==========
+{
+  "projectId": "145b3dcf-272e-4c45-9e19-953f20f25bb9",
+  "shard": "all",
+  "concurrency": 3,
+  "totalTargets": 54,
+  "indexed": 54,
+  "skipped": 0,
+  "errors": 0,
+  "elapsedSeconds": 202.8
+}
+==========================================

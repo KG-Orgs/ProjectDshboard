@@ -1,0 +1,138 @@
+﻿
+> @contractor/backend@0.0.1 tier2:ask-batch C:\Users\georg\ProjectDshboard\packages\backend
+> tsx ./scripts/tier2-ask-batch.ts "--file" ".\\eval\\mlj017-smoke-v2-simple-pkg6gen-batch-input.json" "--ids" "sq04,sq13,sq14,sq15,sq16,sq17"
+
+[tier2:ask-batch] project: 145b3dcf-272e-4c45-9e19-953f20f25bb9
+[tier2:ask-batch] hybrid: true
+[tier2:ask-batch] questions: 6
+
+========================================================================
+[sq04]
+  In the MTACD-MLJTC2-L-0024 sub-contractor approval letter, what subcontractor is approved, what is their contract value, and what scope are they approved to perform?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval Details
+- (p. 1) 50 States Engineering, Corp. is approved as a subcontractor for Land Surveying services, with a subcontract cost of $632,640.00.
+- (p. 1) The subcontractor must enroll in OCIP before starting any work.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0024 Sub-Contractor Approval 50 States Engineering, Corp. $632,640.00.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0024 Sub-Contractor Approval 50 States Engineering, Corp. $632,640.00.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=2741ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq13]
+  In the MTACD-MLJTC2-L-0017 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval Details
+- (p. 1) Approve MASE FX to perform progress photography and video services for $109,450.00, provided they enroll in OCIP.
+
+--- SOURCES ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0017 Subcontractor Approval MASE FX $109,450.00.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-19 MTACD-MLJTC2-L-0017 Subcontractor Approval MASE FX $109,450.00.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=2367ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq14]
+  In the MTACD-MLJTC2-L-0028 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval
+- (p. 1) Approve Titanium Linx Consulting, Inc. as a subcontractor for Public Information & Outreach (labor only) with a cost of $213,840.00.
+- (p. 1) Titanium Linx Consulting, Inc. must enroll in OCIP before starting work.
+
+--- SOURCES ---
+
+- 2025-03-26 MTACD-MLJTC2-L-0028 Sub-Contractor Approval Titanium Linx Consulting, Inc..pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-03-26 MTACD-MLJTC2-L-0028 Sub-Contractor Approval Titanium Linx Consulting, Inc..pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=2258ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq15]
+  In the MTACD-MLJTC2-L-0049 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval Details
+- (p. 1) Approve McVac Environmental Services, Inc. as a subcontractor for vacuum excavation of test pits for subsurface utility engineering, with a subcontract cost of $142,638.73. McVac must enroll in OCIP before starting work.
+
+--- SOURCES ---
+
+- 2025-06-10 MTACD-MLJTC2-L-0049 Sub-Contractor Approval ΓÇô McVac Environmental Services, Inc..pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-06-10 MTACD-MLJTC2-L-0049 Sub-Contractor Approval ΓÇô McVac Environmental Services, Inc..pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=2300ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq16]
+  In the MTACD-MLJTC2-L-0083 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval
+- (p. 1) American Geophysics Inc. is approved as a subcontractor.
+- (p. 1) Their scope of work is underground subsurface investigation (labor only, no material).
+- (p. 1) The subcontract cost is fixed at $5,000.
+
+--- SOURCES ---
+
+- 2025-08-08 MTACD-MLJTC2-L-0083 - Sub-Contractor Approval ΓÇô American Geophysics Inc..pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-08-08 MTACD-MLJTC2-L-0083 - Sub-Contractor Approval ΓÇô American Geophysics Inc..pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=2292ms domains=contracts, subcontractor cacheHit=false
+
+========================================================================
+[sq17]
+  In the MTACD-MLJTC2-L-0093 subcontractor approval letter, what subcontractor is approved, what is their scope of work, and what is their contract value?
+========================================================================
+
+--- ANSWER ---
+
+## Subcontractor Approval Details
+- (p. 1) Tri-State Civil Construction, LLC is approved to furnish and install micropiles for a subcontract cost of $1,134,080.00.
+- (p. 1) Tri-State Civil Construction, LLC must enroll in OCIP and comply with Division 01 Sections 01 35 10 (Safety) and 01 40 00 (Quality) before starting work.
+
+--- SOURCES ---
+
+- 2025-08-25 MTACD-MLJTC2-L-0093 - Sub-Contractor Approval ΓÇô Tri-State Civil Construction LLC.pdf
+  pages: 1
+
+--- CITATIONS ---
+
+- 2025-08-25 MTACD-MLJTC2-L-0093 - Sub-Contractor Approval ΓÇô Tri-State Civil Construction LLC.pdf chunk=2 (p. 1) rel=1.000
+
+--- META --- elapsed=2321ms domains=contracts, subcontractor cacheHit=false

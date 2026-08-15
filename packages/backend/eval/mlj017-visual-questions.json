@@ -1,0 +1,102 @@
+{
+  "_comment": "Visual-heavy subset for the visual evidence fallback (Prompt 2). Every question here asks for something that lives on the page as a mark, a dimension, a photograph, or a layout rather than in extracted text. Ids sqNN are the same ids as mlj017-adjusted-v2-batch-input.json so results are directly comparable against a text-only run; vfNN ids are new cases that target a specific visual task type.",
+  "projectId": "145b3dcf-272e-4c45-9e19-953f20f25bb9",
+  "questions": [
+    {
+      "id": "sq54",
+      "_case": "photo — visible safety measures and signage",
+      "query": "In BUR-081R00 January 2026 Construction Photos, what safety measures and MPT signage are visible in the January 20, 2026 photos?"
+    },
+    {
+      "id": "sq55",
+      "_case": "photo — documented excavation work",
+      "query": "In BUR-081R00 January 2026 Construction Photos, what excavation or foundation work is documented at the Burnside Avenue northbound side?"
+    },
+    {
+      "id": "sq56",
+      "_case": "photo — site conditions shown",
+      "query": "In BUR-080R00 Burnside December 2025 Construction Photos, on what dates were the photos taken and what site conditions are shown?"
+    },
+    {
+      "id": "sq57",
+      "_case": "photo — staging areas and deliveries",
+      "query": "In BUR-080R00 Burnside December 2025 Construction Photos, what staging areas and material deliveries are documented?"
+    },
+    {
+      "id": "sq58",
+      "_case": "photo — elevator/stair progress shown",
+      "query": "In MYR-076R00 Myrtle December 2025 Construction Photos, what elevator or stair construction progress is shown at Myrtle Avenue station?"
+    },
+    {
+      "id": "sq72",
+      "_case": "drawing — dimensions and mounting details",
+      "query": "In drawing MYR-A-444A, what dimensions and mounting details are shown for the EL1121/EL1122 elevator enclosure panels at Myrtle Avenue station?",
+      "activeDocFileName": "MYR-A-444A.pdf"
+    },
+    {
+      "id": "sq23",
+      "_case": "drawing — members and connection details shown",
+      "query": "In BUR-001R00 Burnside Avenue Staircase Enclosure Shop Drawings, what structural steel members and connection details are shown for the staircase enclosure?",
+      "activeDocFileName": "A37806_08 45 25_BUR-001R00 - FIO - Burnside Ave Staircase Enclosure Shop Drawings.pdf"
+    },
+    {
+      "id": "sq20",
+      "_case": "drawing — cab dimensions and finishes",
+      "query": "In BUR-009R00 for the EL539 Burnside elevator cab and entrance drawings, what cab dimensions and finish materials are specified?"
+    },
+    {
+      "id": "sq19",
+      "_case": "title block — revision history and approval dates",
+      "query": "In the AVI-002 Ave I North Foundation Rebar Shop Drawings, what revision history and approval dates are recorded in the title block?"
+    },
+    {
+      "id": "sq25",
+      "_case": "title block / stamp — reviewer disposition",
+      "query": "In GEN-001R02 Elevator Walls Formwork Drawing, what was the AE reviewer's final disposition and were any comments issued?"
+    },
+    {
+      "id": "sq68",
+      "_case": "drawing — dimensions noted at stationing",
+      "query": "In RFI098 for the Ave I Conductor Board, what track and platform dimensions are noted around Station 489+00 to 490+00?"
+    },
+    {
+      "id": "sq70",
+      "_case": "drawing/markup — field condition that prompted the RFI",
+      "query": "In A37806 RFI096, what dimensional discrepancy or field condition prompted the RFI at the McDonald Avenue station?",
+      "activeDocFileName": "A37806_ADA P6_RFI096.pdf"
+    },
+    {
+      "id": "vf01",
+      "_case": "checkbox — which submittal designation is selected (the flagship lost-visual-state case)",
+      "query": "In the MTACD-MLJTC2-L-0024 letter, which submittal designation checkbox is selected?"
+    },
+    {
+      "id": "vf02",
+      "_case": "checkbox — printed options vs the marked one",
+      "query": "In Transmittal 0014 for MTA Personnel and PMC Supplies, which review/approval designation is marked on the transmittal?",
+      "activeDocFileName": "A37806 Transmittal 0014 -  MTA Personnel and PMC Supplies.pdf"
+    },
+    {
+      "id": "vf03",
+      "_case": "signature — is a signature visibly present",
+      "query": "In the MTACD-MLJTC2-L-0024 sub-contractor approval letter, is a signature visible on the letter and what printed name and title appear beside it?"
+    },
+    {
+      "id": "vf04",
+      "_case": "title block — sheet number and revision read visually",
+      "query": "What sheet number and revision are shown in the title block of drawing MYR-A-444A?",
+      "activeDocFileName": "MYR-A-444A.pdf"
+    },
+    {
+      "id": "vf05",
+      "_case": "negative control — a plain text lookup that must NOT trigger vision",
+      "query": "In the MTACD-MLJTC2-L-0017 subcontractor approval letter, on what date was MASE FX approved?"
+    },
+    {
+      "id": "vf06",
+      "_case": "negative control — a specification text question that must NOT trigger vision",
+      "query": "In the AVI-002 Ave I North Foundation Rebar Shop Drawings, what concrete cover requirements are specified for surfaces exposed to earth or weather?",
+      "activeDocFileName": "A37806_03 20 00_AVI-002R02 - FIO - Ave I North Foundation Rebar Shop Drawings.pdf"
+    }
+  ]
+}
