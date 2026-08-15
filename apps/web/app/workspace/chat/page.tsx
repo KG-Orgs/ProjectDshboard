@@ -6,20 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  ArrowLeft,
-  Bot,
-  FileText,
-  PanelLeft,
-  Plus,
-  Search,
-  Send,
-  Sparkles,
-  X,
-} from 'lucide-react';
-import { useAuthStore } from '@contractor/shared';
-import ConversationSidebar from './ConversationSidebar';
-import FileTree, { type WsFile } from './FileTree';
+import { MarkdownLink } from './MarkdownLink';
 import { useConversationStore } from './useConversationStore';
 import './workspace.css';
 
@@ -55,17 +42,6 @@ interface ChatMessage {
   references?: ChatReference[];
   suggestions?: string[];
   isStreaming?: boolean;
-  agentActions?: AgentAction[];
-}
-
-/** Locally-typed agent action — mirrors @contractor/shared AgentAction */
-interface AgentAction {
-  id: string;
-  tool: string;
-  fileId: string;
-  params: Record<string, unknown>;
-  description: string;
-  applied?: boolean;
 }
 
 interface ChatSessionRecord {
@@ -98,7 +74,6 @@ interface SendChatMessageResponse {
   sources?: ChatSource[];
   suggestions?: string[];
   autoOpenFileName?: string;
-  agentActions?: AgentAction[];
 }
 
 interface ProjectFilesListResponse {
@@ -113,6 +88,25 @@ interface ProjectsListResponse {
     id: string;
     name: string;
   }>;
+}
+
+interface DocumentDetailChunk {
+  chunkIndex: number;
+  chunkText: string;
+  pageNumber?: number;
+}
+
+interface DocumentDetailResponse {
+  fileId: string;
+  fileName: string;
+  chunks: DocumentDetailChunk[];
+}
+
+interface ViewerSearchHit {
+  id: string;
+  chunkIndex: number;
+  pageNumber?: number;
+  excerpt: string;
 }
 
 interface PdfCitationRequest {
@@ -187,24 +181,11 @@ const DOC_LIBRARY: WorkspaceDoc[] = [
   },
 ];
 
-interface SuggestedPrompt {
-  label: string;
-  message: string;
-}
-
-// Shown when no file is open in the document viewer
-const NO_FILE_PROMPTS: SuggestedPrompt[] = [
-  { label: 'View Open Issues Matrix', message: 'View Open Issues Matrix' },
-  { label: 'Review Latest Schedule Update', message: 'Review Latest Schedule Update' },
-  { label: 'View Latest Cost Report', message: 'View Latest Cost Report' },
-  { label: 'Create a Submittal Cover Page', message: 'Create a Submittal Cover Page' },
-];
-
-// Shown when a file is open in the document viewer
-const FILE_OPEN_PROMPTS: SuggestedPrompt[] = [
-  { label: 'Summarize This File', message: 'Summarize this file' },
-  { label: 'Ask Questions About This File', message: 'I would like to ask questions about this file' },
-  { label: 'Make Edits to This File', message: 'I would like to make edits to this file' },
+const SUGGESTED_PROMPTS = [
+  'Open structural-report.pdf and summarize page 12',
+  'Compare cost-tracker.xlsx with contract-scope.docx for overruns',
+  'List unresolved risks in site-notes.txt',
+  'Open crane-inspection.jpg and draft a safety observation',
 ];
 
 function uid(prefix: string): string {
@@ -273,6 +254,42 @@ function createDocFromFileName(
   };
 }
 
+function highlightText(content: string, query: string): Array<string | JSX.Element> {
+  if (!query.trim()) {
+    return [content];
+  }
+
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'ig');
+  const parts = content.split(regex);
+
+  return parts.map((part, idx) =>
+    idx % 2 === 1 ? (
+      <mark key={`hit-${idx}`} className="rounded bg-yellow-300 px-0.5 font-semibold text-slate-950">
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
+}
+
+function buildChunkExcerpt(text: string, query: string): string {
+  const normalizedQuery = query.trim().toLowerCase();
+  const normalizedText = text.toLowerCase();
+  const matchIndex = normalizedText.indexOf(normalizedQuery);
+
+  if (matchIndex === -1) {
+    return text.slice(0, 180).trim();
+  }
+
+  const start = Math.max(0, matchIndex - 60);
+  const end = Math.min(text.length, matchIndex + normalizedQuery.length + 90);
+  const prefix = start > 0 ? "..." : "";
+  const suffix = end < text.length ? "..." : "";
+  return `${prefix}${text.slice(start, end).replace(/\s+/g, " ").trim()}${suffix}`;
+}
+
 function extractNodeText(node: ReactNode): string {
   if (typeof node === 'string' || typeof node === 'number') {
     return String(node);
@@ -334,10 +351,94 @@ function CodeBlock({ code }: { code: string }) {
   );
 }
 
+// --- File explorer types & helpers -------------------------------------------
+
+interface WsFile {
+  id: string;
+  fileName: string;
+  filePath: string;
+  indexStatus: string;
+}
+
+interface FolderNode {
+  path: string;
+  name: string;
+  files: WsFile[];
+}
+
+function getFileIcon(fileName: string): string {
+  const ext = fileName.toLowerCase().split('.').pop() ?? '';
+  if (ext === 'pdf') return '[PDF]';
+  if (['doc', 'docx'].includes(ext)) return '[DOC]';
+  if (['xls', 'xlsx', 'csv'].includes(ext)) return '[XLS]';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '[IMG]';
+  if (['dwg', 'dxf'].includes(ext)) return '[DWG]';
+  if (['mpp'].includes(ext)) return '[SCH]';
+  if (['rfi'].includes(ext) || fileName.toLowerCase().includes('rfi')) return '[RFI]';
+  return '[DOC]';
+}
+
+function buildFolderTree(files: WsFile[]): FolderNode[] {
+  const map = new Map<string, WsFile[]>();
+  for (const file of files) {
+    const parts = file.filePath.replace(/\\/g, '/').split('/');
+    parts.pop();
+    const folder = parts.filter(Boolean).join('/') || 'Project Files';
+    if (!map.has(folder)) map.set(folder, []);
+    map.get(folder)!.push(file);
+  }
+  return Array.from(map.entries()).map(([path, nodeFiles]) => ({
+    path,
+    name: path.split('/').filter(Boolean).pop() ?? path,
+    files: nodeFiles,
+  }));
+}
+
+interface FolderSectionProps {
+  folder: FolderNode;
+  isExpanded: boolean;
+  activeFileId: string | undefined;
+  onToggle: () => void;
+  onFileClick: (file: WsFile) => void;
+}
+
+function FolderSection({ folder, isExpanded, activeFileId, onToggle, onFileClick }: FolderSectionProps) {
+  return (
+    <div>
+      <button type="button" className="folder-header-btn" onClick={onToggle}>
+        <span className={`folder-chevron ${isExpanded ? 'open' : ''}`}>&rsaquo;</span>
+        <span>[DIR]</span>
+        <span className="file-name-text">{folder.name}</span>
+        <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#9ca3af', flexShrink: 0, paddingLeft: '4px' }}>
+          {folder.files.length}
+        </span>
+      </button>
+      {isExpanded ? (
+        <div>
+          {folder.files.map((file) => (
+            <button
+              key={file.id}
+              type="button"
+              className={`file-row-btn ${activeFileId === file.id ? 'active' : ''}`}
+              onClick={() => onFileClick(file)}
+              title={file.fileName}
+            >
+              <span style={{ flexShrink: 0 }}>{getFileIcon(file.fileName)}</span>
+              <span className="file-name-text">{file.fileName}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+
+
+
 function ChatWorkspacePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuthStore();
   const queryProjectId = searchParams?.get('projectId') ?? null;
   const [inferredProjectId, setInferredProjectId] = useState<string | null>(null);
   const projectId = queryProjectId ?? inferredProjectId;
@@ -348,6 +449,10 @@ function ChatWorkspacePageContent() {
   const [openDocs, setOpenDocs] = useState<WorkspaceDoc[]>([]);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [viewerLoading, setViewerLoading] = useState(false);
+  const [viewerSearchResults, setViewerSearchResults] = useState<ViewerSearchHit[]>([]);
+  const [viewerSearchError, setViewerSearchError] = useState<string | null>(null);
+  const [viewerSearchBusy, setViewerSearchBusy] = useState(false);
+  const [viewerSearchAppliedTerm, setViewerSearchAppliedTerm] = useState('');
   const [activePdfPage, setActivePdfPage] = useState<number | undefined>(undefined);
   // Tracks the page currently visible in the viewer (scroll-driven). Never fed back into targetPage.
   const [displayedPdfPage, setDisplayedPdfPage] = useState<number | undefined>(undefined);
@@ -366,43 +471,31 @@ function ChatWorkspacePageContent() {
     createSession: storeCreateSession,
     setActiveSession: storeSetActiveSession,
     fetchSessions: storeFetchSessions,
-    deleteSession: storeDeleteSession,
-    activeSessionId: storeActiveSessionId,
   } = useConversationStore();
 
-  const [fileSearch, setFileSearch] = useState('');
+  const [workspaceSearch, setWorkspaceSearch] = useState('');
 
   // -- File explorer state ----------------------------------------------------
   const [wsFiles, setWsFiles] = useState<WsFile[]>([]);
   const [wsFilesLoading, setWsFilesLoading] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-
-  const userInitials = useMemo(() => {
-    const source = user?.name?.trim() || user?.email || 'U';
-    const parts = source.split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) {
-      return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
-    }
-    return source.slice(0, 2).toUpperCase();
-  }, [user?.email, user?.name]);
+  const [fileSearch, setFileSearch] = useState('');
 
   // -- Panel widths (px) ------------------------------------------------------
-  const [leftPanelWidth, setLeftPanelWidth] = useState(220);
-  const [rightPanelWidth, setRightPanelWidth] = useState(560);
-  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(true);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(248);
+  const [rightPanelWidth, setRightPanelWidth] = useState(380);
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [isDraggingRight, setIsDraggingRight] = useState(false);
   const [projectDisplayName, setProjectDisplayName] = useState<string>('');
 
   const panelRootRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const viewerSearchInputRef = useRef<HTMLInputElement | null>(null);
   const promptInputRef = useRef<HTMLTextAreaElement | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
-  const projectDisplayNameRef = useRef('');
-
-  useEffect(() => {
-    projectDisplayNameRef.current = projectDisplayName;
-  }, [projectDisplayName]);
+  const docDetailCacheRef = useRef<Map<string, DocumentDetailResponse>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -432,7 +525,7 @@ function ChatWorkspacePageContent() {
           }
 
           setInferredProjectId(fallbackProjectId);
-          if (!projectDisplayNameRef.current) {
+          if (!projectDisplayName) {
             setProjectDisplayName(projectList[0]?.name ?? '');
           }
           router.replace(`/workspace/chat?projectId=${encodeURIComponent(fallbackProjectId)}`);
@@ -449,14 +542,12 @@ function ChatWorkspacePageContent() {
     return () => {
       cancelled = true;
     };
-  }, [projectId, queryProjectId, router]);
+  }, [projectId, projectDisplayName, queryProjectId, router]);
 
   const activeDoc = useMemo(
     () => openDocs.find((doc) => doc.id === activeDocId) ?? null,
     [openDocs, activeDocId]
   );
-
-  const contextualPrompts = activeDoc ? FILE_OPEN_PROMPTS : NO_FILE_PROMPTS;
 
   const openDoc = useCallback((doc: WorkspaceDoc) => {
     const existingMatch = openDocs.find(
@@ -508,6 +599,109 @@ function ChatWorkspacePageContent() {
 
     setActivePdfPage((current) => (current === page ? current : page));
   }, []);
+
+  const runViewerSearch = useCallback(async (rawTerm?: string) => {
+    const term = (rawTerm ?? viewerSearchInputRef.current?.value ?? '').trim();
+    if (!term) {
+      setViewerSearchAppliedTerm('');
+      setViewerSearchResults([]);
+      setViewerSearchError(null);
+      return;
+    }
+
+    if (!activeDoc) {
+      setViewerSearchResults([]);
+      setViewerSearchError('Open a document first, then run search.');
+      return;
+    }
+
+    setViewerSearchBusy(true);
+    setViewerSearchAppliedTerm(term);
+    setViewerSearchError(null);
+
+    try {
+      if (activeDoc.kind === 'txt') {
+        const text = activeDoc.text ?? '';
+        const lowered = text.toLowerCase();
+        const loweredTerm = term.toLowerCase();
+        const hits: ViewerSearchHit[] = [];
+        let cursor = 0;
+
+        while (cursor < lowered.length && hits.length < 25) {
+          const next = lowered.indexOf(loweredTerm, cursor);
+          if (next === -1) {
+            break;
+          }
+          const start = Math.max(0, next - 60);
+          const end = Math.min(text.length, next + loweredTerm.length + 90);
+          const excerpt = `${start > 0 ? '...' : ''}${text.slice(start, end).replace(/\s+/g, ' ').trim()}${end < text.length ? '...' : ''}`;
+          hits.push({
+            id: `txt-hit-${next}`,
+            chunkIndex: hits.length + 1,
+            excerpt,
+          });
+          cursor = next + loweredTerm.length;
+        }
+
+        setViewerSearchResults(hits);
+        if (hits.length === 0) {
+          setViewerSearchError(`No matches found for "${term}" in this document.`);
+        }
+        return;
+      }
+
+      if (!activeDoc.fileId || !projectId) {
+        setViewerSearchResults([]);
+        setViewerSearchError('Indexed search is unavailable for this document.');
+        return;
+      }
+
+      const activeFileId = activeDoc.fileId;
+
+      const cached = docDetailCacheRef.current.get(activeFileId);
+      const detail = cached
+        ? cached
+        : await (async () => {
+            const response = await fetch(
+              `/api/files/${encodeURIComponent(activeFileId)}?projectId=${encodeURIComponent(projectId)}`,
+              { method: 'GET', cache: 'no-store' }
+            );
+
+            if (!response.ok) {
+              throw new Error(`Document search failed (${response.status}).`);
+            }
+
+            const payload = (await response.json()) as DocumentDetailResponse;
+            docDetailCacheRef.current.set(activeFileId, payload);
+            return payload;
+          })();
+      const loweredTerm = term.toLowerCase();
+      const hits = (detail.chunks ?? [])
+        .filter((chunk) => chunk.chunkText.toLowerCase().includes(loweredTerm))
+        .slice(0, 25)
+        .map((chunk) => ({
+          id: `${chunk.chunkIndex}-${chunk.pageNumber ?? 'na'}`,
+          chunkIndex: chunk.chunkIndex,
+          pageNumber: chunk.pageNumber,
+          excerpt: buildChunkExcerpt(chunk.chunkText, term),
+        }));
+
+      setViewerSearchResults(hits);
+      if (hits.length === 0) {
+        setViewerSearchError(`No matches found for "${term}" in indexed text.`);
+      }
+
+      const firstPageHit = hits.find((hit) => typeof hit.pageNumber === 'number');
+      if (firstPageHit && activeDoc.kind === 'pdf') {
+        jumpToPdfPage(firstPageHit.pageNumber);
+      }
+    } catch (error) {
+      setViewerSearchResults([]);
+      setViewerSearchError(error instanceof Error ? error.message : 'Search failed.');
+    } finally {
+      setViewerSearchBusy(false);
+    }
+  }, [activeDoc, jumpToPdfPage, projectId]);
 
   const resolveProjectFileIdByName = useCallback(async (fileName: string): Promise<string | undefined> => {
     if (!projectId) {
@@ -863,32 +1057,7 @@ function ChatWorkspacePageContent() {
     }
   }, [projectId, storeCreateSession, storeSetActiveSession]);
 
-  const handleSessionSelect = useCallback(
-    (sessionId: string) => {
-      void loadSessionHistory(sessionId);
-    },
-    [loadSessionHistory]
-  );
-
-  const handleSessionDelete = useCallback(
-    async (sessionId: string) => {
-      if (!window.confirm('Delete this conversation? This cannot be undone.')) {
-        return;
-      }
-
-      await storeDeleteSession(sessionId);
-
-      if (chatSessionId === sessionId) {
-        setChatSessionId(null);
-        storeSetActiveSession(null);
-        setMessages([]);
-        setChatError(null);
-      }
-    },
-    [chatSessionId, storeDeleteSession, storeSetActiveSession]
-  );
-
-  const streamAssistantMessage = useCallback(async (fullText: string, references: ChatReference[], suggestions?: string[], agentActions?: AgentAction[]) => {
+  const streamAssistantMessage = useCallback(async (fullText: string, references: ChatReference[], suggestions?: string[]) => {
     setMessages((current) => [
       ...current,
       {
@@ -897,7 +1066,6 @@ function ChatWorkspacePageContent() {
         content: fullText,
         references,
         suggestions,
-        agentActions,
         isStreaming: false,
       },
     ]);
@@ -991,18 +1159,20 @@ function ChatWorkspacePageContent() {
       }
       const references = Array.from(referencesMap.values());
 
-      // Show the answer immediately; don't block on PDF preview resolution.
-      setIsTyping(false);
-      await streamAssistantMessage(responseText, references, payload.suggestions, payload.agentActions);
-
+      // The primary source's best page (from AI citation evidence)
       const primaryBestPage = references[0]?.bestPage ?? references[0]?.suggestedPages?.[0];
-      const shouldAutoOpen = wantsOpen || (!activeDoc && references.length > 0);
 
+      // Auto-open best source if open intent or no doc is open
+      const shouldAutoOpen = wantsOpen || (!activeDoc && references.length > 0);
       if (shouldAutoOpen && references.length > 0) {
-        void openOrCreateDoc(references[0].fileName, requestedPage ?? primaryBestPage, references[0].fileId);
+        await openOrCreateDoc(references[0].fileName, requestedPage ?? primaryBestPage, references[0].fileId);
       } else if (payload.autoOpenFileName && !wantsOpen && references.length > 0) {
-        void openOrCreateDoc(references[0].fileName, primaryBestPage, references[0].fileId);
-      } else if (
+        // Proactively open the top source when AI finds strong evidence.
+        await openOrCreateDoc(references[0].fileName, primaryBestPage, references[0].fileId);
+      }
+
+      // If the active doc is already open and the AI cited a specific page, jump to it.
+      if (
         !shouldAutoOpen &&
         primaryBestPage &&
         activeDoc?.kind === 'pdf' &&
@@ -1012,6 +1182,9 @@ function ChatWorkspacePageContent() {
       ) {
         jumpToPdfPage(primaryBestPage);
       }
+
+      setIsTyping(false);
+      await streamAssistantMessage(responseText, references, payload.suggestions);
     } catch (error) {
       setIsTyping(false);
       setChatError(error instanceof Error ? error.message : 'AI chat request failed.');
@@ -1032,6 +1205,11 @@ function ChatWorkspacePageContent() {
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault();
         void handleSendPrompt();
@@ -1045,6 +1223,15 @@ function ChatWorkspacePageContent() {
     };
   }, [handleSendPrompt]);
 
+  const filteredLibrary = useMemo(() => {
+    if (!workspaceSearch.trim()) {
+      return DOC_LIBRARY;
+    }
+
+    const lowered = workspaceSearch.toLowerCase();
+    return DOC_LIBRARY.filter((doc) => doc.title.toLowerCase().includes(lowered));
+  }, [workspaceSearch]);
+
   // -- Fetch project files for the left panel explorer -----------------------
   useEffect(() => {
     if (!projectId) {
@@ -1055,12 +1242,17 @@ function ChatWorkspacePageContent() {
     let cancelled = false;
     setWsFilesLoading(true);
 
-    fetch(`/api/projects/${encodeURIComponent(projectId)}/files?page=1&pageSize=10000`, { cache: 'no-store' })
+    fetch(`/api/projects/${encodeURIComponent(projectId)}/files?page=1&pageSize=300`, { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
       .then((data: { files: WsFile[] }) => {
         if (cancelled) return;
         const files = data.files ?? [];
         setWsFiles(files);
+        // Auto-expand first folder
+        const tree = buildFolderTree(files);
+        if (tree[0]) {
+          setExpandedFolders(new Set([tree[0].path]));
+        }
       })
       .catch(() => { if (!cancelled) setWsFiles([]); })
       .finally(() => { if (!cancelled) setWsFilesLoading(false); });
@@ -1068,14 +1260,11 @@ function ChatWorkspacePageContent() {
     return () => { cancelled = true; };
   }, [projectId]);
 
-  const explorerFiles = useMemo(() => {
-    const query = fileSearch.trim().toLowerCase();
-    if (!query) return wsFiles;
-    return wsFiles.filter(
-      (file) =>
-        file.fileName.toLowerCase().includes(query) ||
-        file.filePath.toLowerCase().includes(query)
-    );
+  const folderTree = useMemo(() => {
+    const filtered = fileSearch.trim()
+      ? wsFiles.filter((f) => f.fileName.toLowerCase().includes(fileSearch.toLowerCase()))
+      : wsFiles;
+    return buildFolderTree(filtered);
   }, [wsFiles, fileSearch]);
 
   const handleExplorerFileClick = useCallback(
@@ -1087,12 +1276,19 @@ function ChatWorkspacePageContent() {
 
   useEffect(() => {
     window.openPdfCitation = async (args: OpenPdfCitationArgs) => {
-      const candidate = wsFiles.find((file) => file.id === args.fileId);
-      if (!candidate) {
+      // The explorer list is paged, so fall back to the file names carried on the
+      // answers themselves before giving up on a cited file.
+      const fileName =
+        wsFiles.find((file) => file.id === args.fileId)?.fileName ??
+        messages
+          .flatMap((message) => message.references ?? [])
+          .find((reference) => reference.fileId === args.fileId)?.fileName;
+
+      if (!fileName) {
         return;
       }
 
-      await openOrCreateDoc(candidate.fileName, args.pageNumber, args.fileId);
+      await openOrCreateDoc(fileName, args.pageNumber, args.fileId);
       setCitationRequest({
         fileId: args.fileId,
         pageNumber: args.pageNumber,
@@ -1107,7 +1303,7 @@ function ChatWorkspacePageContent() {
         delete window.openPdfCitation;
       }
     };
-  }, [openOrCreateDoc, wsFiles]);
+  }, [messages, openOrCreateDoc, wsFiles]);
 
   const toggleFolder = useCallback((path: string) => {
     setExpandedFolders((prev) => {
@@ -1199,6 +1395,7 @@ function ChatWorkspacePageContent() {
           }}
           onVisiblePageChange={(page) => {
             setDisplayedPdfPage(page);
+            setActivePdfPage(page);
           }}
         />
       );
@@ -1206,8 +1403,8 @@ function ChatWorkspacePageContent() {
 
     if (activeDoc.kind === 'txt') {
       return (
-        <div style={{ height: '100%', overflow: 'auto', padding: '16px', fontFamily: 'Consolas, monospace', fontSize: '13px', lineHeight: '1.7', color: '#374151', background: '#fafafa' }}>
-          {activeDoc.text ?? 'No text available.'}
+        <div style={{ height: '100%', overflow: 'auto', padding: '16px', fontFamily: 'Consolas, monospace', fontSize: '13px', lineHeight: '1.7', color: '#374151', background: '#fafafa', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+          {highlightText(activeDoc.text ?? 'No text available.', viewerSearchAppliedTerm)}
         </div>
       );
     }
@@ -1262,6 +1459,7 @@ function ChatWorkspacePageContent() {
     strong({ children }: { children?: ReactNode }) {
       return <strong style={{ fontWeight: 600, color: '#111827' }}>{children}</strong>;
     },
+    a: MarkdownLink,
     code({ className, children }: { className?: string; children?: ReactNode }) {
       const codeText = String(children).replace(/\n$/, '');
       if (className && className.includes('language-')) {
@@ -1271,57 +1469,6 @@ function ChatWorkspacePageContent() {
     },
   }), []);
 
-  const applyAgentAction = useCallback(async (action: AgentAction, messageId: string) => {
-    if (!projectId) return;
-    try {
-      let url: string;
-      let method = 'POST';
-      const base = `/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(action.fileId)}`;
-      if (action.tool === 'add_pdf_markup') {
-        url = `${base}/markups`;
-      } else if (action.tool === 'update_pdf_markup') {
-        const markupId = (action.params as { markupId?: string }).markupId;
-        if (!markupId) return;
-        url = `${base}/markups/${encodeURIComponent(markupId)}`;
-        method = 'PATCH';
-      } else if (action.tool === 'delete_pdf_markup') {
-        const markupId = (action.params as { markupId?: string }).markupId;
-        if (!markupId) return;
-        url = `${base}/markups/${encodeURIComponent(markupId)}`;
-        method = 'DELETE';
-      } else if (action.tool === 'edit_excel_cells') {
-        url = `${base}/excel-edit`;
-      } else {
-        return;
-      }
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(action.params),
-      });
-      if (!res.ok) return;
-      // Mark the action as applied in message state
-      setMessages((curr) =>
-        curr.map((m) =>
-          m.id === messageId
-            ? {
-                ...m,
-                agentActions: m.agentActions?.map((a) =>
-                  a.id === action.id ? { ...a, applied: true } : a
-                ),
-              }
-            : m
-        )
-      );
-      // Tell any open PDF viewer to re-fetch its markups
-      window.dispatchEvent(
-        new CustomEvent('pdf-markups-updated', { detail: { fileId: action.fileId } })
-      );
-    } catch {
-      // Silently ignore — the user can retry by clicking Apply again
-    }
-  }, [projectId]);
-
   const renderedChatMessages = useMemo(() => messages.map((message) => {
     const isAssistant = message.role === 'assistant';
     return (
@@ -1329,25 +1476,19 @@ function ChatWorkspacePageContent() {
         key={message.id}
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-        className={`chat-message-row ${isAssistant ? 'chat-message-row-assistant' : 'chat-message-row-user'}`}
+        style={{ display: 'flex', justifyContent: isAssistant ? 'flex-start' : 'flex-end' }}
       >
-        {isAssistant ? (
-          <div className="chat-avatar chat-avatar-assistant" aria-hidden>
-            <Bot size={16} />
-          </div>
-        ) : null}
         <div className={isAssistant ? 'chat-bubble-assistant' : 'chat-bubble-user'}>
           {isAssistant ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
               {sanitizeAssistantMarkdown(message.content)}
             </ReactMarkdown>
           ) : (
-            <p className="chat-user-text">{message.content}</p>
+            <p style={{ whiteSpace: 'pre-wrap', fontSize: '13.5px', lineHeight: '1.55', margin: 0 }}>{message.content}</p>
           )}
 
           {message.references?.length ? (
-            <div className="chat-references">
+            <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {message.references.map((reference) => (
                 <button
                   key={`${message.id}-${reference.fileId ?? reference.fileName}`}
@@ -1362,8 +1503,7 @@ function ChatWorkspacePageContent() {
                     );
                   }}
                 >
-                  <FileText size={12} aria-hidden />
-                  <span>{reference.displayName ?? reference.fileName}</span>
+                  [DOC] {reference.displayName ?? reference.fileName}
                   {reference.pageOrigin === 'exact' && reference.suggestedPages && reference.suggestedPages.length > 0
                     ? ` · p. ${reference.suggestedPages.join(', ')}`
                     : ''}
@@ -1373,9 +1513,9 @@ function ChatWorkspacePageContent() {
           ) : null}
 
           {!message.isStreaming && message.suggestions?.length ? (
-            <div className="chat-suggestions">
-              <p className="chat-suggestions-label">Follow-up</p>
-              <div className="chat-suggestions-list">
+            <div style={{ marginTop: '10px', borderTop: '1px solid #e5e7eb', paddingTop: '10px' }}>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9ca3af', marginBottom: '6px' }}>Follow-up</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {message.suggestions.map((suggestion) => (
                   <button
                     key={`${message.id}-sug-${suggestion}`}
@@ -1390,87 +1530,56 @@ function ChatWorkspacePageContent() {
             </div>
           ) : null}
 
-          {!message.isStreaming && message.agentActions?.length ? (
-            <div className="agent-actions">
-              <p className="agent-actions-label">Proposed action</p>
-              {message.agentActions.map((action) => (
-                <div key={action.id} className="agent-action-chip">
-                  <span className="agent-action-description">{action.description}</span>
-                  {action.applied ? (
-                    <span className="agent-action-applied">Applied ✓</span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="agent-action-btn agent-action-btn--apply"
-                      onClick={() => void applyAgentAction(action, message.id)}
-                    >
-                      Apply
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : null}
-
           {message.isStreaming ? (
-            <span className="chat-streaming-dot" aria-label="Streaming response" />
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#0078d4', marginTop: '6px', animation: 'pulse 1s infinite' }} />
           ) : null}
         </div>
       </motion.div>
     );
-  }), [applyAgentAction, handleSendPrompt, markdownComponents, messages, openOrCreateDoc]);
+  }), [handleSendPrompt, markdownComponents, messages, openOrCreateDoc]);
 
   return (
     <div className="workspace-root">
       {/* Top Bar */}
       <header className="ws-topbar">
-        <button type="button" className="ws-topbar-btn ws-topbar-btn-icon" onClick={handleBackToDashboard} title="Back to dashboard">
-          <ArrowLeft size={15} aria-hidden />
-          <span>Back</span>
+        <button
+          type="button"
+          onClick={handleBackToDashboard}
+          style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', color: '#374151', fontFamily: 'inherit', flexShrink: 0 }}
+        >
+           Dashboard
         </button>
-        <span className="ws-topbar-title">ContractorAI</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <div style={{ width: '28px', height: '28px', background: '#0078d4', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '11px', fontWeight: 700 }}>AI</div>
+          <span style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>ContractorAI</span>
+        </div>
         {projectId ? (
           <>
-            <div className="ws-topbar-divider" />
-            <span className="ws-topbar-subtitle" title={projectDisplayName || projectId}>
+            <div style={{ width: '1px', height: '16px', background: '#e5e7eb' }} />
+            <span style={{ fontSize: '13px', color: '#6b7280', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {projectDisplayName || `Project ${projectId.slice(0, 8)}...`}
             </span>
           </>
         ) : null}
         <div style={{ flex: 1 }} />
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <input
+            ref={searchInputRef}
+            value={workspaceSearch}
+            onChange={(e) => setWorkspaceSearch(e.target.value)}
+            placeholder="Search (Ctrl+K)"
+            style={{ height: '32px', width: '180px', borderRadius: '8px', border: '1px solid #e5e7eb', padding: '0 12px', fontSize: '12px', outline: 'none', background: '#f9fafb' }}
+          />
+        </div>
         <button
           type="button"
-          className={`ws-panel-toggle ${leftPanelCollapsed ? '' : 'active'}`}
-          onClick={() => setLeftPanelCollapsed((c) => !c)}
-          title={leftPanelCollapsed ? 'Show project files' : 'Hide project files'}
-        >
-          <span>Files</span>
-        </button>
-        <button
-          type="button"
-          className={`ws-panel-toggle ${rightPanelCollapsed ? '' : 'active'}`}
-          onClick={() => setRightPanelCollapsed((c) => !c)}
-          title={rightPanelCollapsed ? 'Show AI assistant' : 'Hide AI assistant'}
-        >
-          <span>Chat</span>
-        </button>
-        <ConversationSidebar
-          projectId={projectId}
-          activeSessionId={chatSessionId ?? storeActiveSessionId}
-          onSessionSelect={handleSessionSelect}
-          onDeleteSession={handleSessionDelete}
-        />
-        <button
-          type="button"
-          className="ws-topbar-btn-primary ws-topbar-btn-icon"
           onClick={() => void handleSidebarNewChat()}
-          title="New chat"
+          style={{ background: '#0078d4', color: '#fff', border: 'none', borderRadius: '7px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
         >
-          <Plus size={14} aria-hidden />
-          <span>New chat</span>
+          + New Chat
         </button>
-        <div className="ws-user-avatar" title={user?.email ?? 'Signed in user'}>
-          {userInitials}
+        <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#1d4ed8', flexShrink: 0 }}>
+          GK
         </div>
       </header>
 
@@ -1478,52 +1587,44 @@ function ChatWorkspacePageContent() {
       <div className="ws-panels" ref={panelRootRef}>
 
         {/* Panel 1: File Explorer */}
-        <section
-          className={`ws-panel ws-panel-left ${leftPanelCollapsed ? 'ws-panel-collapsed' : ''}`}
-          style={{ width: leftPanelCollapsed ? 32 : leftPanelWidth, flexShrink: 0 }}
-        >
-          {leftPanelCollapsed ? (
+        <section className="ws-panel" style={{ width: leftPanelCollapsed ? 28 : leftPanelWidth, flexShrink: 0, overflow: 'hidden' }}>
+          <div className="ws-panel-header" style={{ justifyContent: 'space-between' }}>
+            {!leftPanelCollapsed ? <span className="ws-panel-title">Project Files</span> : <span />}
             <button
               type="button"
-              className="ws-panel-expand-btn"
-              onClick={() => setLeftPanelCollapsed(false)}
-              title="Show project files"
+              onClick={() => setLeftPanelCollapsed((c) => !c)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
+              title={leftPanelCollapsed ? 'Expand panel' : 'Collapse panel'}
             >
-              <span>Files</span>
+              {leftPanelCollapsed ? '\u25b6' : '\u25c4'}
             </button>
-          ) : (
-            <>
-          <div className="ws-panel-body">
-          <div className="ws-file-search-wrap ws-file-search-wrap--with-collapse">
-            <Search size={14} className="ws-file-search-icon" aria-hidden />
+          </div>
+          <div style={{ display: leftPanelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+          {/* File search */}
+          <div style={{ padding: '6px 8px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
             <input
               type="text"
               value={fileSearch}
               onChange={(e) => setFileSearch(e.target.value)}
-              placeholder="Filter files..."
-              className="ws-file-search-input"
+              placeholder="Search files..."
+              style={{ width: '100%', padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '12px', outline: 'none', background: '#f9fafb' }}
             />
-            <button
-              type="button"
-              className="ws-panel-collapse-btn ws-panel-collapse-btn--inline"
-              onClick={() => setLeftPanelCollapsed(true)}
-              title="Hide project files"
-              aria-label="Hide project files"
-            >
-              <PanelLeft size={14} aria-hidden />
-            </button>
           </div>
+          {/* Tree */}
           <div className="file-explorer-body">
             {wsFilesLoading ? (
               <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af' }}>Loading project files...</div>
-            ) : explorerFiles.length > 0 ? (
-              <FileTree
-                files={explorerFiles}
-                expandedFolders={expandedFolders}
-                activeFileId={activeDoc?.fileId}
-                onToggleFolder={toggleFolder}
-                onFileClick={handleExplorerFileClick}
-              />
+            ) : folderTree.length > 0 ? (
+              folderTree.map((folder) => (
+                <FolderSection
+                  key={folder.path}
+                  folder={folder}
+                  isExpanded={expandedFolders.has(folder.path)}
+                  activeFileId={activeDoc?.fileId}
+                  onToggle={() => toggleFolder(folder.path)}
+                  onFileClick={handleExplorerFileClick}
+                />
+              ))
             ) : (
               <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af', lineHeight: '1.6' }}>
                 {fileSearch.trim()
@@ -1533,13 +1634,33 @@ function ChatWorkspacePageContent() {
                     : 'No project files yet. Run a sync from the dashboard.'}
               </div>
             )}
+            {/* DOC_LIBRARY sample files */}
+            {filteredLibrary.length > 0 ? (
+              <div style={{ borderTop: '1px solid #f3f4f6', padding: '8px 0 4px' }}>
+                <p style={{ fontSize: '10px', color: '#9ca3af', padding: '0 10px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Sample Files
+                </p>
+                {filteredLibrary.map((doc) => (
+                  <button
+                    key={doc.id}
+                    type="button"
+                    className={`file-row-btn ${activeDoc?.id === doc.id ? 'active' : ''}`}
+                    onClick={() => openDoc(doc)}
+                  >
+                    <span style={{ flexShrink: 0 }}>
+                      {doc.kind === 'pdf' ? 'DOC' : doc.kind === 'image' ? 'DOC' : doc.kind === 'xlsx' ? 'DOC' : doc.kind === 'docx' ? 'DOC' : 'DOC'}
+                    </span>
+                    <span className="file-name-text">{doc.title}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
           </div>
-            </>
-          )}
         </section>
+
         {/* Divider 1 */}
-        <div className={`ws-divider ${leftPanelCollapsed ? 'ws-divider-hidden' : ''}`} onMouseDown={() => setIsDraggingLeft(true)}>
+        <div className="ws-divider" onMouseDown={() => setIsDraggingLeft(true)}>
           <div className="ws-divider-handle" />
         </div>
 
@@ -1551,9 +1672,12 @@ function ChatWorkspacePageContent() {
           onDragLeave={() => setIsDropActive(false)}
           onDrop={handleDropFiles}
         >
-          <div className="viewer-doc-tabs">
+          {/* Viewer toolbar */}
+          <div style={{ flexShrink: 0, borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+            {/* Doc tabs */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', overflowX: 'auto', minHeight: '40px' }}>
               {openDocs.length === 0 ? (
-                <span className="viewer-doc-tabs-empty">Open a file from Files or ask the AI to cite a document</span>
+                <span style={{ fontSize: '12px', color: '#9ca3af' }}>No documents open -- select a file from the left panel</span>
               ) : (
                 openDocs.map((doc) => (
                   <button
@@ -1561,75 +1685,144 @@ function ChatWorkspacePageContent() {
                     type="button"
                     className={`doc-tab ${doc.id === activeDocId ? 'active' : ''}`}
                     onClick={() => setActiveDocId(doc.id)}
-                    title={doc.title}
                   >
-                    <FileText size={12} aria-hidden />
-                    <span className="doc-tab-label">{doc.title}</span>
+                    <span>
+                      {doc.kind === 'pdf' ? 'DOC' : doc.kind === 'image' ? 'DOC' : doc.kind === 'xlsx' ? 'DOC' : doc.kind === 'docx' ? 'DOC' : 'DOC'}
+                    </span>
+                    <span>{doc.title}</span>
                     <span
                       role="button"
                       tabIndex={0}
-                      className="doc-tab-close"
-                      aria-label={`Close ${doc.title}`}
+                      style={{ fontSize: '11px', color: '#9ca3af', padding: '0 2px', cursor: 'pointer', lineHeight: 1 }}
                       onClick={(e) => { e.stopPropagation(); handleCloseTab(doc.id); }}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleCloseTab(doc.id); } }}
                     >
-                      <X size={12} aria-hidden />
+                      x
                     </span>
                   </button>
                 ))
               )}
+            </div>
+            {/* Search + zoom */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 10px 7px', flexWrap: 'wrap' }}>
+              <input
+                ref={viewerSearchInputRef}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void runViewerSearch(e.currentTarget.value); } }}
+                placeholder="Search in document"
+                style={{ flex: 1, minWidth: '120px', padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '12px', outline: 'none', background: '#fff' }}
+                disabled={activeDoc?.kind === 'pdf'}
+              />
+              <button
+                type="button"
+                onClick={() => void runViewerSearch()}
+                style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', background: '#fff', fontSize: '12px', cursor: 'pointer' }}
+                disabled={activeDoc?.kind === 'pdf'}
+              >
+                {viewerSearchBusy ? '...' : 'Find'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (viewerSearchInputRef.current) viewerSearchInputRef.current.value = '';
+                  setViewerSearchAppliedTerm('');
+                  setViewerSearchResults([]);
+                  setViewerSearchError(null);
+                }}
+                style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #e5e7eb', background: '#fff', fontSize: '12px', cursor: 'pointer', color: '#6b7280' }}
+              >
+                Clear
+              </button>
+              {activeDoc?.kind === 'pdf' ? (
+                <p style={{ fontSize: '12px', color: '#64748b', marginLeft: 'auto' }}>
+                  PDF search and navigation are available in the viewer toolbar below.
+                </p>
+              ) : null}
+            </div>
           </div>
-          <div className="viewer-stage">
+          {/* Search results */}
+          {(activeDoc?.kind !== 'pdf' && (viewerSearchAppliedTerm || viewerSearchError)) ? (
+            <div style={{ maxHeight: '110px', overflowY: 'auto', borderBottom: '1px solid #e5e7eb', background: '#fafafa', padding: '7px 10px', flexShrink: 0 }}>
+              {viewerSearchError ? <p style={{ fontSize: '12px', color: '#d83b01' }}>{viewerSearchError}</p> : null}
+              {!viewerSearchError && viewerSearchResults.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
+                    {viewerSearchResults.length} match{viewerSearchResults.length === 1 ? '' : 'es'} for &ldquo;{viewerSearchAppliedTerm}&rdquo;
+                  </p>
+                  {viewerSearchResults.map((hit) => (
+                    <button
+                      key={hit.id}
+                      type="button"
+                      className="search-result-btn"
+                      onClick={() => { if (typeof hit.pageNumber === 'number') jumpToPdfPage(hit.pageNumber); }}
+                    >
+                      <span style={{ color: '#0078d4', marginRight: '6px', fontSize: '11px' }}>
+                        {typeof hit.pageNumber === 'number' ? `p.${hit.pageNumber}` : `chunk ${hit.chunkIndex}`}
+                      </span>
+                      {hit.excerpt}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {/* Viewer body */}
+          <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
             {isDropActive ? (
-              <div style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.55)', border: '2px dashed #60a5fa' }}>
-                <p style={{ fontSize: '14px', fontWeight: 600, color: '#e0f2fe' }}>Drop files to open</p>
+              <div style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,246,255,0.92)', border: '2px dashed #0078d4', margin: '8px', borderRadius: '8px' }}>
+                <p style={{ fontSize: '14px', fontWeight: 600, color: '#0078d4' }}>Drop files to open in viewer</p>
               </div>
             ) : null}
-            {renderDocumentBody()}
+            <div style={{ height: '100%', overflow: 'hidden', padding: '8px' }}>
+              {renderDocumentBody()}
+            </div>
           </div>
         </section>
 
         {/* Divider 2 */}
-        <div className={`ws-divider ${rightPanelCollapsed ? 'ws-divider-hidden' : ''}`} onMouseDown={() => setIsDraggingRight(true)}>
+        <div className="ws-divider" onMouseDown={() => setIsDraggingRight(true)}>
           <div className="ws-divider-handle" />
         </div>
 
         {/* Panel 3: AI Chat */}
-        <section
-          className={`ws-panel ws-panel-right ${rightPanelCollapsed ? 'ws-panel-collapsed' : ''}`}
-          style={{ width: rightPanelCollapsed ? 32 : rightPanelWidth, flexShrink: 0, minWidth: rightPanelCollapsed ? 32 : 300 }}
-        >
-          {rightPanelCollapsed ? (
+        <section className="ws-panel" style={{ width: rightPanelCollapsed ? 28 : rightPanelWidth, flexShrink: 0, minWidth: rightPanelCollapsed ? 28 : 280 }}>
+          <div className="ws-panel-header" style={{ justifyContent: 'space-between' }}>
+            {!rightPanelCollapsed ? <span className="ws-panel-title">AI Assistant</span> : <span />}
+            {!rightPanelCollapsed ? (
+              <button
+                type="button"
+                onClick={() => void handleSidebarNewChat()}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#0078d4', fontWeight: 600, fontFamily: 'inherit', padding: '2px 0' }}
+              >
+                + New Chat
+              </button>
+            ) : null}
             <button
               type="button"
-              className="ws-panel-expand-btn"
-              onClick={() => setRightPanelCollapsed(false)}
-              title="Show AI assistant"
+              onClick={() => setRightPanelCollapsed((c) => !c)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
+              title={rightPanelCollapsed ? 'Expand panel' : 'Collapse panel'}
             >
-              <span>Chat</span>
+              {rightPanelCollapsed ? '\u25c4' : '\u25b6'}
             </button>
-          ) : (
-          <div className="ws-panel-body chat-panel-body">
+          </div>
+          <div style={{ display: rightPanelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+
+          {/* Messages */}
           <div ref={chatScrollRef} className="chat-messages-scroll">
             {messages.length === 0 ? (
-              <div className="chat-empty-state">
-                <div className="chat-empty-icon">
-                  <Sparkles size={22} aria-hidden />
-                </div>
-                <p className="chat-empty-title">Ask about your project</p>
-                <p className="chat-empty-subtitle">
-                  Documents open in the viewer when cited.
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '36px', marginBottom: '12px', opacity: 0.5 }}>[ ]</div>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ask about your project</p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', lineHeight: '1.6', maxWidth: '200px' }}>
+                  Questions about documents, RFIs, submittals, schedules, and field coordination.
                 </p>
               </div>
             ) : renderedChatMessages}
             {isTyping ? (
-              <div className="chat-message-row chat-message-row-assistant">
-                <div className="chat-avatar chat-avatar-assistant" aria-hidden>
-                  <Bot size={16} />
-                </div>
-                <div className="chat-typing-bubble">
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '4px 18px 18px 18px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div className="typing-dots"><span /><span /><span /></div>
-                  {statusMessage ? <span className="chat-typing-status">{statusMessage}</span> : null}
+                  {statusMessage ? <span style={{ fontSize: '11px', color: '#9ca3af' }}>{statusMessage}</span> : null}
                 </div>
               </div>
             ) : null}
@@ -1637,44 +1830,45 @@ function ChatWorkspacePageContent() {
 
           {/* Input */}
           <div className="chat-input-area">
-            <div className="chat-suggested-prompts">
-              {contextualPrompts.map((prompt) => (
-                <button
-                  key={prompt.label}
-                  type="button"
-                  className="ws-chip"
-                  onClick={() => void handleSendPrompt(prompt.message)}
-                >
-                  {prompt.label}
-                </button>
-              ))}
-            </div>
+            {messages.length === 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '8px' }}>
+                {SUGGESTED_PROMPTS.slice(0, 3).map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    className="ws-chip"
+                    onClick={() => {
+                      if (promptInputRef.current) promptInputRef.current.value = prompt;
+                      promptInputRef.current?.focus();
+                    }}
+                  >
+                    {prompt.length > 36 ? `${prompt.slice(0, 36)}...` : prompt}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <form
               onSubmit={(e: FormEvent) => { e.preventDefault(); void handleSendPrompt(); }}
               className="chat-input-box"
             >
-              {chatError ? <p className="chat-error">{chatError}</p> : null}
+              {chatError ? <p style={{ padding: '8px 14px 0', fontSize: '12px', color: '#d83b01', lineHeight: '1.5' }}>{chatError}</p> : null}
               <textarea
                 ref={promptInputRef}
                 onKeyDown={handlePromptKeyDown}
                 className="chat-textarea"
-                placeholder="Ask about drawings, specs, RFIs..."
-                rows={3}
+                placeholder="Ask about project documents, RFIs, submittals, schedules..."
               />
-              <div className="chat-input-actions">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px 8px', gap: '6px' }}>
                 <button
                   type="submit"
-                  className="chat-send-btn"
-                  title="Send message"
-                  aria-label="Send message"
+                  style={{ background: '#0078d4', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                 >
-                  <Send size={15} aria-hidden />
+                  Send
                 </button>
               </div>
             </form>
           </div>
           </div>
-          )}
         </section>
 
       </div>

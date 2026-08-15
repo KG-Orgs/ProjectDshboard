@@ -1,0 +1,27 @@
+{
+  "//": "The package tsconfig only includes `src`, so nothing under eval/ is type-checked by `pnpm type-check`. This config covers the independent-grading modules. Its `include` is scoped rather than `./*.ts` because several older scratch scripts in this directory do not compile (wrong relative import paths) and would drown out real errors.",
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["node", "vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "@contractor/shared": ["../../shared/src/index.ts"],
+      "@contractor/ai-actions": ["../../ai-actions/src/index.ts"]
+    }
+  },
+  "include": [
+    "./eval-expectations.ts",
+    "./independent-grader.ts",
+    "./independent-grade-report.ts",
+    "./independent-grader.test.ts",
+    "./independent-grade-report.test.ts",
+    "./grade-independent.ts",
+    "./compare-independent-grades.ts",
+    "./author-expected-facts.ts",
+    "./sync-expected-questions.ts",
+    "./generate-97-traced-report.ts"
+  ]
+}

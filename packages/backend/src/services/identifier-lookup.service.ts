@@ -78,6 +78,8 @@ const QUERY_PRIORITY: IdentifierType[] = [
   "TRANSMITTAL",
   "DU",
   "EDU",
+  "APPROVAL_LETTER",
+  "INVOICE",
   "CSI",
 ];
 
@@ -155,8 +157,30 @@ function filenameTokens(value: string): string[] {
   return value
     .toLowerCase()
     .replace(/\.[a-z0-9]{1,5}$/i, "")
-    .split(/[^a-z]+/i)
-    .filter((token) => token.length >= 3 && !NAME_STOPWORDS.has(token));
+    // Split on non-alphanumeric chars. This preserves revision tokens like
+    // "002r01" and "002r00" so R01 and R00 are distinguishable — the old
+    // /[^a-z]+/ split on digits and collapsed them to "r", making every
+    // revision look identical and breaking family-resolution scoring.
+    .split(/[^a-z0-9]+/i)
+    .filter((token) => token.length >= 2 && !NAME_STOPWORDS.has(token));
+}
+
+/**
+ * How many *other* identifiers of the same type the file's name and path carry.
+ *
+ * Zero means the file is named for the requested identifier and nothing else;
+ * higher means it also references neighbours, which makes it a document *about*
+ * the requested identifier rather than the document itself.
+ */
+function countExtraIdentifiersOfType(
+  fileName: string,
+  filePath: string,
+  type: IdentifierType,
+  valueNormalized: string
+): number {
+  return extractIdentifiers(fileName, filePath).filter(
+    (identifier) => identifier.type === type && identifier.valueNormalized !== valueNormalized
+  ).length;
 }
 
 function overlapCount(queryTokens: string[], nameTokens: string[]): number {
@@ -207,6 +231,12 @@ export const identifierLookupService = {
 
       // Resolve the near-duplicate family to the latest/approved member.
       // Disambiguation order (most → least important):
+      //   0. extraIdsOfType — a file whose name/path carries *other* identifiers
+      //      of the requested type is a document that references the requested
+      //      one, not the requested one itself: `A37806_RFI-0163 - AECOM-RFI-096
+      //      follow Up to RFI-119` mentions RFI-096 but is RFI-0163, while
+      //      `A37806_ADA P6_RFI096` carries nothing else. This outranks name
+      //      overlap because it is identity, not wording.
       //   1. nameOverlap — when the query carries distinctive filename words
       //      (e.g. "GEN-027R00 Subcontractor Approval Forms for Crossroads JV LLC"),
       //      prefer the member whose name best matches, even if it currently has
@@ -227,6 +257,12 @@ export const identifierLookupService = {
             file,
             statusCode,
             hasChunks: (file.chunkCount ?? 0) > 0 ? 1 : 0,
+            extraIdsOfType: countExtraIdentifiersOfType(
+              file.fileName,
+              file.filePath,
+              candidate.type,
+              candidate.valueNormalized
+            ),
             nameOverlap: overlapCount(queryNameTokens, filenameTokens(file.fileName)),
             approvedRank: statusApprovedRank(statusCode),
             revisionNum: revisionNumber(file.revision ?? undefined),
@@ -235,6 +271,7 @@ export const identifierLookupService = {
         })
         .sort(
           (a, b) =>
+            a.extraIdsOfType - b.extraIdsOfType ||
             b.nameOverlap - a.nameOverlap ||
             b.hasChunks - a.hasChunks ||
             b.approvedRank - a.approvedRank ||

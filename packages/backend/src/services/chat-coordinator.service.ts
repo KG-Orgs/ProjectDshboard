@@ -1,13 +1,36 @@
-import type { ChatHistoryTurn, ChatInterpretation, OpenDocContext, SendChatMessageResponse, UUID } from "@contractor/shared";
+import type { ChatHistoryTurn, ChatInterpretation, ExtractedAnswer, OpenDocContext, SendChatMessageResponse, UUID, VisualFallbackTrace } from "@contractor/shared";
 import { buildActionAddendum, extractAgentActions } from "@contractor/ai-actions";
 import type { AgentAction } from "@contractor/ai-actions";
 import { createHash } from "node:crypto";
 import { getEnv } from "../config/env";
 import { logger } from "../lib/logger";
-import { interpretationService } from "./interpretation.service";
+import { interpretationService, isDocumentSummaryQuery } from "./interpretation.service";
 import { projectService } from "./project.service";
 import type { IdentifierLookupResult } from "./identifier-lookup.service";
+import { parseIdentifierQuery } from "./identifier-lookup.service";
+import { extractPathMetadata, describeStatusCode } from "./identifier-extraction.utils";
+import { documentIdentityService } from "./document-identity.service";
+import { extractDocumentReference } from "./document-identity.utils";
 import { retrievalService } from "./retrieval.service";
+import { callChatLlm, extractFirstJsonObject, type ChatLlmMessage } from "./llm-client";
+import { formatAnswer } from "./answer-formatter.service";
+import {
+  toGuardJson,
+  verifySourceIdentity,
+  type CandidateSource,
+} from "./source-identity-guard.service";
+import {
+  detectSelectionConflicts,
+  logVisualNeedAssessment,
+  runVisualFallback,
+  shouldTriggerVisualFallback,
+  visualEvidenceToEvidenceItems,
+  type VisualCandidateChunk,
+} from "./visual-fallback.service";
+import { assessVisualNeed } from "./visual-need.utils";
+
+// Re-exported for tests that import the JSON helper from this module.
+export { extractFirstJsonObject };
 import { keywordHitScore, tokenizeQuery } from "./text-ranking.utils";
 
 type QueryDomain =
@@ -101,6 +124,8 @@ type PageOrigin = "exact" | "fallback" | "mixed";
 
 interface CoordinatorResult {
   content: string;
+  /** Structured evidence-extractor output; present when the LLM answer path ran. */
+  answer?: ExtractedAnswer;
   sources: SendChatMessageResponse["sources"];
   citations?: SendChatMessageResponse["citations"];
   interpretation?: ChatInterpretation;
@@ -148,6 +173,7 @@ interface RoutePreviewResult {
 
 interface ResponseCacheEntry {
   content: string;
+  answer?: ExtractedAnswer;
   sources: SendChatMessageResponse["sources"];
   citations?: SendChatMessageResponse["citations"];
   interpretation?: ChatInterpretation;
@@ -161,140 +187,16 @@ const RESPONSE_CACHE_MAX_ENTRIES = 800;
 // Context window for the LLM. Sized for depth on factual/spec queries within a
 // ~3-4s latency budget (more chunks + longer excerpts = more complete answers).
 const ROUTED_CONTEXT_TOKEN_BUDGET = 3000;
-const MAX_GRAPH_NODES = 10;
-const AGENT_CALL_TIMEOUT_MS = 12_000;
+const MAX_GRAPH_NODES = 7;
 // Cap generated output so a single reply cannot run away on tokens/latency.
 const AGENT_MAX_OUTPUT_TOKENS = 1_024;
 // Depth mode lifts the output cap so multi-item factual answers aren't truncated.
 const AGENT_DEPTH_OUTPUT_TOKENS = 2_048;
-const DETAILED_EXTRACTION_MAX_OUTPUT_TOKENS = 768;
+const DETAILED_EXTRACTION_MAX_OUTPUT_TOKENS = 1_536;
 // Only the most recent turns are sent to the LLM; older context is summarized in
 // the prompt, so unbounded history would just waste tokens.
 const MAX_HISTORY_TURNS = 8;
 const responseCache = new Map<string, ResponseCacheEntry>();
-
-type ChatLlmMessage = { role: "system" | "user" | "assistant"; content: string };
-
-/**
- * Provider-agnostic chat transport. Tries the primary OpenAI-compatible endpoint
- * (Gemini, then OpenAI/DeepSeek) first, then falls back to the Anthropic Messages
- * API when an `ANTHROPIC_API_KEY` is configured. Returns null when every configured
- * provider fails so callers can fall back to deterministic evidence text.
- */
-async function callChatLlm(
-  messages: ChatLlmMessage[],
-  options: { temperature: number; maxTokens: number; timeoutMs?: number }
-): Promise<string | null> {
-  const env = getEnv();
-  const timeoutMs = options.timeoutMs ?? AGENT_CALL_TIMEOUT_MS;
-
-  const primaryApiKey = env.geminiApiKey ?? env.openAiApiKey;
-  if (primaryApiKey) {
-    const chatEndpoint =
-      env.geminiChatEndpoint ??
-      env.openAiChatEndpoint ??
-      "https://api.openai.com/v1/chat/completions";
-    const chatModel = env.geminiChatModel ?? env.openAiChatModel ?? "gemini-2.5-flash";
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const response = await fetch(chatEndpoint, {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${primaryApiKey}`,
-        },
-        body: JSON.stringify({
-          model: chatModel,
-          temperature: options.temperature,
-          max_tokens: options.maxTokens,
-          messages,
-        }),
-      });
-      if (response.ok) {
-        const payload = (await response.json()) as {
-          choices?: Array<{ message?: { content?: string } }>;
-        };
-        const completion = payload.choices?.[0]?.message?.content?.trim();
-        if (completion) return completion;
-      } else {
-        const body = await response.text();
-        logger.warn("chat.coordinator.primary_llm_failed", { reason: body || response.statusText });
-      }
-    } catch (error) {
-      logger.warn("chat.coordinator.primary_llm_error", {
-        reason:
-          error instanceof Error && error.name === "AbortError"
-            ? `primary_llm_timeout_${timeoutMs}ms`
-            : error instanceof Error
-              ? error.message
-              : "unknown_error",
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-
-  if (env.anthropicApiKey) {
-    const systemPrompt = messages
-      .filter((message) => message.role === "system")
-      .map((message) => message.content)
-      .join("\n\n");
-    const conversation = messages
-      .filter((message) => message.role !== "system")
-      .map((message) => ({ role: message.role as "user" | "assistant", content: message.content }));
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const response = await fetch(env.anthropicChatEndpoint, {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": env.anthropicApiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: env.anthropicChatModel,
-          max_tokens: options.maxTokens,
-          temperature: options.temperature,
-          ...(systemPrompt ? { system: systemPrompt } : {}),
-          messages: conversation,
-        }),
-      });
-      if (response.ok) {
-        const payload = (await response.json()) as {
-          content?: Array<{ type?: string; text?: string }>;
-        };
-        const completion = (payload.content ?? [])
-          .filter((block) => block.type === "text" && typeof block.text === "string")
-          .map((block) => block.text as string)
-          .join("")
-          .trim();
-        if (completion) return completion;
-      } else {
-        const body = await response.text();
-        logger.warn("chat.coordinator.anthropic_llm_failed", { reason: body || response.statusText });
-      }
-    } catch (error) {
-      logger.warn("chat.coordinator.anthropic_llm_error", {
-        reason:
-          error instanceof Error && error.name === "AbortError"
-            ? `anthropic_llm_timeout_${timeoutMs}ms`
-            : error instanceof Error
-              ? error.message
-              : "unknown_error",
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-
-  return null;
-}
 
 function getChatCoordinatorFeatureFlags(): ChatCoordinatorFeatureFlags {
   const env = getEnv();
@@ -659,7 +561,12 @@ function enforceAliasAndEvidenceFormatting(
     .filter((line): line is string => Boolean(line))
     .slice(0, 3);
 
-  if (evidence.length > 0 && !/\(p\.\s*\d+/i.test(next)) {
+  // A formatted answer already carries its own source reference with pages —
+  // either the compact "**Source:**" line or a legacy "### Sources" heading — so
+  // appending an Evidence line would duplicate provenance below it.
+  const hasSourcesSection = /(^|\n)\s*(?:[-*+]\s+)?(?:#{1,6}\s*sources?\b|\*\*sources?\s*:?\*\*)/i.test(next);
+
+  if (evidence.length > 0 && !hasSourcesSection && !/\(p\.\s*\d+/i.test(next)) {
     if (sources.length === 1) {
       next = `${next.trim()}\n\nEvidence: ${evidence[0]}.`;
     }
@@ -725,10 +632,16 @@ function enforceReadableMarkdown(content: string): string {
     return trimmed;
   }
 
+  // This guardrail exists to rescue long unstructured text dumps. A bold label
+  // line ("**Unit price:** $350") or an already-brief answer is deliberate
+  // formatting, so wrapping it in "## Answer" plus bullets would only add noise.
+  const bodyLineCount = trimmed.split(/\r?\n/).filter((line) => line.trim().length > 0).length;
   const alreadyStructured =
     /(^|\n)\s{0,3}#{1,6}\s+/m.test(trimmed) ||
     /(^|\n)\s*[-*]\s+/m.test(trimmed) ||
-    /(^|\n)\s*\d+\.\s+/m.test(trimmed);
+    /(^|\n)\s*\d+\.\s+/m.test(trimmed) ||
+    /(^|\n)\s*\*\*[^*\n]{1,60}:\*\*\s/m.test(trimmed) ||
+    (bodyLineCount <= 3 && trimmed.length <= 400);
 
   if (alreadyStructured) {
     return trimmed;
@@ -1017,6 +930,15 @@ function isFileLookupFragmentQuery(input: string): boolean {
  * In this case the coordinator should request clarification rather than guess.
  */
 function isVagueOpenEndedQuery(query: string): boolean {
+  // Never block queries that carry an explicit construction identifier — those
+  // always resolve to a specific document and are always answerable.
+  if (parseIdentifierQuery(query).length > 0) return false;
+
+  // Document-summary and meeting-summary queries should always route to
+  // retrieval. Intent detection lives in interpretation.service.ts so this
+  // function never needs its own phrase-specific bypass list.
+  if (isDocumentSummaryQuery(query)) return false;
+
   // Must be a catch-all "what is mentioned / said / in it" phrasing
   const VAGUE_PATTERN =
     /\bwhat\s+(?:is|was|are|were)\s+(?:mentioned|discussed|said|stated|described|covered|noted|included)\b|\bwhat(?:'s|\s+does\s+it|\s+is\s+in\s+(?:it|the|this))\b/i;
@@ -1064,6 +986,15 @@ const STATION_SCOPED_SUBMITTAL_PATTERN = /\bpermit[s]?\b|\bshop\s+drawing[s]?\b|
 function buildRetrievalQuery(query: string): string {
   if (isSpecificationRequirementsQuery(query)) {
     return `${query} project requirements design criteria PRDC volume`;
+  }
+  // When the query explicitly names a meeting type (Monthly Job Progress Meeting,
+  // Coordination Meeting, etc.), append "meeting minutes" so that:
+  //   • FTS finds chunks whose text references the meeting-minutes document, and
+  //   • the vector embedding shifts toward meeting_minutes-category content.
+  // This compensates for domain abbreviations in the document ("GOs" for
+  // "Grade Operations", "MLJTC2" for "MLJ Contracting") that break exact-term FTS.
+  if (/\b(job\s+progress\s+meeting|coordination\s+meeting|progress\s+meeting|meeting\s+minutes|kick[\s-]?off\s*(meeting|conference)|pre[\s-]?work\s+conference)\b/i.test(query)) {
+    return `${query} meeting minutes`;
   }
   // For Division 1 / General Requirements spec sections (01 XX XX), boost Volume 4.
   if (/\b(?:spec(?:ification)?\s+)?section\s+01\s*\d/i.test(query) || /\b01\s+\d{2}\s+\d{2}\b/.test(query)) {
@@ -2745,12 +2676,232 @@ function buildSectionSuggestionContent(fileName: string, anchors: string[]): str
   ].join("\n");
 }
 
-function buildNoExactEvidenceContent(fileName: string): string {
+export function buildNoExactEvidenceContent(fileName: string, visualFallback?: VisualFallbackTrace): string {
+  // A visual question must not be refused on the grounds that the text layer
+  // lacked the answer — say what was inspected, or why nothing could be.
+  if (visualFallback?.triggered) {
+    if (visualFallback.pagesInspected.length > 0) {
+      return [
+        `I found ${deriveShortFormName(fileName)}, but the requested information could not be verified from the extracted text or from visual inspection of ${visualFallback.pagesInspected.map((page) => `page ${page}`).join(", ")}.`,
+        "Nothing on those pages showed the requested detail clearly enough to report it.",
+        "Point me at a specific page or detail callout and I will inspect that page.",
+      ].join("\n");
+    }
+    return [
+      `I found ${deriveShortFormName(fileName)}, but the requested information could not be verified from the extracted text, and the pages could not be inspected visually (${visualFallback.failureReason ?? "visual inspection unavailable"}).`,
+      "Open the file to check it directly, or ask again once page rendering is available.",
+    ].join("\n");
+  }
+
+  if (visualFallback?.assessment.visualLikely) {
+    return [
+      `I found ${deriveShortFormName(fileName)}, but the requested information could not be verified from the extracted text or available visual inspection.`,
+      "This looks like a question the page image would answer; visual inspection was not available for this document.",
+    ].join("\n");
+  }
+
   return [
     `I could not find an exact indexed passage in ${deriveShortFormName(fileName)} that answers this question.`,
     "No evidence-backed specification text was verified in the retrieved chunks for this request.",
     "Refine with a section heading or exact phrase and I will search only this file again.",
   ].join("\n");
+}
+
+/**
+ * Visual evidence fallback for the *deterministic* refusal paths.
+ *
+ * `runEvidenceExtractor` handles the case where an extraction call produced a
+ * `not_found`/`partial` answer. But the coordinator also refuses before it ever
+ * calls the extractor — most importantly when no chunk contains a single query
+ * keyword, which is exactly what a photo sheet or a drawing with a thin text
+ * layer looks like. This runs the fallback on those paths and answers from the
+ * page image when it can.
+ *
+ * Always returns the trace (even when it declined to run) so the refusal wording
+ * can state whether inspection was attempted.
+ */
+async function tryVisualEvidenceAnswer(input: {
+  detail: NonNullable<DocumentDetailResult>;
+  rawQuery: string;
+  startedAt: number;
+  selectedFileName?: string;
+  visualSource?: LockedDocumentVisualSource;
+  rankedChunks: RankedDocumentChunk[];
+  /** The status the text pipeline reached before refusing. */
+  textStatus: "not_found" | "no_evidence";
+}): Promise<{ result?: CoordinatorResult; trace?: VisualFallbackTrace }> {
+  const { detail, rawQuery, visualSource } = input;
+  if (!getEnv().chatVisualFallbackEnabled || !visualSource) return {};
+
+  const assessment = assessVisualNeed(rawQuery);
+  logVisualNeedAssessment(rawQuery, assessment, {
+    fileId: detail.fileId,
+    fileName: detail.fileName,
+  });
+
+  const alias = deriveShortFormName(detail.fileName);
+  const textEvidence: VisualCandidateChunk[] = input.rankedChunks.slice(0, 24).map((chunk) => ({
+    ...(typeof chunk.pageNumber === "number" ? { page: chunk.pageNumber } : {}),
+    text: chunk.chunkText,
+    score: chunk.score,
+    strongEvidence: chunk.strongEvidence,
+  }));
+
+  const renderable =
+    (detail.mimeType ?? "").toLowerCase().includes("pdf") || /\.pdf$/i.test(detail.fileName);
+
+  const trigger = shouldTriggerVisualFallback({
+    assessment,
+    textStatus: input.textStatus,
+    textEvidence,
+    documentLocked: true,
+    renderable,
+  });
+
+  if (!trigger.trigger) {
+    return {
+      trace: {
+        assessment,
+        triggered: false,
+        triggerReason: trigger.reason,
+        pagesSelected: [],
+        pagesInspected: [],
+        evidence: [],
+      },
+    };
+  }
+
+  const trace = await runVisualFallback(
+    {
+      question: rawQuery,
+      projectId: visualSource.projectId,
+      fileId: detail.fileId,
+      fileName: detail.fileName,
+      ...(detail.filePath ? { filePath: detail.filePath } : {}),
+      ...(detail.mimeType ? { mimeType: detail.mimeType } : {}),
+      documentAlias: alias,
+      assessment,
+      textEvidence,
+    },
+    trigger
+  );
+
+  if (trace.evidence.length === 0) {
+    return { trace };
+  }
+
+  // Extract over the visual observations. A few top-ranked chunks ride along as
+  // text evidence so the extractor can reconcile the two and report a conflict
+  // rather than letting the image silently overrule the text.
+  const contextChunks = input.rankedChunks.slice(0, 4);
+  const evidence: ExtractorEvidenceItem[] = [
+    ...contextChunks.map((chunk, index) => ({
+      id: `c${index + 1}`,
+      documentId: alias,
+      documentName: alias,
+      fileName: detail.fileName,
+      fileId: detail.fileId,
+      ...(typeof chunk.pageNumber === "number" ? { page: chunk.pageNumber } : {}),
+      text: chunk.chunkText,
+      evidenceType: "text" as const,
+    })),
+    ...visualEvidenceToEvidenceItems(trace.evidence, {
+      documentAlias: alias,
+      fileName: detail.fileName,
+      startIndex: 0,
+    }).map((item) => ({
+      id: item.id,
+      documentId: item.documentId,
+      documentName: item.documentName,
+      ...(item.fileId ? { fileId: item.fileId } : {}),
+      ...(item.fileName ? { fileName: item.fileName } : {}),
+      ...(typeof item.page === "number" ? { page: item.page } : {}),
+      text: item.text,
+      evidenceType: "visual" as const,
+      confidence: item.confidence,
+    })),
+  ];
+
+  const extracted = await runEvidenceExtractor(rawQuery, evidence, {
+    maxTokens: DETAILED_EXTRACTION_MAX_OUTPUT_TOKENS,
+  });
+  if (!extracted) {
+    return { trace };
+  }
+
+  const deterministicConflicts = detectSelectionConflicts(textEvidence, trace.evidence);
+  const conflicts = [...(extracted.answer.conflicts ?? [])];
+  for (const conflict of deterministicConflicts) {
+    if (!conflicts.some((existing) => existing.field.toLowerCase() === conflict.field.toLowerCase())) {
+      conflicts.push(conflict);
+    }
+  }
+
+  const answer: ExtractedAnswer = {
+    ...extracted.answer,
+    ...(conflicts.length > 0
+      ? {
+          conflicts,
+          status: extracted.answer.status === "complete" ? ("partial" as const) : extracted.answer.status,
+        }
+      : {}),
+    visualFallback: {
+      ...trace,
+      changedAnswerStatus: extracted.answer.status !== "not_found",
+    },
+  };
+
+  if (answer.status === "not_found" || answer.items.length === 0) {
+    // The pages were inspected but nothing on them answered the question. Let the
+    // caller refuse with the honest "inspected and could not verify" wording.
+    return { trace: answer.visualFallback! };
+  }
+
+  const inspectedPages = trace.pagesInspected;
+  const bestPage = trace.evidence
+    .slice()
+    .sort((left, right) => right.confidence - left.confidence)[0]?.page;
+
+  const sources = buildSingleSource(detail.fileId, detail.fileName, {
+    suggestedPages: inspectedPages,
+    ...(typeof bestPage === "number" ? { bestPage } : {}),
+    displayName: alias,
+    pageOrigin: "exact",
+  });
+
+  const domains = classifyQueryDomains(rawQuery);
+  const telemetry = buildTelemetry(input.startedAt);
+
+  logger.info("visual_fallback.answered", {
+    fileId: detail.fileId,
+    fileName: detail.fileName,
+    textStatus: input.textStatus,
+    visualStatus: answer.status,
+    pagesInspected: inspectedPages,
+    items: answer.items.length,
+    conflicts: conflicts.length,
+  });
+
+  return {
+    trace: answer.visualFallback!,
+    result: {
+      content: enforceAliasAndEvidenceFormatting(extracted.markdown, sources),
+      answer,
+      sources,
+      // No chunk backs a visual observation, so there is no chunk citation to
+      // emit. Provenance lives on `answer.citations` (fileId + page), which is
+      // what the viewer deep-links from.
+      citations: [],
+      domains,
+      coordinator: buildCoordinatorMetadata(domains, telemetry),
+      cacheHit: false,
+      suggestions: buildSuggestions(rawQuery, domains, sources, {
+        ...(input.selectedFileName ? { selectedFileName: input.selectedFileName } : {}),
+        enforceSelectedFileScope: true,
+      }),
+      autoOpenFileName: detail.fileName,
+    },
+  };
 }
 
 function isDetailedExtractionQuery(rawQuery: string): boolean {
@@ -2913,6 +3064,104 @@ function buildDetailedKeywordMatchContent(
   ].join("\n");
 }
 
+/**
+ * True when the question asks for a submittal's NYCT/MTA designation / review
+ * type (the "information only vs. approval vs. designer review" bucket) — as
+ * opposed to a review *status* / disposition question. Requires both a
+ * designation cue and at least one of the concrete option words so unrelated
+ * queries don't match.
+ */
+function isSubmittalDesignationQuery(rawQuery: string): boolean {
+  const q = rawQuery.toLowerCase();
+  const asksDesignation = /\bsubmittal\s+designation\b|\breview\s+type\b|\bdesignation\b/.test(q);
+  if (!asksDesignation) return false;
+  const mentionsOption =
+    /\bfor\s+information\b|\binformation\s+only\b|\bfor\s+approval\b|\bapproval\b|\bdesigner\s+review\b|\bdesigner\s+approval\b|\breview\s+(?:&|and)\s+comment\b/.test(
+      q
+    );
+  return mentionsOption;
+}
+
+/**
+ * Deterministic answer for submittal-designation questions.
+ *
+ * OCR loses which transmittal checkbox is ticked (see sq59 investigation), so
+ * the flat checkbox label list in the extracted text can't tell us the selected
+ * designation. The filename's ` - XXX - ` status token (e.g. `- FIO -`) is a
+ * reliable, corpus-standard encoding of that designation, so we normalize it via
+ * describeStatusCode() and pass it to answer generation as structured evidence
+ * instead of asking the LLM to infer it from the filename.
+ *
+ * Guardrails to stay a *fallback* and avoid regressions:
+ *   - Only fires for designation questions (isSubmittalDesignationQuery).
+ *   - Only when the filename carries a documented status code.
+ *   - Skipped when the document's own text already states the review type /
+ *     purpose of issue (e.g. GEN-001R02 / sq25), so the existing content path
+ *     keeps handling those.
+ */
+function tryFilenameDesignationAnswer(
+  detail: NonNullable<DocumentDetailResult>,
+  rawQuery: string,
+  startedAt: number,
+  selectedFileName?: string
+): CoordinatorResult | null {
+  if (!isSubmittalDesignationQuery(rawQuery)) return null;
+
+  const meta = extractPathMetadata(detail.fileName, detail.filePath ?? detail.fileName);
+  const status = describeStatusCode(meta.statusCode);
+  if (!status) return null;
+
+  // If the document text itself states the review type / purpose of issue, defer
+  // to the content-based path — that in-document evidence is more specific than
+  // the filename disposition token (which may differ from the review type).
+  //
+  // Match only an explicit *stated* value (a "Submittal Review Type:" /
+  // "Purpose of Issue:" field followed by content). We deliberately do NOT match
+  // the bare checkbox labels ("For NYCT/MTA Review & Comment", "For NYCT/MTA
+  // Information Only", …): OCR captures those labels for every transmittal
+  // without recording which box is ticked, so their mere presence is not
+  // evidence of the selected designation (this is the sq59 failure mode).
+  const hasInDocReviewType = detail.chunks.some((chunk) =>
+    /(submittal\s+review\s+type|purpose\s+of\s+issue)\s*[:\-]\s*\S/i.test(chunk.chunkText)
+  );
+  if (hasInDocReviewType) return null;
+
+  const alias = deriveShortFormName(detail.fileName);
+  const domains = classifyQueryDomains(rawQuery);
+  const telemetry = buildTelemetry(startedAt);
+  const sources = buildSingleSource(detail.fileId, detail.fileName, {
+    displayName: alias,
+  });
+
+  const content = [
+    `## Submittal Designation for ${alias}`,
+    `- The submittal is designated **${status.label} (${status.code})**.`,
+    `- ${status.description}`,
+    `- Evidence: transmittal status code \`- ${status.code} -\` in the filename \`${detail.fileName}\`. The scanned transmittal checkbox is not machine-readable, so this filename code is the authoritative designation on record.`,
+  ].join("\n");
+
+  logger.info("chat.coordinator.filename_designation", {
+    fileId: String(detail.fileId),
+    fileName: detail.fileName,
+    statusCode: status.code,
+    normalized: status.label,
+  });
+
+  return {
+    content,
+    sources,
+    citations: [],
+    domains,
+    coordinator: buildCoordinatorMetadata(domains, telemetry),
+    cacheHit: false,
+    suggestions: buildSuggestions(rawQuery, domains, sources, {
+      selectedFileName,
+      enforceSelectedFileScope: true,
+    }),
+    autoOpenFileName: detail.fileName,
+  };
+}
+
 async function answerFromDocumentDetail(
   detail: NonNullable<DocumentDetailResult>,
   rawQuery: string,
@@ -2920,9 +3169,23 @@ async function answerFromDocumentDetail(
   history?: ChatHistoryTurn[],
   openDocs?: OpenDocContext[],
   selectedFileName?: string,
-  options?: { forceSummaryFallback?: boolean }
+  options?: { forceSummaryFallback?: boolean; maxGraphNodes?: number; projectId?: UUID }
 ): Promise<CoordinatorResult> {
+  const designationAnswer = tryFilenameDesignationAnswer(detail, rawQuery, startedAt, selectedFileName);
+  if (designationAnswer) return designationAnswer;
+
   const featureFlags = getChatCoordinatorFeatureFlags();
+  // The visual fallback needs the project to resolve the file's bytes; callers
+  // that could not supply one get the text-only pipeline unchanged.
+  const visualSource: LockedDocumentVisualSource | undefined = options?.projectId
+    ? {
+        projectId: options.projectId,
+        fileId: detail.fileId,
+        fileName: detail.fileName,
+        ...(detail.filePath ? { filePath: detail.filePath } : {}),
+        ...(detail.mimeType ? { mimeType: detail.mimeType } : {}),
+      }
+    : undefined;
   const queryTokens = expandSpellingVariants(tokenizeQuery(rawQuery));
   const fileReferenceTerms = new Set(extractActiveDocReferenceTerms(detail.fileName));
   const scoringTokens = queryTokens.filter((token) => !fileReferenceTerms.has(token));
@@ -3084,6 +3347,67 @@ async function answerFromDocumentDetail(
     });
   }
 
+  /**
+   * The "I could not pin down a section" answer.
+   *
+   * With anchors to offer this is a useful narrowing prompt. With none it degrades
+   * into a bare no-evidence refusal — so a visual question gets the page inspected
+   * before we get there, rather than being refused on the text layer alone.
+   */
+  const refuseWithSectionSuggestions = async (anchors: string[]): Promise<CoordinatorResult> => {
+    if (anchors.length === 0) {
+      const visualAttempt = await tryVisualEvidenceAnswer({
+        detail,
+        rawQuery,
+        startedAt,
+        ...(selectedFileName ? { selectedFileName } : {}),
+        ...(visualSource ? { visualSource } : {}),
+        rankedChunks,
+        textStatus: "not_found",
+      });
+      if (visualAttempt.result) return visualAttempt.result;
+
+      const domains = classifyQueryDomains(rawQuery);
+      const telemetry = buildTelemetry(startedAt);
+      const sources = buildSingleSource(detail.fileId, detail.fileName, {
+        displayName: deriveShortFormName(detail.fileName),
+      });
+      return {
+        content: buildNoExactEvidenceContent(detail.fileName, visualAttempt.trace),
+        sources,
+        citations: [],
+        domains,
+        coordinator: buildCoordinatorMetadata(domains, telemetry),
+        cacheHit: false,
+        suggestions: buildSuggestions(rawQuery, domains, sources, {
+          ...(selectedFileName ? { selectedFileName } : {}),
+          enforceSelectedFileScope: true,
+        }),
+        autoOpenFileName: detail.fileName,
+      };
+    }
+
+    const domains = classifyQueryDomains(rawQuery);
+    const telemetry = buildTelemetry(startedAt);
+    const sources = buildSingleSource(detail.fileId, detail.fileName, {
+      displayName: deriveShortFormName(detail.fileName),
+    });
+
+    return {
+      content: buildSectionSuggestionContent(detail.fileName, anchors),
+      sources,
+      citations: [],
+      domains,
+      coordinator: buildCoordinatorMetadata(domains, telemetry),
+      cacheHit: false,
+      suggestions: buildSuggestions(rawQuery, domains, sources, {
+        ...(selectedFileName ? { selectedFileName } : {}),
+        enforceSelectedFileScope: true,
+      }),
+      autoOpenFileName: detail.fileName,
+    };
+  };
+
   const ambiguousSectionInference =
     factualIntent &&
     evidenceProfile.queryHasSpecificationIntent &&
@@ -3094,25 +3418,7 @@ async function answerFromDocumentDetail(
     !sectionSpecificationQuestion;
 
   if (ambiguousSectionInference) {
-    const domains = classifyQueryDomains(rawQuery);
-    const telemetry = buildTelemetry(startedAt);
-    const sources = buildSingleSource(detail.fileId, detail.fileName, {
-      displayName: deriveShortFormName(detail.fileName),
-    });
-
-    return {
-      content: buildSectionSuggestionContent(detail.fileName, sectionSuggestions),
-      sources,
-      citations: [],
-      domains,
-      coordinator: buildCoordinatorMetadata(domains, telemetry),
-      cacheHit: false,
-      suggestions: buildSuggestions(rawQuery, domains, sources, {
-        selectedFileName,
-        enforceSelectedFileScope: true,
-      }),
-      autoOpenFileName: detail.fileName,
-    };
+    return refuseWithSectionSuggestions(sectionSuggestions);
   }
 
   if (isExplicitSectionReviewQuery(rawQuery) || sectionSpecificationQuestion) {
@@ -3124,24 +3430,7 @@ async function answerFromDocumentDetail(
     const domains = classifyQueryDomains(rawQuery);
 
     if (!sectionAnchor) {
-      const telemetry = buildTelemetry(startedAt);
-      const sources = buildSingleSource(detail.fileId, detail.fileName, {
-        displayName: deriveShortFormName(detail.fileName),
-      });
-
-      return {
-        content: buildSectionSuggestionContent(detail.fileName, sectionSuggestions),
-        sources,
-        citations: [],
-        domains,
-        coordinator: buildCoordinatorMetadata(domains, telemetry),
-        cacheHit: false,
-        suggestions: buildSuggestions(rawQuery, domains, sources, {
-          selectedFileName,
-          enforceSelectedFileScope: true,
-        }),
-        autoOpenFileName: detail.fileName,
-      };
+      return refuseWithSectionSuggestions(sectionSuggestions);
     }
 
     const anchorSupport = summarizeAnchorSupport(sectionAnchor);
@@ -3159,48 +3448,13 @@ async function answerFromDocumentDetail(
         (sectionSuggestions.length >= 2 && (anchorSupport.aligned < 2 || anchorSupport.heading < 1)));
 
     if (ambiguousInferredReviewAnchor) {
-      const telemetry = buildTelemetry(startedAt);
-      const sources = buildSingleSource(detail.fileId, detail.fileName, {
-        displayName: deriveShortFormName(detail.fileName),
-      });
-
-      return {
-        content: buildSectionSuggestionContent(detail.fileName, sectionSuggestions),
-        sources,
-        citations: [],
-        domains,
-        coordinator: buildCoordinatorMetadata(domains, telemetry),
-        cacheHit: false,
-        suggestions: buildSuggestions(rawQuery, domains, sources, {
-          selectedFileName,
-          enforceSelectedFileScope: true,
-        }),
-        autoOpenFileName: detail.fileName,
-      };
+      return refuseWithSectionSuggestions(sectionSuggestions);
     }
 
     const sectionChunks = collectSectionReviewChunks(rankedChunks, sectionAnchor);
 
     if (sectionChunks.length === 0) {
-      const suggestions = inferCandidateSectionAnchors(rankedChunks, evidenceProfile);
-      const telemetry = buildTelemetry(startedAt);
-      const sources = buildSingleSource(detail.fileId, detail.fileName, {
-        displayName: deriveShortFormName(detail.fileName),
-      });
-
-      return {
-        content: buildSectionSuggestionContent(detail.fileName, suggestions),
-        sources,
-        citations: [],
-        domains,
-        coordinator: buildCoordinatorMetadata(domains, telemetry),
-        cacheHit: false,
-        suggestions: buildSuggestions(rawQuery, domains, sources, {
-          selectedFileName,
-          enforceSelectedFileScope: true,
-        }),
-        autoOpenFileName: detail.fileName,
-      };
+      return refuseWithSectionSuggestions(inferCandidateSectionAnchors(rankedChunks, evidenceProfile));
     }
 
     const activeNodes: GraphNodeContext[] = sectionChunks.map((chunk) => ({
@@ -3362,35 +3616,50 @@ async function answerFromDocumentDetail(
   if (
     factualIntent &&
     queryTokens.length > 0 &&
-    (keywordMatchedChunks.length === 0 ||
-      (featureFlags.strictFactualActiveDocMode && evidenceQualifiedChunks.length === 0))
+    // Refuse only when zero chunks contain any query keyword — the document
+    // genuinely does not have the answer in its text. The old Case-2 guard
+    // (evidenceQualifiedChunks.length === 0) also fired when keywords were
+    // present but not in "strong evidence" form (scanned PDFs, tables,
+    // cover sheets), causing false refusals. Removing only Case-2 preserves
+    // the hallucination guard for out-of-scope questions while allowing the
+    // LLM to receive and evaluate chunks that do contain relevant tokens.
+    keywordMatchedChunks.length === 0
   ) {
-    // When the caller explicitly targeted this file (e.g. from tryInTheDocumentAnswer),
-    // fall through to the LLM with top semantic-ranked chunks rather than aborting.
-    if (!(options?.forceSummaryFallback && rankedChunks.length > 0)) {
-      const domains = classifyQueryDomains(rawQuery);
-      const telemetry = buildTelemetry(startedAt);
-      const sources = buildSingleSource(detail.fileId, detail.fileName, {
-        displayName: deriveShortFormName(detail.fileName),
-      });
+    // The text layer has nothing — which is what a photo sheet, a drawing, or a
+    // scan looks like. Inspect the page before refusing.
+    const visualAttempt = await tryVisualEvidenceAnswer({
+      detail,
+      rawQuery,
+      startedAt,
+      ...(selectedFileName ? { selectedFileName } : {}),
+      ...(visualSource ? { visualSource } : {}),
+      rankedChunks,
+      textStatus: "no_evidence",
+    });
+    if (visualAttempt.result) return visualAttempt.result;
 
-      return {
-        content:
-          sectionSuggestions.length > 0
-            ? buildSectionSuggestionContent(detail.fileName, sectionSuggestions)
-            : buildNoExactEvidenceContent(detail.fileName),
-        sources,
-        citations: [],
-        domains,
-        coordinator: buildCoordinatorMetadata(domains, telemetry),
-        cacheHit: false,
-        suggestions: buildSuggestions(rawQuery, domains, sources, {
-          selectedFileName,
-          enforceSelectedFileScope: true,
-        }),
-        autoOpenFileName: detail.fileName,
-      };
-    }
+    const domains = classifyQueryDomains(rawQuery);
+    const telemetry = buildTelemetry(startedAt);
+    const sources = buildSingleSource(detail.fileId, detail.fileName, {
+      displayName: deriveShortFormName(detail.fileName),
+    });
+
+    return {
+      content:
+        sectionSuggestions.length > 0 && !visualAttempt.trace?.assessment.visualLikely
+          ? buildSectionSuggestionContent(detail.fileName, sectionSuggestions)
+          : buildNoExactEvidenceContent(detail.fileName, visualAttempt.trace),
+      sources,
+      citations: [],
+      domains,
+      coordinator: buildCoordinatorMetadata(domains, telemetry),
+      cacheHit: false,
+      suggestions: buildSuggestions(rawQuery, domains, sources, {
+        selectedFileName,
+        enforceSelectedFileScope: true,
+      }),
+      autoOpenFileName: detail.fileName,
+    };
   }
 
   if (isDetailedExtractionQuery(rawQuery)) {
@@ -3398,11 +3667,31 @@ async function answerFromDocumentDetail(
       rawQuery,
       rankedChunks,
       evidenceTokens.length > 0 ? evidenceTokens : effectiveTokens
-    ).slice(0, 12);
+    ).slice(0, 8);  // keep head for keyword-matched pages; 4 slots reserved for neighbors
 
-    if (lexicalMatches.length > 0) {
+    // Enrich with adjacent-page chunks around the matched pages so related
+    // content that lacks the exact evidence tokens (e.g. wire-transfer
+    // instructions on the page after a remittance header) reaches the LLM.
+    const matchedPageSet = new Set(
+      lexicalMatches
+        .map((chunk) => chunk.pageNumber)
+        .filter((p): p is number => typeof p === "number")
+    );
+    const neighborChunks = lexicalMatches.length > 0
+      ? rankedChunks
+          .filter(
+            (chunk) =>
+              typeof chunk.pageNumber === "number" &&
+              [...matchedPageSet].some((p) => Math.abs(chunk.pageNumber! - p) === 1) &&
+              !lexicalMatches.some((m) => m.chunkIndex === chunk.chunkIndex)
+          )
+          .slice(0, 4)
+      : [];
+    const enrichedMatches = [...lexicalMatches, ...neighborChunks];
+
+    if (enrichedMatches.length > 0) {
       const domains = classifyQueryDomains(rawQuery);
-      const activeNodes: GraphNodeContext[] = lexicalMatches.map((chunk) => ({
+      const activeNodes: GraphNodeContext[] = enrichedMatches.map((chunk) => ({
         chunkId: `${detail.fileId}:${chunk.chunkIndex}`,
         fileId: detail.fileId,
         fileName: detail.fileName,
@@ -3416,7 +3705,7 @@ async function answerFromDocumentDetail(
       }));
 
       const provisionalPages = normalizePageReferences(
-        lexicalMatches.map((chunk) => ({
+        enrichedMatches.map((chunk) => ({
           chunkIndex: chunk.chunkIndex,
           pageNumber: chunk.pageNumber,
           sourceType: chunk.sourceType ?? "content",
@@ -3449,12 +3738,19 @@ async function answerFromDocumentDetail(
 
       const telemetry = buildTelemetry(startedAt);
 
-      // Try LLM interpretation first; fall back to verbatim raw-text if unavailable
-      const llmContent = await callDetailedExtractionLlm(rawQuery, detail.fileName, lexicalMatches);
-      const content = llmContent ?? buildDetailedKeywordMatchContent(detail.fileName, rawQuery, lexicalMatches);
+      // Try the evidence-based extractor first; fall back to verbatim raw-text if unavailable.
+      const extracted = await callDetailedExtractionLlm(
+        rawQuery,
+        detail.fileName,
+        enrichedMatches,
+        detail.fileId,
+        visualSource
+      );
+      const content = extracted?.markdown ?? buildDetailedKeywordMatchContent(detail.fileName, rawQuery, enrichedMatches);
 
       return {
         content,
+        answer: extracted?.answer,
         sources,
         citations,
         domains,
@@ -3563,7 +3859,7 @@ async function answerFromDocumentDetail(
           return [...aligned, ...unaligned];
         })()
       : primaryChunkPool
-  ).slice(0, MAX_GRAPH_NODES);
+  ).slice(0, options?.maxGraphNodes ?? MAX_GRAPH_NODES);
 
   const activeNodes: GraphNodeContext[] = selectedChunks.map((chunk) => ({
     chunkId: `${detail.fileId}:${chunk.chunkIndex}`,
@@ -3580,7 +3876,7 @@ async function answerFromDocumentDetail(
 
   const domains = classifyQueryDomains(rawQuery);
   const agentStartedAt = Date.now();
-  const { text: content, actions: agentActions } = await callSingleAgent(
+  const { text: content, actions: agentActions, answer } = await callSingleAgent(
     rawQuery,
     domains,
     activeNodes,
@@ -3588,7 +3884,8 @@ async function answerFromDocumentDetail(
     history,
     openDocs,
     selectedFileName,
-    detail.fileId
+    detail.fileId,
+    visualSource
   );
   const agentMs = Date.now() - agentStartedAt;
 
@@ -3656,6 +3953,10 @@ async function answerFromDocumentDetail(
       })()
     : [];
 
+  // Pages a visual observation was read from are real, verified page references —
+  // they belong in the source's page list so the citation chip deep-links there.
+  const visualPages = (answer?.visualFallback?.evidence ?? []).map((entry) => entry.page);
+
   const finalizedPages = normalizePageReferences(
     citations.length > 0
       ? [
@@ -3677,16 +3978,56 @@ async function answerFromDocumentDetail(
     }
   );
 
+  const suggestedPages = Array.from(
+    new Set([...(finalizedPages.suggestedPages ?? []), ...visualPages])
+  );
+
   const sources = buildSingleSource(detail.fileId, detail.fileName, {
-    suggestedPages: finalizedPages.suggestedPages,
-    bestPage: finalizedPages.bestPage,
+    suggestedPages,
+    bestPage: finalizedPages.bestPage ?? visualPages[0],
     displayName: deriveShortFormName(detail.fileName),
     pageOrigin: finalizedPages.pageOrigin,
   });
+
+  // Visual evidence is citation-worthy even though no chunk backs it, so the
+  // strict "no chunk citations → refuse" guard must not discard a verified visual
+  // answer.
+  const answeredVisually =
+    (answer?.visualFallback?.evidence.length ?? 0) > 0 &&
+    answer?.status !== "not_found" &&
+    (answer?.items.length ?? 0) > 0;
+
+  const aboutToRefuse =
+    isFactualIntent(rawQuery) &&
+    citations.length === 0 &&
+    !answeredVisually &&
+    featureFlags.strictFactualActiveDocMode &&
+    !options?.forceSummaryFallback;
+
+  // Last chance before a strict refusal. `runEvidenceExtractor` already tried the
+  // visual stage when it produced an answer — but it returns null when the LLM is
+  // unavailable or its output is unusable, and this path also refuses on zero
+  // verified chunk citations. Either way no page has been looked at yet, so a
+  // visual question would be refused on the text layer alone.
+  let lateVisualTrace = answer?.visualFallback;
+  if (aboutToRefuse && !lateVisualTrace) {
+    const visualAttempt = await tryVisualEvidenceAnswer({
+      detail,
+      rawQuery,
+      startedAt,
+      ...(selectedFileName ? { selectedFileName } : {}),
+      ...(visualSource ? { visualSource } : {}),
+      rankedChunks,
+      textStatus: "not_found",
+    });
+    if (visualAttempt.result) return visualAttempt.result;
+    lateVisualTrace = visualAttempt.trace;
+  }
+
   const guardedContent =
-    isFactualIntent(rawQuery) && citations.length === 0
-      ? (featureFlags.strictFactualActiveDocMode && !options?.forceSummaryFallback)
-        ? buildNoExactEvidenceContent(detail.fileName)
+    isFactualIntent(rawQuery) && citations.length === 0 && !answeredVisually
+      ? aboutToRefuse
+        ? buildNoExactEvidenceContent(detail.fileName, lateVisualTrace)
         : shouldAppendUncertaintyMarker(rawQuery, citations, activeNodes)
           ? withUncertaintyMarker(content)
           : content
@@ -3696,6 +4037,7 @@ async function answerFromDocumentDetail(
 
   return {
     content: contentWithGuardrail,
+    answer,
     sources,
     citations,
     domains,
@@ -4338,19 +4680,37 @@ function buildGraphContextBlock(nodes: GraphNodeContext[]): string {
     return "No relevant graph nodes were retrieved.";
   }
 
-  return nodes
-    .map((node, index) => {
-      // Wider excerpt so tables / multi-row content survive into the prompt.
-      const excerpt = node.chunkText.slice(0, 900).replace(/\s+/g, " ").trim();
-      const tags = node.tags?.length ? ` tags=${node.tags.join(",")}` : "";
+  // Group nodes by file so the LLM sees all evidence for the same document
+  // together, making it easier to synthesise a complete answer from one source.
+  const byFile = new Map<string, { nodes: GraphNodeContext[]; alias: string; meta: string }>();
+  for (const node of nodes) {
+    if (!byFile.has(node.fileId)) {
+      const alias = deriveShortFormName(node.fileName, node.extractedFields, node.docCategory);
       const category = node.docCategory ? ` category=${node.docCategory}` : "";
+      const tags = node.tags?.length ? ` tags=${node.tags.join(",")}` : "";
+      byFile.set(node.fileId, { nodes: [], alias, meta: `${category}${tags}`.trim() });
+    }
+    byFile.get(node.fileId)!.nodes.push(node);
+  }
+
+  let nodeIndex = 0;
+  const blocks: string[] = [];
+  for (const { nodes: fileNodes, alias, meta } of byFile.values()) {
+    blocks.push(`[DOCUMENT: ${alias}${meta ? ` | ${meta}` : ""}]`);
+    for (const node of fileNodes) {
+      nodeIndex += 1;
+      // Use full chunk size (1400 chars) — the old 900-char limit silently
+      // discarded the trailing ~35% of each chunk, often containing the
+      // exact values the user asked for (prices, dates, approval status).
+      const excerpt = node.chunkText.slice(0, 1400).replace(/\s+/g, " ").trim();
       const page = typeof node.pageNumber === "number" ? ` page=${node.pageNumber}` : "";
       const section = node.sectionLabel ? ` section=${node.sectionLabel}` : "";
-      const alias = deriveShortFormName(node.fileName, node.extractedFields, node.docCategory);
-      const meta = `${category}${tags}${page}${section}`.trim();
-      return `NODE ${index + 1}: ${alias}${meta ? ` | ${meta}` : ""}\ntext=${excerpt}`;
-    })
-    .join("\n\n");
+      blocks.push(`NODE ${nodeIndex}:${page}${section}\ntext=${excerpt}`);
+    }
+    blocks.push("");
+  }
+
+  return blocks.join("\n");
 }
 
 function buildIndexedSnapshotBlock(snapshot?: IndexedProjectSnapshot): string {
@@ -4740,49 +5100,790 @@ async function routeGraphContext(
   };
 }
 
+// ---------- Evidence-Based Answer Extractor ----------
+//
+// Shared prompt + parsing pipeline used by both the main RAG answerer
+// (callSingleAgent) and the single-document detailed extractor
+// (callDetailedExtractionLlm). The model receives a question plus a list of
+// citation-tagged evidence passages and returns a strict JSON object. We parse
+// that JSON, reconcile its citation ids against the real evidence we supplied
+// (so document names / pages can never be hallucinated), and render an
+// equivalent markdown answer for display. Both the structured object and the
+// markdown are returned so the response can carry each.
+
+const EVIDENCE_EXTRACTOR_SYSTEM_PROMPT = [
+  "You are an AI assistant answering questions about construction project documents.",
+  "Your job is to extract the most accurate answer possible from the evidence provided.",
+  "",
+  "## Core Rules",
+  "* Answer only from the provided evidence.",
+  "* Do not use outside knowledge unless explicitly instructed.",
+  "* Do not infer facts that are not supported.",
+  "* Do not mention retrieval systems, chunks, nodes, embeddings, routing, indexing, or internal processing.",
+  "* Do not repeat the user's question unless needed for clarity.",
+  "* Focus only on information that directly answers the user's request.",
+  "* Ignore unrelated information even if it appears in the source.",
+  "* If the question asks for multiple items, answer each requested item separately.",
+  "* If some requested information is available and some is missing, answer the available portions and clearly identify what could not be verified.",
+  "* Never refuse the entire question if a partial answer can be provided.",
+  "* Never fabricate missing values.",
+  "",
+  "## Document Identity Rules",
+  "If the question contains an exact document identifier (e.g. RFI-0115, GEN-042R00, BUR-009R00, PRDC12-019R00, MTACD-MLJTC2-L-0024):",
+  "* Only answer from evidence belonging to that exact identifier unless the evidence explicitly shows another document is a referenced continuation or attachment.",
+  "* If the retrieved evidence conflicts with the identifier in the question, return status \"source_mismatch\" and do not answer from the conflicting document.",
+  "* If the question specifies a revision (R00, R01, R02), prefer that exact revision; do not silently substitute another revision.",
+  "",
+  "## Answer Quality",
+  "The answer should be concise, factual, easy to scan, informative, and professionally written. Prefer short factual statements over copied source text.",
+  "",
+  "## Evidence Format",
+  "Each evidence passage is tagged with a citation id in square brackets, e.g. [c1]. Cite the ids of the passages that support each answer item using those exact ids.",
+  "",
+  "## Output Format",
+  "Return valid JSON only, with this exact shape:",
+  "{",
+  '  "status": "complete | partial | not_found | source_mismatch",',
+  '  "title": "Short descriptive title",',
+  '  "summary": "Optional one-sentence direct answer.",',
+  '  "items": [ { "label": "Short field or topic name", "value": "Concise answer", "citation_ids": ["c1"] } ],',
+  '  "missing": [ "Any requested information that could not be verified" ],',
+  '  "citations": [ { "id": "c1", "document_id": "Document identifier", "document_name": "Document filename or short name", "page": 1, "evidence_text": "Shortest supporting excerpt needed to verify the claim" } ],',
+  '  "conflicts": [ { "field": "What disagrees", "text_value": "What the text evidence says", "visual_value": "What the visual evidence says", "citation_ids": ["c1", "v1"] } ]',
+  "}",
+  "",
+  "## Status Definitions",
+  "* complete — every material part of the user's question is answered.",
+  "* partial — at least one requested part is answered but another cannot be verified.",
+  "* not_found — the correct source was found but the requested information is not present in the available evidence.",
+  "* source_mismatch — the retrieved source does not match the document identifier or revision requested by the user.",
+  "Do not mark an answer complete merely because a source was returned.",
+  "",
+  "## Visual Evidence",
+  "Evidence may arrive in two blocks: TEXT EVIDENCE (extracted or OCR'd text) and VISUAL EVIDENCE (a vision pass over the rendered page).",
+  "* Visual evidence carries the same document and page provenance as text evidence, and is cited the same way, using its own ids (e.g. [v1]).",
+  "* Both kinds are held to the same standard: cite the passage or observation that supports each claim, and never state more than it shows.",
+  "* Visual evidence may answer a question that the text evidence does not — a selected checkbox, a dimension on a drawing, a title-block revision, what a photograph shows.",
+  "* Do not treat visual evidence as weaker merely because it came from an image, and do not treat it as stronger.",
+  "* Never let visual evidence silently override directly contradictory text evidence. When they disagree about the same field, report the disagreement in \"conflicts\", answer with the conflict stated rather than picking a side, and set status to \"partial\".",
+  "* An observation absent from the visual evidence was not visible; do not fill it in.",
+].join("\n");
+
+export interface ExtractorEvidenceItem {
+  /** Stable citation id shown to the model, e.g. "c1". */
+  id: string;
+  /** Construction identifier or short-form name used for source-mismatch checks. */
+  documentId: string;
+  documentName: string;
+  /** Source file this passage came from; carried through so citations can deep-link into the viewer. */
+  fileId?: string;
+  /**
+   * Verbatim file name / path, as opposed to the display alias in `documentName`.
+   * The Source Identity Guard reads identity (identifier, revision, station) from
+   * these, so aliasing must not reach it.
+   */
+  fileName?: string;
+  filePath?: string;
+  page?: number;
+  text: string;
+  /** `visual` items came from a vision pass over a rendered page, not from text. */
+  evidenceType?: "text" | "visual";
+  /** Vision-reported confidence, for `visual` items only. */
+  confidence?: number;
+}
+
 /**
- * Calls the LLM with a specialized prompt asking it to interpret each matched
- * passage and explain it in plain language. Used by the detailed extraction path
- * so results are Gemini-interpreted rather than raw verbatim text.
- * Returns null when no API key is configured (caller should fall back to raw text).
+ * Render the evidence list into the user message the extractor prompt expects:
+ * a question followed by citation-tagged passages.
+ *
+ * Text and visual evidence are shown in separate labelled blocks so the model
+ * can tell how each fact was observed — the provenance requirements are the same
+ * for both, but a conflict between them has to be reportable.
+ */
+export function buildEvidenceExtractorUserMessage(query: string, evidence: ExtractorEvidenceItem[]): string {
+  const renderItem = (item: ExtractorEvidenceItem): string => {
+    const page = typeof item.page === "number" ? ` page=${item.page}` : "";
+    const confidence =
+      item.evidenceType === "visual" && typeof item.confidence === "number"
+        ? ` confidence=${item.confidence.toFixed(2)}`
+        : "";
+    const cleaned = item.text.slice(0, 1400).replace(/[ \t]+/g, " ").trim();
+    return `[${item.id}] document="${item.documentName}" id=${item.documentId}${page}${confidence}\n${cleaned}`;
+  };
+
+  const textItems = evidence.filter((item) => item.evidenceType !== "visual");
+  const visualItems = evidence.filter((item) => item.evidenceType === "visual");
+
+  const sections = [`Question: ${query}`, ""];
+
+  if (visualItems.length === 0) {
+    sections.push("Evidence:", textItems.map(renderItem).join("\n\n"));
+    return sections.join("\n");
+  }
+
+  sections.push(
+    "TEXT EVIDENCE",
+    textItems.length > 0
+      ? textItems.map(renderItem).join("\n\n")
+      : "(no text passage contained the requested information)",
+    "",
+    "VISUAL EVIDENCE",
+    "(read from the rendered page image by visual inspection; same document and page provenance as text evidence)",
+    visualItems.map(renderItem).join("\n\n")
+  );
+  return sections.join("\n");
+}
+
+const EXTRACTOR_STATUSES = new Set<ExtractedAnswer["status"]>([
+  "complete",
+  "partial",
+  "not_found",
+  "source_mismatch",
+]);
+
+/**
+ * Validate and normalise a parsed JSON object into an ExtractedAnswer.
+ * Maps the prompt's snake_case fields to the camelCase API type, and reconciles
+ * every citation id against the real evidence we supplied — a citation whose id
+ * is unknown is dropped, and document name / page are always overwritten with
+ * the ground-truth values so the model cannot invent provenance.
+ */
+export function coerceExtractedAnswer(
+  parsed: Record<string, unknown>,
+  evidenceById: Map<string, ExtractorEvidenceItem>
+): ExtractedAnswer | null {
+  const status = EXTRACTOR_STATUSES.has(parsed.status as ExtractedAnswer["status"])
+    ? (parsed.status as ExtractedAnswer["status"])
+    : "complete";
+
+  const title = typeof parsed.title === "string" && parsed.title.trim().length > 0
+    ? parsed.title.trim()
+    : "Answer";
+
+  const summary = typeof parsed.summary === "string" && parsed.summary.trim().length > 0
+    ? parsed.summary.trim()
+    : undefined;
+
+  const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
+  const items = rawItems
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const obj = entry as Record<string, unknown>;
+      const label = typeof obj.label === "string" ? obj.label.trim() : "";
+      const value = typeof obj.value === "string" ? obj.value.trim() : "";
+      if (!value) return null;
+      const citationIds = Array.isArray(obj.citation_ids)
+        ? (obj.citation_ids as unknown[])
+            .filter((id): id is string => typeof id === "string" && evidenceById.has(id))
+        : undefined;
+      return {
+        label: label || "Detail",
+        value,
+        ...(citationIds && citationIds.length > 0 ? { citationIds } : {}),
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  const missing = Array.isArray(parsed.missing)
+    ? (parsed.missing as unknown[]).filter((m): m is string => typeof m === "string" && m.trim().length > 0)
+    : undefined;
+
+  // Build citations from ground-truth evidence, keyed by the ids the model
+  // actually referenced (via items or its own citations array). Provenance
+  // (document id/name/page) is taken from our evidence map, never the model.
+  const referencedIds = new Set<string>();
+  for (const item of items) {
+    for (const id of item.citationIds ?? []) referencedIds.add(id);
+  }
+  const modelEvidenceText = new Map<string, string>();
+  if (Array.isArray(parsed.citations)) {
+    for (const entry of parsed.citations as unknown[]) {
+      if (!entry || typeof entry !== "object") continue;
+      const obj = entry as Record<string, unknown>;
+      const id = typeof obj.id === "string" ? obj.id : undefined;
+      if (!id || !evidenceById.has(id)) continue;
+      referencedIds.add(id);
+      if (typeof obj.evidence_text === "string" && obj.evidence_text.trim().length > 0) {
+        modelEvidenceText.set(id, obj.evidence_text.trim().slice(0, 400));
+      }
+    }
+  }
+
+  const citations = Array.from(referencedIds).map((id) => {
+    const source = evidenceById.get(id)!;
+    const evidenceText = modelEvidenceText.get(id) ?? source.text.slice(0, 240).replace(/\s+/g, " ").trim();
+    return {
+      id,
+      documentId: source.documentId,
+      documentName: source.documentName,
+      ...(source.fileId ? { fileId: source.fileId as UUID } : {}),
+      ...(typeof source.page === "number" ? { page: source.page } : {}),
+      evidenceText,
+      // Provenance kind is code-owned like the rest of the citation: it comes from
+      // the evidence we supplied, never from the model's own claim about it.
+      evidenceType: source.evidenceType === "visual" ? ("visual" as const) : ("text" as const),
+    };
+  });
+
+  // Text-vs-visual disagreements the model reported. Only conflicts naming real
+  // citation ids survive, and a conflict is never resolved here — it is carried
+  // through so the answer can state it.
+  const conflicts = Array.isArray(parsed.conflicts)
+    ? (parsed.conflicts as unknown[])
+        .map((entry) => {
+          if (!entry || typeof entry !== "object") return null;
+          const obj = entry as Record<string, unknown>;
+          const field = typeof obj.field === "string" ? obj.field.trim() : "";
+          const textValue = typeof obj.text_value === "string" ? obj.text_value.trim() : "";
+          const visualValue = typeof obj.visual_value === "string" ? obj.visual_value.trim() : "";
+          if (!field || !textValue || !visualValue) return null;
+          const citationIds = Array.isArray(obj.citation_ids)
+            ? (obj.citation_ids as unknown[]).filter(
+                (id): id is string => typeof id === "string" && evidenceById.has(id)
+              )
+            : undefined;
+          return {
+            field,
+            textValue,
+            visualValue,
+            ...(citationIds && citationIds.length > 0 ? { citationIds } : {}),
+          };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+    : [];
+
+  return {
+    status,
+    title,
+    ...(summary ? { summary } : {}),
+    items,
+    ...(missing && missing.length > 0 ? { missing } : {}),
+    citations,
+    ...(conflicts.length > 0 ? { conflicts } : {}),
+  };
+}
+
+/** Collect the display page numbers cited by a single answer item. */
+function pagesForItem(item: ExtractedAnswer["items"][number], answer: ExtractedAnswer): number[] {
+  const pages: number[] = [];
+  for (const id of item.citationIds ?? []) {
+    const citation = answer.citations.find((c) => c.id === id);
+    if (citation && typeof citation.page === "number" && !pages.includes(citation.page)) {
+      pages.push(citation.page);
+    }
+  }
+  return pages;
+}
+
+/**
+ * Render an ExtractedAnswer as the markdown `content` string. Keeps the
+ * "## heading + bullets + (p. X)" shape the downstream formatting guardrails
+ * expect so page references and aliases are enforced consistently.
+ */
+export function renderExtractedAnswerMarkdown(answer: ExtractedAnswer): string {
+  const lines: string[] = [`## ${answer.title}`];
+
+  if (answer.status === "source_mismatch") {
+    lines.push(
+      answer.summary ??
+        "The retrieved evidence does not match the requested document identifier or revision."
+    );
+    return lines.join("\n");
+  }
+
+  if (answer.summary) {
+    lines.push(answer.summary);
+  }
+
+  for (const item of answer.items) {
+    const pages = pagesForItem(item, answer);
+    const pageRef = pages.length > 0 ? ` (p. ${pages.join(", ")})` : "";
+    const label = item.label && item.label !== "Detail" ? `**${item.label}:** ` : "";
+    lines.push(`- ${label}${item.value}${pageRef}`);
+  }
+
+  for (const missing of answer.missing ?? []) {
+    lines.push(`- Could not verify: ${missing}.`);
+  }
+
+  // A text/visual disagreement is stated, never resolved silently.
+  for (const conflict of answer.conflicts ?? []) {
+    lines.push(
+      `- **Conflict — ${conflict.field}:** the extracted text says "${conflict.textValue}" while the page image shows "${conflict.visualValue}". This needs review; I have not picked a side.`
+    );
+  }
+
+  if (answer.items.length === 0 && (answer.missing?.length ?? 0) === 0) {
+    lines.push(
+      answer.status === "not_found"
+        ? visualFallbackRefusalLine(answer)
+        : "- No answer could be extracted from the available evidence."
+    );
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * The `not_found` line, aware of whether visual inspection was attempted.
+ *
+ * A visual question must never be refused on the grounds that OCR lacked the
+ * answer, so the wording distinguishes "we looked at the page and could not
+ * verify it" from "we could not look at all".
+ */
+function visualFallbackRefusalLine(answer: ExtractedAnswer): string {
+  const trace = answer.visualFallback;
+  if (!trace) {
+    return "- The requested information is not present in the available evidence.";
+  }
+
+  if (trace.triggered && trace.pagesInspected.length > 0) {
+    return `- The correct document was found, but the requested information could not be verified from the extracted text or from visual inspection of ${trace.pagesInspected.map((page) => `p. ${page}`).join(", ")}.`;
+  }
+
+  if (trace.triggered) {
+    return `- The correct document was found, but the requested information could not be verified from the extracted text, and the page could not be inspected visually (${trace.failureReason ?? "visual inspection unavailable"}).`;
+  }
+
+  if (trace.assessment.visualLikely) {
+    return "- The correct document was found, but the requested information could not be verified from the extracted text or available visual inspection.";
+  }
+
+  return "- The requested information is not present in the available evidence.";
+}
+
+/** Per-source text budget for the guard's station check — enough to spot a mention. */
+const GUARD_TEXT_BUDGET = 4000;
+
+/**
+ * Source Identity Guard pre-pass over the extractor's evidence.
+ *
+ * Groups the evidence by source file, asks the guard whether those files really
+ * are the document the question names, and returns only the evidence that
+ * survives. A `retry_retrieval` verdict comes back as `mismatch`, and the caller
+ * must not answer from the conflicting evidence.
+ *
+ * A no-op when `CHAT_SOURCE_IDENTITY_GUARD_ENABLED` is off.
+ */
+function guardEvidenceSourceIdentity(
+  query: string,
+  evidence: ExtractorEvidenceItem[]
+): { evidence: ExtractorEvidenceItem[]; mismatch?: string } {
+  if (!getEnv().chatSourceIdentityGuardEnabled || evidence.length === 0) {
+    return { evidence };
+  }
+
+  const keyOf = (item: ExtractorEvidenceItem): string =>
+    item.fileId ?? item.fileName ?? item.documentName;
+
+  const byKey = new Map<string, CandidateSource>();
+  for (const item of evidence) {
+    const key = keyOf(item);
+    const existing = byKey.get(key);
+    if (existing) {
+      if ((existing.text?.length ?? 0) < GUARD_TEXT_BUDGET) {
+        existing.text = `${existing.text ?? ""}\n${item.text}`.slice(0, GUARD_TEXT_BUDGET);
+      }
+      continue;
+    }
+    byKey.set(key, {
+      key,
+      // Fall back to the display alias only when no real filename was threaded
+      // through; the alias still carries the identifier in most cases.
+      fileName: item.fileName ?? item.documentName,
+      ...(item.filePath ? { filePath: item.filePath } : {}),
+      text: item.text.slice(0, GUARD_TEXT_BUDGET),
+    });
+  }
+
+  const verdict = verifySourceIdentity({ question: query, sources: [...byKey.values()] });
+
+  if (!verdict.valid) {
+    logger.warn("chat.source_identity_guard.retry_retrieval", {
+      ...toGuardJson(verdict),
+      sources: [...byKey.values()].map((source) => source.fileName),
+    });
+    return { evidence, mismatch: verdict.reason ?? "The retrieved source does not match the requested document." };
+  }
+
+  const accepted = new Set(verdict.acceptedKeys);
+  const kept = evidence.filter((item) => accepted.has(keyOf(item)));
+
+  if (kept.length < evidence.length) {
+    logger.info("chat.source_identity_guard.filtered", {
+      keptEvidence: kept.length,
+      droppedEvidence: evidence.length - kept.length,
+      rejected: verdict.rejected.map((entry) => `${entry.fileName}: ${entry.reason}`),
+    });
+  }
+
+  // Every candidate was rejected by the type-narrowing pass rather than by an
+  // identity conflict; keeping the original evidence is safer than answering
+  // from nothing.
+  return { evidence: kept.length > 0 ? kept : evidence };
+}
+
+/**
+ * The deterministic answer for a `retry_retrieval` verdict: state the mismatch and
+ * synthesize nothing. The formatter deliberately skips `source_mismatch`, so this
+ * reason is what the user sees.
+ */
+function buildSourceMismatchAnswer(reason: string): { answer: ExtractedAnswer; markdown: string; raw: string } {
+  const answer: ExtractedAnswer = {
+    status: "source_mismatch",
+    title: "Requested document not confirmed",
+    summary: reason,
+    items: [],
+    citations: [],
+  };
+  return { answer, markdown: renderExtractedAnswerMarkdown(answer), raw: "" };
+}
+
+/**
+ * One extraction call: build the prompt, call the LLM, parse and reconcile the
+ * JSON. Returns null when the LLM is unavailable or its output is unusable.
+ */
+async function callExtractorOnce(
+  query: string,
+  evidence: ExtractorEvidenceItem[],
+  options?: { maxTokens?: number; extraSystem?: string }
+): Promise<{ answer: ExtractedAnswer; raw: string } | null> {
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const systemContent = options?.extraSystem
+    ? `${EVIDENCE_EXTRACTOR_SYSTEM_PROMPT}\n\n${options.extraSystem}`
+    : EVIDENCE_EXTRACTOR_SYSTEM_PROMPT;
+
+  const completion = await callChatLlm(
+    [
+      { role: "system", content: systemContent },
+      { role: "user", content: buildEvidenceExtractorUserMessage(query, evidence) },
+    ],
+    { temperature: 0.1, maxTokens: options?.maxTokens ?? DETAILED_EXTRACTION_MAX_OUTPUT_TOKENS }
+  );
+
+  if (!completion) return null;
+
+  const jsonText = extractFirstJsonObject(completion);
+  if (!jsonText) {
+    logger.warn("chat.coordinator.extractor_no_json", { sample: completion.slice(0, 160) });
+    return null;
+  }
+
+  let parsed: Record<string, unknown>;
+  try {
+    const value = JSON.parse(jsonText) as unknown;
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return null;
+    }
+    parsed = value as Record<string, unknown>;
+  } catch {
+    logger.warn("chat.coordinator.extractor_parse_error", { sample: jsonText.slice(0, 160) });
+    return null;
+  }
+
+  const answer = coerceExtractedAnswer(parsed, evidenceById);
+  if (!answer) return null;
+  return { answer, raw: completion };
+}
+
+/**
+ * Everything the visual fallback stage needs about the locked document. Passed
+ * by callers that have actually locked a single document; omitted on project-wide
+ * routes, where there is no single page to inspect.
+ */
+export interface ExtractorVisualContext {
+  projectId: UUID;
+  fileId: UUID;
+  fileName: string;
+  filePath?: string;
+  mimeType?: string;
+  documentAlias: string;
+  /** Ranked chunks from the locked document, for page selection and prompt context. */
+  textEvidence: VisualCandidateChunk[];
+}
+
+/**
+ * Run the evidence-based extractor end to end: extract from text, and when the
+ * text answer is insufficient on a question that looks visual, inspect the
+ * rendered pages and extract again over the merged evidence.
+ *
+ * Returns null when the LLM is unavailable or returns unparseable output, so
+ * callers fall back to their existing deterministic behaviour.
+ */
+async function runEvidenceExtractor(
+  query: string,
+  rawEvidence: ExtractorEvidenceItem[],
+  options?: { maxTokens?: number; extraSystem?: string; visual?: ExtractorVisualContext }
+): Promise<{ answer: ExtractedAnswer; markdown: string; raw: string } | null> {
+  if (rawEvidence.length === 0) return null;
+
+  // Identity first: never spend an extraction call on — or synthesize an answer
+  // from — a document that is not the one the question asks about.
+  const guarded = guardEvidenceSourceIdentity(query, rawEvidence);
+  if (guarded.mismatch) {
+    return buildSourceMismatchAnswer(guarded.mismatch);
+  }
+  const evidence = guarded.evidence;
+
+  const first = await callExtractorOnce(query, evidence, options);
+  if (!first) return null;
+
+  let { answer, raw } = first;
+
+  // ---- Visual evidence fallback -------------------------------------------
+  // Runs only when a single document is locked and the text answer left the
+  // question unanswered or partly unanswered.
+  if (options?.visual) {
+    const visualResult = await attemptVisualFallback({
+      query,
+      textAnswer: answer,
+      textEvidence: evidence,
+      context: options.visual,
+      extractorOptions: options,
+    });
+    if (visualResult) {
+      answer = visualResult.answer;
+      raw = visualResult.raw ?? raw;
+    }
+  }
+
+  // Presentation stage. When enabled, the answer formatter turns the verified
+  // items into polished display markdown (bold labels, bullets, a compact source
+  // line). Provenance stays code-owned, and any failure falls back to the
+  // deterministic renderer below.
+  let markdown = renderExtractedAnswerMarkdown(answer);
+  if (getEnv().chatAnswerFormatterEnabled) {
+    const formatted = await formatAnswer({ question: query, answer });
+    if (formatted) {
+      markdown = formatted;
+    }
+  }
+
+  return { answer, markdown, raw };
+}
+
+/**
+ * The visual evidence fallback around a text-only extractor answer.
+ *
+ * Assesses the visual need, decides whether to trigger (Step 2), inspects the
+ * selected pages, and — when the pages yielded observations — extracts again over
+ * TEXT + VISUAL evidence so a visual fact is cited and deep-linked like any
+ * other. The returned answer always carries the trace, including when the stage
+ * declined to run, so the completeness logic and the trace report can see it.
+ *
+ * Returns null only when nothing about the answer changed and there is no trace
+ * worth attaching.
+ */
+async function attemptVisualFallback(input: {
+  query: string;
+  textAnswer: ExtractedAnswer;
+  textEvidence: ExtractorEvidenceItem[];
+  context: ExtractorVisualContext;
+  extractorOptions?: { maxTokens?: number; extraSystem?: string };
+}): Promise<{ answer: ExtractedAnswer; raw?: string } | null> {
+  const { context, textAnswer } = input;
+
+  if (!getEnv().chatVisualFallbackEnabled) return null;
+
+  const assessment = assessVisualNeed(input.query);
+  logVisualNeedAssessment(input.query, assessment, {
+    fileId: context.fileId,
+    fileName: context.fileName,
+  });
+
+  const renderable =
+    (context.mimeType ?? "").toLowerCase().includes("pdf") || /\.pdf$/i.test(context.fileName);
+
+  const trigger = shouldTriggerVisualFallback({
+    assessment,
+    textStatus: textAnswer.status,
+    textEvidence: context.textEvidence,
+    documentLocked: true,
+    renderable,
+  });
+
+  if (!trigger.trigger) {
+    // Still attach the trace: a `not_found` on a visual question has to be able to
+    // say whether inspection was even attempted.
+    return {
+      answer: {
+        ...textAnswer,
+        visualFallback: {
+          assessment,
+          triggered: false,
+          triggerReason: trigger.reason,
+          pagesSelected: [],
+          pagesInspected: [],
+          evidence: [],
+        },
+      },
+    };
+  }
+
+  const citedPages = Array.from(
+    new Set(
+      textAnswer.citations
+        .map((citation) => citation.page)
+        .filter((page): page is number => typeof page === "number")
+    )
+  );
+
+  const trace = await runVisualFallback(
+    {
+      question: input.query,
+      projectId: context.projectId,
+      fileId: context.fileId,
+      fileName: context.fileName,
+      ...(context.filePath ? { filePath: context.filePath } : {}),
+      ...(context.mimeType ? { mimeType: context.mimeType } : {}),
+      documentAlias: context.documentAlias,
+      assessment,
+      textEvidence: context.textEvidence,
+      ...(citedPages.length > 0 ? { citedPages } : {}),
+    },
+    trigger
+  );
+
+  if (trace.evidence.length === 0) {
+    return { answer: { ...textAnswer, visualFallback: trace } };
+  }
+
+  // Re-extract over text + visual evidence. Visual items keep their own id space
+  // (`v1`, `v2`, …) so a citation's provenance kind is unambiguous.
+  const visualItems: ExtractorEvidenceItem[] = visualEvidenceToEvidenceItems(trace.evidence, {
+    documentAlias: context.documentAlias,
+    fileName: context.fileName,
+    startIndex: 0,
+  }).map((item) => ({
+    id: item.id,
+    documentId: item.documentId,
+    documentName: item.documentName,
+    ...(item.fileId ? { fileId: item.fileId } : {}),
+    ...(item.fileName ? { fileName: item.fileName } : {}),
+    ...(typeof item.page === "number" ? { page: item.page } : {}),
+    text: item.text,
+    evidenceType: "visual" as const,
+    confidence: item.confidence,
+  }));
+
+  const merged = [...input.textEvidence, ...visualItems];
+  const second = await callExtractorOnce(input.query, merged, input.extractorOptions);
+
+  if (!second) {
+    // The merge extraction failed; keep the text answer but record that visual
+    // observations exist so the refusal wording stays honest.
+    return { answer: { ...textAnswer, visualFallback: trace } };
+  }
+
+  // Deterministic conflict check on top of whatever the model reported: a
+  // preserved selection marker in the text that disagrees with what the page
+  // shows must surface even if the model did not volunteer it.
+  const deterministicConflicts = detectSelectionConflicts(context.textEvidence, trace.evidence);
+  const conflicts = [...(second.answer.conflicts ?? [])];
+  for (const conflict of deterministicConflicts) {
+    const alreadyReported = conflicts.some(
+      (existing) => existing.field.toLowerCase() === conflict.field.toLowerCase()
+    );
+    if (!alreadyReported) conflicts.push(conflict);
+  }
+
+  const changedAnswerStatus = second.answer.status !== textAnswer.status;
+  const answer: ExtractedAnswer = {
+    ...second.answer,
+    // A conflict means we did not verify the field; never present that as complete.
+    ...(conflicts.length > 0
+      ? { conflicts, status: second.answer.status === "complete" ? ("partial" as const) : second.answer.status }
+      : {}),
+    visualFallback: { ...trace, changedAnswerStatus },
+  };
+
+  logger.info("visual_fallback.merged", {
+    fileId: context.fileId,
+    fileName: context.fileName,
+    textStatus: textAnswer.status,
+    mergedStatus: answer.status,
+    changedAnswerStatus,
+    visualCitations: answer.citations.filter((citation) => citation.evidenceType === "visual").length,
+    conflicts: conflicts.length,
+  });
+
+  return { answer, raw: second.raw };
+}
+
+/**
+ * Calls the evidence-based extractor for a single project document. Returns the
+ * rendered markdown plus the structured answer, or null when no API key is
+ * configured / the model returns unusable output (caller falls back to raw text).
  */
 async function callDetailedExtractionLlm(
   rawQuery: string,
   fileName: string,
-  matchedChunks: RankedDocumentChunk[]
-): Promise<string | null> {
+  matchedChunks: RankedDocumentChunk[],
+  fileId?: string,
+  visual?: LockedDocumentVisualSource
+): Promise<{ markdown: string; answer: ExtractedAnswer } | null> {
   const alias = deriveShortFormName(fileName);
 
-  const passageBlocks = matchedChunks
+  const evidence: ExtractorEvidenceItem[] = matchedChunks
     .slice(0, 12)
-    .map((chunk, index) => {
-      const text = chunk.chunkText.replace(/\s+/g, " ").trim();
-      const page = typeof chunk.pageNumber === "number" ? ` (p. ${chunk.pageNumber})` : "";
-      return `PASSAGE ${index + 1}${page}:\n${text}`;
-    })
-    .join("\n\n");
+    .map((chunk, index) => ({
+      id: `c${index + 1}`,
+      documentId: alias,
+      documentName: alias,
+      fileName,
+      ...(fileId ? { fileId } : {}),
+      ...(typeof chunk.pageNumber === "number" ? { page: chunk.pageNumber } : {}),
+      text: chunk.chunkText,
+    }));
 
-  const systemInstruction = [
-    "You are ContractorAI — a construction PM assistant. The user asked about specific items in a QA/QC or inspection document.",
-    "You will receive numbered passages extracted from the document. Each passage contains a mention of the queried term.",
-    "For EACH passage, write exactly one bullet point that explains in plain English what the item is, what it requires, and who is responsible (if stated).",
-    "Rules:",
-    "- Use the exact page reference shown with each passage: (p. X).",
-    "- Under 25 words per bullet. Lead with the action/requirement, not a summary label.",
-    "- If two passages cover the same requirement, merge them into one bullet and list both page refs.",
-    "- Do NOT say 'the document does not contain' — only describe what IS in the passages.",
-    "- Output format: ## [Short 3-5 word heading]\\n- (p. X) [plain-language bullet]\\n- (p. X) ...",
-  ].join("\n");
+  const result = await runEvidenceExtractor(rawQuery, evidence, {
+    maxTokens: DETAILED_EXTRACTION_MAX_OUTPUT_TOKENS,
+    ...(visual
+      ? {
+          visual: buildVisualContext(visual, alias, matchedChunks),
+        }
+      : {}),
+  });
+  if (!result) return null;
 
-  const userMessage = `Query: ${rawQuery}\nDocument: ${alias}\n\n${passageBlocks}`;
+  return { markdown: result.markdown, answer: result.answer };
+}
 
-  return callChatLlm(
-    [
-      { role: "system", content: systemInstruction },
-      { role: "user", content: userMessage },
-    ],
-    { temperature: 0.1, maxTokens: DETAILED_EXTRACTION_MAX_OUTPUT_TOKENS }
-  );
+/**
+ * The locked document, as the callers inside `answerFromDocumentDetail` know it.
+ * `projectId` is required: without it the file's bytes cannot be resolved, so
+ * there is nothing to render.
+ */
+export interface LockedDocumentVisualSource {
+  projectId: UUID;
+  fileId: UUID;
+  fileName: string;
+  filePath?: string;
+  mimeType?: string;
+}
+
+/** Adapt a locked document + its ranked chunks into the extractor's visual context. */
+function buildVisualContext(
+  source: LockedDocumentVisualSource,
+  documentAlias: string,
+  rankedChunks: RankedDocumentChunk[]
+): ExtractorVisualContext {
+  const textEvidence: VisualCandidateChunk[] = rankedChunks.slice(0, 24).map((chunk) => ({
+    ...(typeof chunk.pageNumber === "number" ? { page: chunk.pageNumber } : {}),
+    text: chunk.chunkText,
+    score: chunk.score,
+    strongEvidence: chunk.strongEvidence,
+  }));
+
+  return {
+    projectId: source.projectId,
+    fileId: source.fileId,
+    fileName: source.fileName,
+    ...(source.filePath ? { filePath: source.filePath } : {}),
+    ...(source.mimeType ? { mimeType: source.mimeType } : {}),
+    documentAlias,
+    textEvidence,
+  };
 }
 
 async function callSingleAgent(
@@ -4793,28 +5894,85 @@ async function callSingleAgent(
   history?: ChatHistoryTurn[],
   openDocs?: OpenDocContext[],
   activeDocFileName?: string,
-  activeDocFileId?: string
-): Promise<{ text: string; actions: AgentAction[] }> {
+  activeDocFileId?: string,
+  visual?: LockedDocumentVisualSource
+): Promise<{ text: string; actions: AgentAction[]; answer?: ExtractedAnswer }> {
   const userPrompt = buildUserPrompt(query, domains, nodes, snapshot, openDocs, activeDocFileName);
 
   const historyMessages: ChatLlmMessage[] = (history ?? [])
     .slice(-MAX_HISTORY_TURNS)
     .map((turn) => ({ role: turn.role, content: turn.content }));
 
-  // Depth mode: factual/spec/extraction queries get a fuller prompt + higher
-  // output budget so multi-item answers aren't compressed into header bullets.
+  // Depth mode: factual/spec/extraction queries get a higher output budget so
+  // multi-item answers aren't compressed.
   const depthMode = isFactualIntent(query);
+  const maxTokens = depthMode ? AGENT_DEPTH_OUTPUT_TOKENS : AGENT_MAX_OUTPUT_TOKENS;
+
+  // Primary path: the evidence-based answer extractor. It receives
+  // citation-tagged passages and returns a strict JSON answer, which we render
+  // to markdown and also surface as a structured object. When a document is
+  // open we append the action-proposal addendum so the model can still emit a
+  // fenced write-action block after the JSON.
+  if (nodes.length > 0) {
+    const evidence: ExtractorEvidenceItem[] = nodes.slice(0, 12).map((node, index) => {
+      const alias = deriveShortFormName(node.fileName, node.extractedFields, node.docCategory);
+      return {
+        id: `c${index + 1}`,
+        documentId: alias,
+        documentName: alias,
+        fileName: node.fileName,
+        fileId: node.fileId,
+        ...(typeof node.pageNumber === "number" && node.pageNumber > 0 ? { page: node.pageNumber } : {}),
+        text: node.chunkText,
+      };
+    });
+
+    const extraSystem = activeDocFileId
+      ? [
+          "After the JSON object, and only if a document write action is clearly warranted, append the action block described below.",
+          buildActionAddendum(activeDocFileId),
+        ].join("\n\n")
+      : undefined;
+
+    // Visual fallback only applies when a single document is locked: on a
+    // project-wide route there is no one document whose pages we could inspect.
+    const visualContext = visual
+      ? buildVisualContext(
+          visual,
+          deriveShortFormName(visual.fileName),
+          nodes
+            .filter((node) => node.fileId === visual.fileId)
+            .map((node) => ({
+              chunkIndex: node.chunkIndex,
+              chunkText: node.chunkText,
+              ...(typeof node.pageNumber === "number" ? { pageNumber: node.pageNumber } : {}),
+              keywordHits: 0,
+              strongEvidence: false,
+              matchedEvidenceTerms: 0,
+              score: node.score,
+            }))
+        )
+      : undefined;
+
+    const extracted = await runEvidenceExtractor(query, evidence, {
+      maxTokens,
+      ...(extraSystem ? { extraSystem } : {}),
+      ...(visualContext ? { visual: visualContext } : {}),
+    });
+    if (extracted) {
+      const actions = activeDocFileId ? extractAgentActions(extracted.raw).actions : [];
+      return { text: extracted.markdown, actions, answer: extracted.answer };
+    }
+  }
+
+  // Fallback path: legacy free-form prose prompt (used when the extractor is
+  // unavailable or returns unparseable output).
   const baseSystemPrompt = depthMode
     ? `${STATIC_SYSTEM_PROMPT}\n${DEPTH_MODE_ADDENDUM}`
     : STATIC_SYSTEM_PROMPT;
-  // When a document is open, append the action-proposal addendum so the LLM
-  // knows it can suggest write actions. This works across all LLM providers
-  // because it uses structured output (fenced blocks) rather than native
-  // function-calling (which has incompatible wire formats per provider).
   const systemPrompt = activeDocFileId
     ? `${baseSystemPrompt}\n\n${buildActionAddendum(activeDocFileId)}`
     : baseSystemPrompt;
-  const maxTokens = depthMode ? AGENT_DEPTH_OUTPUT_TOKENS : AGENT_MAX_OUTPUT_TOKENS;
 
   const completion = await callChatLlm(
     [
@@ -5063,7 +6221,17 @@ async function tryInTheDocumentAnswer(
   rawQuery: string,
   startedAt: number,
   history?: ChatHistoryTurn[],
-  openDocs?: OpenDocContext[]
+  openDocs?: OpenDocContext[],
+  /**
+   * When set, only accept a candidate whose `docCategory` is in this list.
+   * Candidates that don't match are tried in score order until one does.
+   * If none match, return null so the caller falls to the hybrid search path.
+   *
+   * This prevents a Progress Report (which mentions a meeting in passing)
+   * from beating the actual Meeting Minutes when the interpretation has
+   * already narrowed the search to `meeting_minutes` / `communication`.
+   */
+  allowedCategories?: readonly string[]
 ): Promise<CoordinatorResult | null> {
   // Detect multiple "ask about a specific named document" patterns:
   // 1. "In the [doc], what/which/..."  (original)
@@ -5076,30 +6244,53 @@ async function tryInTheDocumentAnswer(
   if (!inTheMatch) return null;
 
   const docRef = inTheMatch[1].trim();
-  // Expand month name↔number variants so "December" matches "12" in file names and vice versa
-  const terms = extractFileLookupTerms(expandDocRefDateVariants(docRef));
-  if (terms.length < 2) return null;
 
-  const candidates = await listFileLookupCandidates(projectId, terms);
-  const ranked = candidates
-    .map((file) => ({
-      file,
-      score: scoreFileMatch(file.fileName, file.filePath, terms),
-    }))
-    .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score);
+  // Document resolution is its own stage: the reference is turned into a
+  // requested identity, candidates are generated from the identifier index and
+  // file-name search, and a lock is only issued when one candidate actually
+  // carries that identity. Anything else (ambiguous / not_found) falls through to
+  // project-wide retrieval rather than answering from the nearest related file —
+  // the old file-name scorer here is what locked a May 5–7 Burnside flagging
+  // sheet onto a question about the May 13 Burnside VECP presentation.
+  const lock = await documentIdentityService.resolveDocumentLock({
+    projectId,
+    question: rawQuery,
+    reference: docRef,
+    ...(allowedCategories && allowedCategories.length > 0
+      ? { restrictToDocCategories: allowedCategories }
+      : {}),
+  });
 
-  if (ranked.length === 0) return null;
+  if (lock.status !== "locked" || !lock.fileId) {
+    logger.info("chat.coordinator.document_lock_declined", {
+      projectId: String(projectId),
+      reference: docRef,
+      status: lock.status,
+      reason: lock.reason,
+      candidates: (lock.candidateFiles ?? []).slice(0, 5).map((candidate) => ({
+        fileName: candidate.fileName,
+        identityScore: candidate.identityScore,
+        decision: candidate.decision,
+      })),
+    });
+    return null;
+  }
 
-  const best = ranked[0];
-  // Require score >= terms.length: roughly half the reference terms must match in the file name
-  // (scoreFileMatch gives +2 per term matched in the file name)
-  if (best.score < terms.length) return null;
-
-  const detail = await retrievalService.getDocumentDetail(best.file.id, projectId);
+  const detail = await retrievalService.getDocumentDetail(lock.fileId, projectId);
   if (!detail) return null;
 
-  return answerFromDocumentDetail(detail, rawQuery, startedAt, history, openDocs, detail.fileName, { forceSummaryFallback: true });
+  // Attendee questions need a wider node budget to cover a minutes attendance
+  // list; unrelated to identity, kept from the previous implementation.
+  const ATTENDEE_QUERY_RE =
+    /\b(attendee|attendees|participant|participants|presenter|presenters|who\s+attended|staff\s+attended|staff\s+present|external\s+consultants?)\b/i;
+  const maxNodes =
+    detail.docCategory === "meeting_minutes" && ATTENDEE_QUERY_RE.test(rawQuery) ? 14 : undefined;
+
+  return answerFromDocumentDetail(detail, rawQuery, startedAt, history, openDocs, detail.fileName, {
+    forceSummaryFallback: true,
+    projectId,
+    ...(maxNodes !== undefined ? { maxGraphNodes: maxNodes } : {}),
+  });
 }
 
 function isExampleSubmittalsQuery(query: string): boolean {
@@ -5267,6 +6458,114 @@ async function tryPermitFilenameLookup(
   };
 }
 
+/**
+ * Fallback when lookupExactIdentifier returned null (file is not yet in
+ * document_identifiers) but the query carries a parseable construction ID.
+ * Searches project files by filename for the raw identifier string, then
+ * answers from the best match.  This prevents the coordinator from falling
+ * all the way through to global hybrid search — which may surface a
+ * semantically related but wrong document — while the backfill is pending.
+ */
+async function tryFilenameIdentifierSearch(
+  projectId: UUID,
+  rawQuery: string,
+  startedAt: number,
+  history?: ChatHistoryTurn[],
+  openDocs?: OpenDocContext[]
+): Promise<CoordinatorResult | null> {
+  const identifiers = parseIdentifierQuery(rawQuery);
+  if (identifiers.length === 0) return null;
+
+  // Use the highest-priority identifier as the filename search term.
+  const primaryId = identifiers[0]!;
+  const searchTerm = primaryId.raw.trim();
+
+  const results = await projectService.listProjectFiles(projectId, {
+    page: 1,
+    pageSize: 10,
+    search: searchTerm,
+  });
+
+  if (results.files.length === 0) return null;
+
+  // Score candidates by how much their filename resembles the full query.
+  const scoredFiles = results.files
+    .map((file) => {
+      const nameLower = file.fileName.toLowerCase();
+      const termLower = searchTerm.toLowerCase();
+      // Exact identifier present in name gets priority over partial matches.
+      const exactHit = nameLower.includes(termLower) ? 2 : 0;
+      // Secondary: query revision code appears in the filename.
+      const queryLower = rawQuery.toLowerCase();
+      const revMatch = queryLower.match(/r\d{2}/i);
+      const revHit = revMatch && nameLower.includes(revMatch[0].toLowerCase()) ? 1 : 0;
+      return { file, score: exactHit + revHit };
+    })
+    .filter((e) => e.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  // The filename search is a substring match, so it can surface a neighbour of
+  // the requested identifier (`RFI-0163 - AECOM-RFI-096 …` for `RFI096`, a
+  // different revision of the same control number). Take the highest-scoring file
+  // whose identity the question confirms, not simply the highest-scoring file.
+  const reference = extractDocumentReference(rawQuery);
+  const best = scoredFiles.find(
+    (entry) =>
+      documentIdentityService.verifyLock({
+        question: rawQuery,
+        ...(reference ? { reference } : {}),
+        candidate: {
+          fileId: entry.file.id,
+          fileName: entry.file.fileName,
+          filePath: entry.file.filePath,
+        },
+        projectId,
+      }).accepted
+  );
+  if (!best) {
+    logger.info("chat.coordinator.filename_id_lock_declined", {
+      projectId: String(projectId),
+      searchTerm,
+      candidates: scoredFiles.slice(0, 5).map((entry) => entry.file.fileName),
+    });
+    return null;
+  }
+
+  const detail = await retrievalService.getDocumentDetail(best.file.id, projectId);
+  if (!detail) return null;
+
+  if (detail.chunks.length === 0) {
+    // File found but not indexed — tell the user rather than silently failing.
+    const domains: QueryDomain[] = ["documents"];
+    const telemetry = buildTelemetry(startedAt);
+    return {
+      content: [
+        `## ${primaryId.raw}`,
+        `- Found \`${best.file.fileName}\` via filename search, but it has no indexed text yet.`,
+        "- Re-run indexing on this file, then ask again for a precise answer.",
+      ].join("\n"),
+      sources: buildSingleSource(best.file.id, best.file.fileName, {
+        displayName: deriveShortFormName(best.file.fileName),
+      }),
+      domains,
+      coordinator: buildCoordinatorMetadata(domains, telemetry),
+      cacheHit: false,
+      autoOpenFileName: best.file.fileName,
+    };
+  }
+
+  logger.info("chat.coordinator.filename_id_fallback", {
+    projectId: String(projectId),
+    searchTerm,
+    resolvedFile: best.file.fileName,
+    score: best.score,
+  });
+
+  return answerFromDocumentDetail(detail, rawQuery, startedAt, history, openDocs, best.file.fileName, {
+    projectId,
+  });
+}
+
 async function tryExactIdentifierDocumentAnswer(
   projectId: UUID,
   trimmedQuery: string,
@@ -5280,11 +6579,31 @@ async function tryExactIdentifierDocumentAnswer(
   if (!interpretation.retrievalHints?.exactIdentifierFirst || !exact) {
     return null;
   }
-  if (!isContentRetrievalQuery(trimmedQuery)) {
+  // NOTE: We intentionally do NOT gate on isContentRetrievalQuery here.
+  // When the query carries a construction document identifier (GEN-042R00,
+  // AVI-002R01, RFI-0116, …) and the exact-ID lookup resolved to a specific
+  // file, that identifier is the strongest possible retrieval signal — stronger
+  // than query-structure heuristics. Queries in "In [ID], what X?" form start
+  // with "In" rather than "what/which/…" and are rejected by
+  // isContentRetrievalQuery, but they are canonical content-retrieval queries.
+
+  // `lookupExactIdentifier` resolves a revision/status *family* to one member,
+  // and family resolution is a ranking — it can land on a member whose identity
+  // contradicts the question (a different revision of the same control number).
+  // Verify the chosen member's identity before it becomes the lock, and walk the
+  // family for one that passes rather than answering from a contradiction.
+  const reference = extractDocumentReference(rawQuery);
+  const confirmed = resolveVerifiedFamilyMember(exact, rawQuery, reference, projectId);
+  if (!confirmed) {
+    logger.info("chat.coordinator.exact_identifier_lock_declined", {
+      projectId: String(projectId),
+      identifier: exact.identifier.valueNormalized,
+      candidates: exact.family.map((member) => member.fileName).slice(0, 5),
+    });
     return null;
   }
 
-  const detail = await retrievalService.getDocumentDetail(exact.fileId, projectId);
+  const detail = await retrievalService.getDocumentDetail(confirmed.fileId, projectId);
   if (detail && detail.chunks.length > 0) {
     const result = await answerFromDocumentDetail(
       detail,
@@ -5292,21 +6611,22 @@ async function tryExactIdentifierDocumentAnswer(
       startedAt,
       history,
       openDocs,
-      detail.fileName
+      detail.fileName,
+      { projectId }
     );
     return { ...result, interpretation };
   }
 
   const domains: QueryDomain[] = ["documents"];
   const telemetry = buildTelemetry(startedAt);
-  const fallbackSource = buildSingleSource(exact.fileId, exact.fileName, {
-    displayName: deriveShortFormName(exact.fileName),
+  const fallbackSource = buildSingleSource(confirmed.fileId, confirmed.fileName, {
+    displayName: deriveShortFormName(confirmed.fileName),
   });
 
   return {
     content: [
       `## ${exact.identifier.valueNormalized}`,
-      `- I found ${deriveShortFormName(exact.fileName)}, but I do not have indexed text for a precise answer.`,
+      `- I found ${deriveShortFormName(confirmed.fileName)}, but I do not have indexed text for a precise answer.`,
       "- Re-run indexing on that file, then ask again.",
     ].join("\n"),
     sources: fallbackSource,
@@ -5314,8 +6634,44 @@ async function tryExactIdentifierDocumentAnswer(
     domains,
     coordinator: buildCoordinatorMetadata(domains, telemetry),
     cacheHit: false,
-    autoOpenFileName: exact.fileName,
+    autoOpenFileName: confirmed.fileName,
   };
+}
+
+/**
+ * The first member of an exact-identifier family whose identity the question
+ * actually confirms — the resolved member first, then the rest in family order.
+ * Returns null when every member contradicts the question, so the caller falls
+ * through to project-wide retrieval instead of locking onto a wrong document.
+ */
+function resolveVerifiedFamilyMember(
+  exact: IdentifierLookupResult,
+  rawQuery: string,
+  reference: string | undefined,
+  projectId: UUID
+): { fileId: UUID; fileName: string } | null {
+  const ordered = [
+    { fileId: exact.fileId, fileName: exact.fileName, filePath: exact.filePath },
+    ...(exact.family ?? [])
+      .filter((member) => member.fileId !== exact.fileId)
+      .map((member) => ({
+        fileId: member.fileId,
+        fileName: member.fileName,
+        filePath: member.filePath,
+      })),
+  ];
+
+  for (const member of ordered) {
+    const { accepted } = documentIdentityService.verifyLock({
+      question: rawQuery,
+      ...(reference ? { reference } : {}),
+      candidate: member,
+      projectId,
+    });
+    if (accepted) return { fileId: member.fileId, fileName: member.fileName };
+  }
+
+  return null;
 }
 
 export const chatCoordinatorService = {
@@ -5514,9 +6870,31 @@ export const chatCoordinatorService = {
       if (exactIdentifierAnswer) {
         return exactIdentifierAnswer;
       }
+
+      // document_identifiers table miss: the query carries a parseable ID but
+      // the backfill hasn't run yet (or the file was indexed before identifier
+      // extraction was added). Search by filename so we still answer from the
+      // right document rather than falling to global hybrid search.
+      if (exactIdentifierFirst && !exactIdentifierLookup) {
+        const filenameAnswer = await tryFilenameIdentifierSearch(
+          projectId,
+          rawQuery,
+          startedAt,
+          history,
+          openDocs
+        );
+        if (filenameAnswer) {
+          return { ...filenameAnswer, interpretation };
+        }
+      }
     }
 
-    const inTheDocAnswer = await tryInTheDocumentAnswer(projectId, rawQuery, startedAt, history, openDocs);
+    const meetingCategories = interpreted.retrievalHints?.preferredCategories?.includes("meeting_minutes")
+      ? interpreted.retrievalHints.preferredCategories
+      : undefined;
+    const inTheDocAnswer = await tryInTheDocumentAnswer(
+      projectId, rawQuery, startedAt, history, openDocs, meetingCategories
+    );
     if (inTheDocAnswer) {
       return { ...inTheDocAnswer, interpretation };
     }
@@ -5551,7 +6929,8 @@ export const chatCoordinatorService = {
             startedAt,
             history,
             openDocs,
-            activeDocFileName
+            activeDocFileName,
+            { projectId }
           );
         }
 
@@ -5596,7 +6975,8 @@ export const chatCoordinatorService = {
           startedAt,
           history,
           openDocs,
-          activeDocFileName ?? activeDocDetail.fileName
+          activeDocFileName ?? activeDocDetail.fileName,
+          { projectId }
         );
       }
     }
@@ -5617,7 +6997,8 @@ export const chatCoordinatorService = {
           startedAt,
           history,
           openDocs,
-          directDocumentCandidate.fileName
+          directDocumentCandidate.fileName,
+          { projectId }
         );
       }
 
@@ -5673,6 +7054,7 @@ export const chatCoordinatorService = {
         };
         return {
           content: cached.content,
+          answer: cached.answer,
           sources: cached.sources,
           citations: cached.citations,
           interpretation: cached.interpretation,
@@ -5791,7 +7173,7 @@ export const chatCoordinatorService = {
     };
 
     const agentStartedAt = Date.now();
-    const { text: content, actions: agentActions } = await callSingleAgent(rawQuery, domains, graphNodes, contextSnapshot, history, openDocs, activeDocFileName, activeDocFileId);
+    const { text: content, actions: agentActions, answer } = await callSingleAgent(rawQuery, domains, graphNodes, contextSnapshot, history, openDocs, activeDocFileName, activeDocFileId);
     const agentMs = Date.now() - agentStartedAt;
     const strictQueryTokens = filterHighFrequencyTokens(tokenizeQuery(rawQuery), graphNodes);
     const citations = buildValidatedCitations(graphNodes, sources, {
@@ -5876,6 +7258,7 @@ export const chatCoordinatorService = {
     if (shouldUseResponseCache) {
       responseCache.set(cacheKey, {
         content: contentWithGuardrail,
+        answer,
         sources,
         citations,
         interpretation,
@@ -5894,6 +7277,7 @@ export const chatCoordinatorService = {
 
     return {
       content: contentWithGuardrail,
+      answer,
       sources,
       citations,
       interpretation,

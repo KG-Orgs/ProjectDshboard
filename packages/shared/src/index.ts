@@ -77,6 +77,12 @@ export type {
   UpdateChatSessionResponse,
   SendChatMessageRequest,
   SendChatMessageResponse,
+  ExtractedAnswer,
+  VisualTaskType,
+  VisualNeedAssessment,
+  VisualEvidence,
+  VisualFallbackTrace,
+  AnswerValidation,
   ChatHistoryResponse,
   ChatHistoryTurn,
   OpenDocContext,
@@ -100,6 +106,16 @@ export {
   isInviteOnlyAuth,
   parsePlatformOperatorEmails,
 } from "./auth/platform";
+
+// ================================
+// CITATION DEEP LINKS
+// ================================
+export {
+  CITATION_HREF_PREFIX,
+  buildCitationHref,
+  parseCitationHref,
+  type CitationTarget,
+} from "./citations";
 
 // ================================
 // API CLIENT

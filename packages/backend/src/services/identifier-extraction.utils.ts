@@ -33,6 +33,10 @@ export const IDENTIFIER_TYPES = [
   "SUBMITTAL",
   "CO",
   "NCR",
+  // Approval/correspondence letters: MTACD-MLJTC2-L-0024, MTA-CD-L-0017
+  "APPROVAL_LETTER",
+  // Invoice/billing references: Invoice 11707, Inv# 0849812
+  "INVOICE",
 ] as const;
 
 export type IdentifierType = (typeof IDENTIFIER_TYPES)[number];
@@ -62,7 +66,7 @@ const PREFIX_INT_TYPES = new Set<IdentifierType>([
 
 // These keep zeros and status suffixes (semantically significant) — only
 // separators are stripped.
-const KEEP_ZEROS_TYPES = new Set<IdentifierType>(["SUBMITTAL", "CO", "NCR"]);
+const KEEP_ZEROS_TYPES = new Set<IdentifierType>(["SUBMITTAL", "CO", "NCR", "APPROVAL_LETTER", "INVOICE"]);
 
 // ============================================================
 // Normalization (D2 — formats are equivalent + unique)
@@ -140,11 +144,18 @@ interface IdentifierPattern {
 // more specific identifier wins (and dedup keeps both where legitimately
 // distinct).
 const IDENTIFIER_PATTERNS: IdentifierPattern[] = [
+  // MTA/NYCT approval-letter references: MTACD-MLJTC2-L-0024, MTACD-L-0017.
+  // Must come before SUBMITTAL to avoid partial PRDC/station matches.
+  { type: "APPROVAL_LETTER", regex: new RegExp(`${LB}MTACD-[A-Z0-9]+-L-\\d+`, "gi") },
+  // Invoice and billing references: Invoice 11707, Invoice# 0849812, Inv# 129318.
+  { type: "INVOICE", regex: new RegExp(`${LB}inv(?:oice)?[\\s#]*\\d+`, "gi") },
   // Submittal control number: GEN-023R00, AVI-082R00, MYR-013R01 (the station
   // code is the origin; a PRDC package prefix is captured separately below).
-  { type: "SUBMITTAL", regex: new RegExp(`${LB}(?:${STATION_ALTERNATION})-\\d+R\\d+`, "gi") },
+  // The separator is optional so a user typing `GEN042R00` resolves to the same
+  // key as the `GEN-042R00` the file names use — normalization strips it anyway.
+  { type: "SUBMITTAL", regex: new RegExp(`${LB}(?:${STATION_ALTERNATION})[\\s-]?\\d+R\\d+`, "gi") },
   // PRDC-as-origin control number: PRDC04-040R00.
-  { type: "SUBMITTAL", regex: new RegExp(`${LB}PRDC\\d+-\\d+R\\d+`, "gi") },
+  { type: "SUBMITTAL", regex: new RegExp(`${LB}PRDC\\d+[\\s-]?\\d+R\\d+`, "gi") },
   // Secondary domain identifiers (live in the description segment).
   { type: "QWP", regex: new RegExp(`${LB}QWP[\\s\\-]*0*\\d+`, "gi") },
   { type: "SWP", regex: new RegExp(`${LB}SWP[\\s\\-]*0*\\d+`, "gi") },
@@ -306,7 +317,7 @@ export function extractPathMetadata(fileName: string, filePath: string): PathMet
 
   // Station/area + revision: from the submittal control number in the name.
   const controlMatch = nameWithoutExt.match(
-    new RegExp(`(?<![A-Za-z0-9])(${STATION_ALTERNATION})-(\\d+)R(\\d+)`, "i")
+    new RegExp(`(?<![A-Za-z0-9])(${STATION_ALTERNATION})[\\s-]?(\\d+)R(\\d+)`, "i")
   );
   if (controlMatch) {
     const station = controlMatch[1].toUpperCase() as StationCode;
@@ -358,6 +369,56 @@ const STATUS_APPROVED_RANK: Record<string, number> = {
 export function statusApprovedRank(statusCode?: string): number {
   if (!statusCode) return 1;
   return STATUS_APPROVED_RANK[statusCode.toUpperCase()] ?? 1;
+}
+
+// Human-readable expansion of the transmittal status/disposition codes that
+// appear as a ` - XXX - ` segment in submittal filenames. Meanings are taken
+// verbatim from ai-instructions/context/project_domain_context.md §2 (the
+// project's authoritative status-code glossary) and the inline glosses on
+// STATUS_APPROVED_RANK above — not inferred. Codes without a documented meaning
+// (e.g. AAR, AEAN) are intentionally omitted so callers fall through instead of
+// guessing.
+export const STATUS_CODE_LABELS: Record<string, { label: string; description: string }> = {
+  APP: { label: "Approved", description: "Contractor may proceed; no changes required." },
+  NET: { label: "No Exceptions Taken", description: "Reviewed with no exceptions; contractor may proceed." },
+  AAN: {
+    label: "Approved As Noted",
+    description:
+      "Approved with reviewer comments; contractor must incorporate the reviewer's notes before or during construction.",
+  },
+  RWC: {
+    label: "Reviewed with Comments",
+    description:
+      "Reviewed; contractor should address comments; resubmittal may not be required — confirm with reviewer.",
+  },
+  "R&R": {
+    label: "Revise and Resubmit",
+    description:
+      "Not approved; contractor must revise and resubmit before using the document for construction.",
+  },
+  FIO: {
+    label: "For Information Only",
+    description:
+      "Document received by CM / MTA for their records; no approval action is taken by MTA on this transmittal.",
+  },
+  ORIG: { label: "Original", description: "First submission; not yet reviewed." },
+  ORG: { label: "Original", description: "First submission; not yet reviewed." },
+  CLO: { label: "Closed", description: "Item closed out; final." },
+  VOID: { label: "Void", description: "Superseded or voided." },
+};
+
+/**
+ * Expand a filename status/disposition code (e.g. "FIO", "R&R") to its
+ * authoritative human-readable meaning. Returns undefined for unknown or
+ * undocumented codes so callers can fall back rather than emit a guess.
+ */
+export function describeStatusCode(
+  statusCode?: string
+): { code: string; label: string; description: string } | undefined {
+  if (!statusCode) return undefined;
+  const code = statusCode.toUpperCase();
+  const entry = STATUS_CODE_LABELS[code];
+  return entry ? { code, ...entry } : undefined;
 }
 
 export function revisionNumber(revision?: string): number {

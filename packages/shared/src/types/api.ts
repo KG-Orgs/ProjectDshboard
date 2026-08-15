@@ -429,10 +429,154 @@ export interface SendChatMessageRequest {
   feedback?: InterpretationFeedbackEvent;
 }
 
+/**
+ * Structured, evidence-grounded answer produced by the Evidence-Based Answer
+ * Extractor prompt. This is emitted alongside the rendered markdown `content`:
+ * `content` is for display, `answer` is the machine-readable equivalent that
+ * carries per-item citations, a status, and an explicit list of anything that
+ * could not be verified.
+ */
+export interface ExtractedAnswer {
+  /**
+   * complete       — every material part of the question was answered.
+   * partial        — some parts answered, others could not be verified.
+   * not_found      — correct source located but requested info absent.
+   * source_mismatch — retrieved evidence does not match the requested identifier/revision.
+   */
+  status: "complete" | "partial" | "not_found" | "source_mismatch";
+  title: string;
+  /** Optional one-sentence direct answer. */
+  summary?: string;
+  items: Array<{
+    label: string;
+    value: string;
+    /** Ids referencing entries in `citations`. */
+    citationIds?: string[];
+  }>;
+  /** Requested information that could not be verified from the evidence. */
+  missing?: string[];
+  citations: Array<{
+    id: string;
+    documentId?: string;
+    documentName?: string;
+    /** Source file, used to deep-link the citation into the document viewer. */
+    fileId?: UUID;
+    page?: number;
+    /** Shortest supporting excerpt needed to verify the claim. */
+    evidenceText?: string;
+    /**
+     * How the cited fact was observed. `text` (default) means it came from
+     * extracted/OCR text; `visual` means a vision pass read it off the rendered
+     * page. Both carry the same document + page provenance so the viewer can
+     * deep-link either kind.
+     */
+    evidenceType?: "text" | "visual";
+  }>;
+  /**
+   * Direct disagreements between extracted text and visual inspection of the
+   * same page. Surfaced for review rather than silently resolved — visual
+   * interpretation must not override contradictory text.
+   */
+  conflicts?: Array<{
+    field: string;
+    textValue: string;
+    visualValue: string;
+    /** Citation ids backing each side, when known. */
+    citationIds?: string[];
+  }>;
+  /** Set when the visual evidence fallback stage ran for this answer. */
+  visualFallback?: VisualFallbackTrace;
+}
+
+/** The kinds of visual inspection task a question can imply. */
+export type VisualTaskType =
+  | "drawing"
+  | "photo"
+  | "table"
+  | "checkbox"
+  | "title_block"
+  | "signature"
+  | "markup"
+  | "scan"
+  | "other";
+
+/**
+ * Whether a question is likely to require looking at the page rather than
+ * reading extracted text. Produced before any rendering happens, so the
+ * decision to spend a vision call is auditable.
+ */
+export interface VisualNeedAssessment {
+  visualLikely: boolean;
+  /** 0–1. How strongly the wording indicates a visual answer. */
+  confidence: number;
+  reasons: string[];
+  visualTaskTypes: VisualTaskType[];
+}
+
+/**
+ * One page-level visual observation set. Carries document + page so a visual
+ * claim is citable and deep-linkable exactly like a text passage.
+ */
+export interface VisualEvidence {
+  fileId: string;
+  page: number;
+  evidenceType: "visual";
+  /** 0–1 confidence the vision pass reported for this page's observations. */
+  confidence: number;
+  observations: Array<{
+    field: string;
+    value: string;
+    /** Where on the page the value was seen, in the model's own words. */
+    boundingDescription?: string;
+  }>;
+}
+
+/** What the visual fallback stage did, for tracing and for the trace report. */
+export interface VisualFallbackTrace {
+  assessment: VisualNeedAssessment;
+  triggered: boolean;
+  /** Why the stage ran, or why it declined to. */
+  triggerReason: string;
+  pagesSelected: number[];
+  pagesInspected: number[];
+  evidence: VisualEvidence[];
+  /** True when the stage ran but nothing was legible on the selected pages. */
+  noEvidence?: boolean;
+  /** Set when rendering or the vision call failed outright. */
+  failureReason?: string;
+  /** True when visual evidence moved the answer off `not_found`. */
+  changedAnswerStatus?: boolean;
+}
+
+/**
+ * Result of grading an answer against its question and supporting evidence
+ * (the Answer Completeness and Grounding Validator). Produced offline by the
+ * eval harness and, optionally, at runtime as a self-check over `answer`.
+ */
+export interface AnswerValidation {
+  grade: "pass" | "partial" | "fail";
+  failureType:
+    | "none"
+    | "retrieval"
+    | "synthesis"
+    | "source_mismatch"
+    | "unsupported_claim"
+    | "incomplete";
+  requestedFields: Array<{
+    field: string;
+    status: "answered" | "missing" | "unsupported";
+  }>;
+  unsupportedClaims: string[];
+  /** One concise explanation of the result. */
+  notes: string;
+}
+
 export interface SendChatMessageResponse {
   messageId: UUID;
   role: "assistant";
   content: string;
+  /** Structured, machine-readable form of `content` when the answer was produced by the evidence extractor. */
+  answer?: ExtractedAnswer;
   interpretation?: ChatInterpretation;
   suggestions?: string[];
   autoOpenFileName?: string;

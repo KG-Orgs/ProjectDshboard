@@ -10,6 +10,11 @@ export interface AppEnv {
   oauthRedirectUri: string;
   webOrigins: string[];
   onedriveApiEndpoint: string;
+  // OpenRouter — OpenAI-compatible aggregator (takes priority over Gemini/OpenAI
+  // when set; works with any model available on openrouter.ai).
+  openrouterApiKey?: string;
+  openrouterChatModel: string;
+  openrouterChatEndpoint: string;
   geminiApiKey?: string;
   geminiChatModel?: string;
   geminiChatEndpoint?: string;
@@ -41,6 +46,20 @@ export interface AppEnv {
   chatSectionProximityBoostEnabled: boolean;
   chatStrictCitationVerificationEnabled: boolean;
   chatRetrievalTraceEnabled: boolean;
+  /** Run the user-facing answer formatter (Prompt 3) over extractor answers before display. */
+  chatAnswerFormatterEnabled: boolean;
+  /** Verify retrieved sources against the identifier/revision/station the question asks for before answering. */
+  chatSourceIdentityGuardEnabled: boolean;
+  /** Inspect rendered PDF pages with a vision model when text evidence is insufficient and the question is likely visual. */
+  chatVisualFallbackEnabled: boolean;
+  /** Hard cap on pages rendered per visual fallback attempt. */
+  chatVisualFallbackMaxPages: number;
+  /** Render resolution for visual fallback pages — high enough for dimension callouts and checkboxes. */
+  chatVisualFallbackDpi: number;
+  /** Per-page timeout for the vision call. */
+  chatVisualFallbackTimeoutMs: number;
+  /** Vision-capable model id. Falls back to the configured chat model when unset. */
+  visionModel?: string;
   indexingExtractorPipelineV2Enabled: boolean;
   indexingOcrEnabled: boolean;
   docParserTimeoutMs: number;
@@ -102,6 +121,9 @@ export function getEnv(): AppEnv {
     10
   );
   const docParserTimeoutMs = Number.parseInt(process.env.DOC_PARSER_TIMEOUT_MS ?? "12000", 10);
+  const visualFallbackMaxPages = Number.parseInt(process.env.CHAT_VISUAL_FALLBACK_MAX_PAGES ?? "3", 10);
+  const visualFallbackDpi = Number.parseInt(process.env.CHAT_VISUAL_FALLBACK_DPI ?? "200", 10);
+  const visualFallbackTimeoutMs = Number.parseInt(process.env.CHAT_VISUAL_FALLBACK_TIMEOUT_MS ?? "30000", 10);
   const retrievalRerankTopN = Number.parseInt(process.env.RETRIEVAL_RERANK_TOP_N ?? "20", 10);
   const retrievalBlendProfileRaw = (process.env.RETRIEVAL_BLEND_PROFILE ?? "balanced").trim().toLowerCase();
   const retrievalBlendProfile: AppEnv["retrievalBlendProfile"] =
@@ -112,6 +134,10 @@ export function getEnv(): AppEnv {
   const parsedEmbeddingDimensions = Number.parseInt(process.env.OPENAI_EMBEDDING_DIMENSIONS ?? "1024", 10);
   const embeddingDimensions =
     Number.isNaN(parsedEmbeddingDimensions) || parsedEmbeddingDimensions < 1 ? 1024 : parsedEmbeddingDimensions;
+
+  const openrouterApiKey = process.env.OPENROUTER_API_KEY;
+  const openrouterChatModel =
+    process.env.OPENROUTER_CHAT_MODEL ?? "google/gemini-2.5-flash";
 
   const geminiApiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
   const geminiChatModel = process.env.GEMINI_CHAT_MODEL ?? "gemini-2.5-flash";
@@ -153,6 +179,9 @@ export function getEnv(): AppEnv {
       .filter(Boolean),
     onedriveApiEndpoint:
       process.env.ONEDRIVE_API_ENDPOINT ?? "https://graph.microsoft.com/v1.0",
+    openrouterApiKey,
+    openrouterChatModel,
+    openrouterChatEndpoint: "https://openrouter.ai/api/v1/chat/completions",
     geminiApiKey,
     geminiChatModel,
     geminiChatEndpoint,
@@ -193,6 +222,19 @@ export function getEnv(): AppEnv {
     chatSectionProximityBoostEnabled: parseBooleanFlag(process.env.CHAT_SECTION_PROXIMITY_BOOST_ENABLED, true),
     chatStrictCitationVerificationEnabled: parseBooleanFlag(process.env.CHAT_STRICT_CITATION_VERIFICATION_ENABLED, true),
     chatRetrievalTraceEnabled: parseBooleanFlag(process.env.CHAT_RETRIEVAL_TRACE_ENABLED, false),
+    chatAnswerFormatterEnabled: parseBooleanFlag(process.env.CHAT_ANSWER_FORMATTER_ENABLED, false),
+    chatSourceIdentityGuardEnabled: parseBooleanFlag(process.env.CHAT_SOURCE_IDENTITY_GUARD_ENABLED, false),
+    chatVisualFallbackEnabled: parseBooleanFlag(process.env.CHAT_VISUAL_FALLBACK_ENABLED, false),
+    // Clamped: a runaway page count would render (and bill for) an entire drawing set.
+    chatVisualFallbackMaxPages:
+      Number.isNaN(visualFallbackMaxPages) || visualFallbackMaxPages < 1
+        ? 3
+        : Math.min(visualFallbackMaxPages, 5),
+    chatVisualFallbackDpi:
+      Number.isNaN(visualFallbackDpi) || visualFallbackDpi < 72 ? 200 : Math.min(visualFallbackDpi, 400),
+    chatVisualFallbackTimeoutMs:
+      Number.isNaN(visualFallbackTimeoutMs) || visualFallbackTimeoutMs < 1000 ? 30_000 : visualFallbackTimeoutMs,
+    visionModel: process.env.VISION_MODEL,
     indexingExtractorPipelineV2Enabled: parseBooleanFlag(process.env.INDEXING_EXTRACTOR_PIPELINE_V2_ENABLED, false),
     indexingOcrEnabled: parseBooleanFlag(process.env.INDEXING_OCR_ENABLED, false),
     docParserTimeoutMs: Number.isNaN(docParserTimeoutMs) || docParserTimeoutMs < 500 ? 12000 : docParserTimeoutMs,

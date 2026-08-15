@@ -108,6 +108,57 @@ flowchart TD
 
 ## 2. Retrieval pipeline
 
+### Stage 0: document identity resolution (before retrieval)
+
+When the question names a specific document — by identifier (`RFI-096`, `GEN-042R00`,
+`Invoice 11830`) or in natural language ("the May 13, 2025 Burnside Avenue VECP
+Presentation") — resolution runs as its own stage *before* any retrieval:
+
+```
+query → extract identity → generate candidates → score identity → confirm/reject lock
+      → retrieve only inside the locked document → answer
+```
+
+`document-identity.utils.ts` is the pure half (extraction + scoring),
+`document-identity.service.ts` the stateful half (candidate generation + the lock
+decision). The rule the stage exists to enforce: **semantic or file-name
+similarity may propose a document, never confirm one.**
+
+| Signal | Weight | Signal | Weight |
+|--------|--------|--------|--------|
+| Exact identifier | +10 | Different identifier of a requested type | **disqualify** |
+| Exact revision | +5 | Different revision when one was requested | **disqualify** |
+| Exact date (day) | +4 | Below the title-term quorum in the file name | **disqualify** |
+| Full title phrase | +4 | Different station | −6 |
+| Month-precision date | +3 | Conflicting date | −5 |
+| Correct station | +3 | Conflicting document type | −4 |
+| Correct document type | +2 | Extra unrequested type / identifier in the name | −2 each |
+| Correct contract | +2 | Requested field the candidate is silent about | −1 |
+
+A lock needs score ≥ `LOCK_MIN_SCORE` (6) **and** either two confirmed identity
+dimensions or an exact identifier. Two different documents within
+`AMBIGUITY_MARGIN` (2) of each other → `ambiguous`; nothing carrying the identity
+→ `not_found`. Copies of one document (format, disposition, token order) are
+collapsed via `identityFamilyKey` and are not an ambiguity.
+
+`ambiguous` and `not_found` are **not** "use the best guess": the coordinator
+falls through to project-wide hybrid retrieval, where the Source Identity Guard
+remains the emergency brake. Trace events `document_identity.extracted` /
+`.candidates` / `.locked` / `.ambiguous` / `.rejected` carry every candidate's
+normalized identifier, matched fields, conflicting fields and score.
+
+Wired into: `tryInTheDocumentAnswer` (owns the lock decision),
+`tryExactIdentifierDocumentAnswer` and `tryFilenameIdentifierSearch` (verify the
+file another stage chose, and walk to the next family member if it contradicts the
+question).
+
+Diagnostics:
+
+```bash
+pnpm tsx ./eval/probe-document-lock.ts          # lock decisions, no retrieval/LLM
+pnpm tsx ./eval/compare-identity-rerun.ts       # old vs new selected document
+```
+
 ### Two entry paths: exact-ID vs hybrid search
 
 | Path | Trigger | Behavior |
@@ -141,9 +192,18 @@ Applied in order:
 
 When multiple files share an identifier, ranking order:
 
-1. Approval status rank (APP/NET > RWC > ORIG > VOID)
-2. Higher revision number
-3. Most recently modified
+1. **Fewest other identifiers of the requested type** — a file named for a
+   different RFI that merely references the requested one (`RFI-0163 -
+   AECOM-RFI-096 follow Up to RFI-119`) is not the requested document
+2. Filename-token overlap with the query
+3. Has indexed chunks
+4. Approval status rank (APP/NET > RWC > ORIG > VOID)
+5. Higher revision number
+6. Most recently modified
+
+The chosen member is then re-checked by `documentIdentityService.verifyLock`; if it
+contradicts the question (wrong revision, wrong sibling identifier) the next family
+member is tried, and if none pass the route falls through to hybrid retrieval.
 
 Returns `exactIdentifier` metadata + full `family[]` of superseded members.
 
@@ -225,6 +285,39 @@ When a file is open or exact-ID resolves, the coordinator loads **full document 
 - **Detailed extraction** path for list/enumeration queries (LLM interprets matched passages)
 - Deterministic section summaries for spec review queries
 
+### Visual evidence fallback (`visual-fallback.service.ts`)
+
+When the document is locked but the answer is not in the extracted text, the answer may still be on the page as a mark, a dimension, a photograph, or a layout. This stage inspects the rendered page before the pipeline is allowed to return `not_found`.
+
+```
+locked document
+  → text retrieval → text evidence extraction
+  → is the evidence sufficient?
+  → if insufficient AND likely visual:
+       page selection → render (pdftoppm) → vision → merge text + visual → re-extract
+  → completeness validation (checks visual evidence before refusing)
+```
+
+**Trigger (all three required, plus one independent case):**
+
+1. the document is locked (identity resolution is unchanged and simply consumed),
+2. text evidence is insufficient / partial / suspicious (`isSuspiciousExtraction`),
+3. the question is likely visual (`assessVisualNeed`, a deterministic keyword/weight classifier over `shown`, `visible`, `dimensions`, `checkbox`, `title block`, …).
+
+Independently, `detectLostVisualState()` fires when extracted text lists mutually exclusive option labels (NYCT/MTA Approval, Designer Approval, Information Only, …) with no indication of which is selected — the classic case of OCR keeping the labels and losing the tick.
+
+**Page selection** (`selectCandidatePages`) uses cited pages → pages of top-ranked chunks → page 1 for title-block/checkbox/signature tasks → all pages of a document of ≤4 pages. Never more than `CHAT_VISUAL_FALLBACK_MAX_PAGES` (capped at 5).
+
+**Prompting** is one narrow extraction task per page, not a page summary: the exact question, the locked identity, the page number, task-specific rules (a checkbox task gets the printed option set and is told that presence in the list is not selection; a drawing task is forbidden from estimating dimensions from scale; a photo task is forbidden from inferring invisible work), and `NOT_VISIBLE` as the required answer when the page does not determine it.
+
+**Evidence** comes back as page-scoped `VisualEvidence` and is merged into the extractor as a labelled `VISUAL EVIDENCE` block alongside `TEXT EVIDENCE`. Both kinds carry the same provenance requirements, and citations are tagged `evidenceType: "text" | "visual"` — code-owned, so the model cannot relabel a text passage as visual. A visual citation keeps `fileId` + `page`, so it deep-links exactly like a text citation.
+
+**Conflicts:** visual interpretation never silently overrides contradictory text. The extractor is asked to report disagreements in `conflicts`, and `detectSelectionConflicts()` adds a deterministic check for a preserved selection marker that disagrees with what the image shows. A conflict downgrades `complete` to `partial` and is stated in the answer rather than resolved.
+
+**Trace events:** `visual_fallback.assessed`, `.triggered`, `.pages_selected`, `.completed`, `.no_evidence`, `.failed`, plus `.merged` / `.answered` when evidence reached the answer.
+
+**Limitation:** the coordinator has no user Microsoft token, so only locally synced corpus files (`LOCAL_CORPUS_PARENT`) can be rendered. A Graph-only file reports `source_unavailable` and the answer says the page could not be inspected — it never guesses.
+
 ### Citation building
 
 `buildValidatedCitations()`:
@@ -239,6 +332,8 @@ When a file is open or exact-ID resolves, the coordinator loads **full document 
 | Template | When | User sees |
 |----------|------|-----------|
 | `buildNoExactEvidenceContent()` | Strict factual mode, no keyword/evidence match in active doc | “I could not find an exact indexed passage… Refine with a section heading…” |
+| `buildNoExactEvidenceContent()` (visual) | Same, but the question was visual and the pages were inspected | “I found [file], but the requested information could not be verified from the extracted text or from visual inspection of page 2, page 3.” |
+| `buildNoExactEvidenceContent()` (visual, unavailable) | Visual question, rendering or the file's bytes unreachable | “…could not be verified from the extracted text, and the pages could not be inspected visually (…).” |
 | `buildSectionSuggestionContent()` | Factual query, section hints but no verified anchor | “Could not verify a single exact section… Review: 3.5, 3.5.1…” |
 | **Need Indexed** | Exact-ID or direct doc found, zero chunks | “I found [file], but I do not have indexed text…” |
 | `withUncertaintyMarker()` | Factual query, LLM answered, but **zero citations** and **zero context nodes** | Answer + footnote: “could not validate direct chunk-level evidence…” |
@@ -253,6 +348,13 @@ When a file is open or exact-ID resolves, the coordinator loads **full document 
 | `CHAT_STRICT_FACTUAL_ACTIVE_DOC_MODE` | Refuse instead of uncertain answer when no evidence |
 | `CHAT_STRICT_CITATION_VERIFICATION_ENABLED` | Drop citations failing token verification |
 | `CHAT_CITATION_FALLBACK_ENABLED` | Allow page from chunk metadata |
+| `CHAT_ANSWER_FORMATTER_ENABLED` | Run the answer formatter over extractor answers; sources stay code-rendered (default off) |
+| `CHAT_VISUAL_FALLBACK_ENABLED` | Inspect rendered PDF pages with a vision model when text is insufficient and the question is visual (default off) |
+| `CHAT_VISUAL_FALLBACK_MAX_PAGES` | Pages rendered per attempt, clamped to 5 (default 3) |
+| `CHAT_VISUAL_FALLBACK_DPI` | Render resolution, clamped to 400 (default 200) |
+| `CHAT_VISUAL_FALLBACK_TIMEOUT_MS` | Per-page vision timeout (default 30,000) |
+| `VISION_MODEL` | Vision-capable model id; falls back to the configured chat model |
+| `PDFTOPPM_PATH` | Path to `pdftoppm` when poppler-utils is not on `PATH` (required for rendering on Windows) |
 | `RETRIEVAL_HYBRID_ENABLED` | Vector + FTS hybrid |
 | `RETRIEVAL_RERANK_ENABLED` | Rerank stage |
 

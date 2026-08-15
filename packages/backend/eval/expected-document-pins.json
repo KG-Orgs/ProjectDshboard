@@ -1,0 +1,57 @@
+{
+  "_comment": "Hand-authored document pins for the grader benchmark, applied by sync-expected-questions.ts. The sync script derives a pin from identifiers written in the question text; this file covers the questions whose identifier is not written in a derivable form, names the file when the question only describes it, and flags the questions whose answer lives on the page rather than in the text layer. Kept separate from the benchmark itself so re-deriving the question set never loses this work.",
+  "pins": {
+    "sq02": { "fileNamePatterns": ["Island Pavement"] },
+    "sq03": { "fileNamePatterns": ["Island Pavement"] },
+    "sq09": { "fileNamePatterns": ["M017_IMP"] },
+    "sq10": { "fileNamePatterns": ["M017_IMP"] },
+    "sq12": { "fileNamePatterns": ["Reserve Service Load"] },
+    "sq26": { "fileNamePatterns": ["11707"] },
+    "sq27": { "fileNamePatterns": ["11830"] },
+    "sq28": { "fileNamePatterns": ["0849812", "Lockton"] },
+    "sq29": { "fileNamePatterns": ["0849812", "Lockton"] },
+    "sq30": { "fileNamePatterns": ["Backup for Invoice"] },
+    "sq31": { "fileNamePatterns": ["Backup for Invoice"] },
+    "sq42": { "fileNamePatterns": ["SDI"] },
+    "sq43": { "fileNamePatterns": ["SDI"] },
+    "sq64": { "identifier": "RFI-0203" },
+    "sq65": { "identifier": "TRACK-13A-041R00", "fileNamePatterns": ["TRACK-13A-041"] },
+    "sq85": { "fileNamePatterns": ["Schedule Update"] },
+    "sq86": { "fileNamePatterns": ["Schedule Update"] },
+    "sq87": { "fileNamePatterns": ["21 12 00"] },
+    "sq88": { "fileNamePatterns": ["21 12 00"] },
+    "sq94": { "identifier": "EDU05B", "fileNamePatterns": ["EDU05B"] },
+    "sq95": { "identifier": "EDU05B", "fileNamePatterns": ["EDU05B"] },
+    "sq98": { "identifier": "PRDC12-019R00" },
+    "sq99": { "identifier": "PRDC12-019R00" },
+    "sq100": { "identifier": "PRDC12-012R02" },
+    "sq101": { "identifier": "PRDC12-012R02" },
+    "sq102": { "identifier": "PRDC12-019R00" }
+  },
+  "unpinned": {
+    "_comment": "The question names no document, so no document-fidelity check is possible: any file carrying the fact is a legitimate source.",
+    "ids": ["sq24", "sq35", "sq44", "sq45", "sq46", "sq47", "sq48"]
+  },
+  "visualEvidenceExpected": {
+    "_comment": "The requested fact lives on the page as a mark, dimension, stamp, tabulated form, or photograph. A text-layer draft cannot prove such a fact absent, and a failure here is attributed to VISUAL_EVIDENCE_MISSED.",
+    "ids": [
+      "sq18",
+      "sq19",
+      "sq20",
+      "sq21",
+      "sq22",
+      "sq23",
+      "sq25",
+      "sq33",
+      "sq54",
+      "sq55",
+      "sq56",
+      "sq57",
+      "sq58",
+      "sq59",
+      "sq72",
+      "sq85",
+      "sq86"
+    ]
+  }
+}

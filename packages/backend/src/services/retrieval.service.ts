@@ -1171,7 +1171,19 @@ async function ftsSearch(
       // On timeout the outer catch returns [] and the caller falls back to
       // the keyword search path.
       await tx.execute(sql.raw(`SET LOCAL statement_timeout = '25000'`));
+      // CTE approach: scan GIN index globally (no project_id filter in the inner
+      // query so the planner uses the GIN index rather than the project btree +
+      // 1.88M-row inline tsvector evaluation that previously took ~140 s).
+      // The outer query then filters to the target project on the small GIN result.
       return tx.execute<FtsRow>(sql`
+        WITH gin_hits AS MATERIALIZED (
+          SELECT id
+          FROM file_chunks
+          WHERE (
+            to_tsvector('english', COALESCE(chunk_text, '')) @@ ${tsquery}
+            OR to_tsvector('english', COALESCE(file_name, '')) @@ ${tsquery}
+          )
+        )
         SELECT
           fc.id,
           fc.file_id,
@@ -1196,19 +1208,10 @@ async function ftsSearch(
           ) AS fts_rank
         FROM file_chunks fc
         JOIN file_records fr ON fr.id = fc.file_id
+        JOIN gin_hits ON fc.id = gin_hits.id
         WHERE fc.project_id = ${projectId}
           ${categoryFileIdClause}
           ${tagsClause}
-          AND (
-            -- Only predicates backed by GIN expression indexes on file_chunks
-            -- (chunk_text, file_name) so the planner uses a BitmapOr index scan
-            -- instead of a full seq scan over every chunk. file_path lives on the
-            -- joined file_records table with no FTS index; including it here forced
-            -- a 1.18M-row seq scan (~117s). file_path still contributes to ranking
-            -- above, and filename/path targeting is handled by exact-id routing.
-            to_tsvector('english', COALESCE(fc.chunk_text, '')) @@ ${tsquery}
-            OR to_tsvector('english', COALESCE(fc.file_name, '')) @@ ${tsquery}
-          )
         ORDER BY fts_rank DESC
         LIMIT ${ftsLimit}
       `);

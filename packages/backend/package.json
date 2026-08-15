@@ -47,7 +47,15 @@
     "backfill:project-access": "tsx ./scripts/backfill-project-access.ts",
     "backfill:identifiers": "tsx ./scripts/backfill-identifiers.ts",
     "discover:onedrive-folder": "tsx ./scripts/discover-onedrive-folder.ts",
-    "probe:graph-cross-user": "tsx ./scripts/probe-graph-cross-user.ts"
+    "probe:graph-cross-user": "tsx ./scripts/probe-graph-cross-user.ts",
+    "eval:visual": "tsx ./eval/run-97-traced.ts --file ./eval/mlj017-visual-questions.json --out ./eval/mlj017-visual-run.jsonl",
+    "eval:visual-report": "tsx ./eval/generate-visual-fallback-report.ts ./eval/mlj017-visual-run.jsonl ./eval/mlj017-visual-fallback-report.md",
+    "eval:type-check": "tsc -p ./eval/tsconfig.check.json",
+    "eval:expected-sync": "tsx ./eval/sync-expected-questions.ts",
+    "eval:expected-draft": "tsx ./eval/author-expected-facts.ts",
+    "eval:grade": "tsx ./eval/grade-independent.ts",
+    "eval:grade-compare": "tsx ./eval/compare-independent-grades.ts",
+    "eval:traced-report": "tsx ./eval/generate-97-traced-report.ts"
   },
   "dependencies": {
     "@contractor/ai-actions": "workspace:*",

@@ -138,6 +138,7 @@ export const chatService = {
       messageId: toUuid(randomUUID()),
       role: "assistant",
       content: coordinatorReply.content,
+      answer: coordinatorReply.answer,
       sources: coordinatorReply.sources,
       citations: coordinatorReply.citations,
       interpretation: coordinatorReply.interpretation,

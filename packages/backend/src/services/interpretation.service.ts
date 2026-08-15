@@ -27,6 +27,23 @@ export interface InterpretationContext {
   openDocs?: OpenDocContext[];
 }
 
+/**
+ * Returns true when the query is a document-summary or meeting-summary request
+ * that should always route to retrieval rather than a vague-query clarification.
+ * Pure synchronous, no side effects. Centralises document-summary intent detection
+ * so the coordinator never needs its own phrase-specific bypass list.
+ */
+export function isDocumentSummaryQuery(query: string): boolean {
+  const q = query.trim().toLowerCase();
+  return (
+    /\b(summary|summarize|overview|what is this|big picture)\b/.test(q) ||
+    // "What is in the X letter / report / document"
+    /\bwhat\s+is\s+in\s+the\b/.test(q) ||
+    // "What was / were discussed in the September 3 meeting"
+    (/\bwhat\s+(was|were)\s+discussed\b/.test(q) && /\bmeeting\b/.test(q))
+  );
+}
+
 function normalize(input: string): string {
   return input.trim().toLowerCase();
 }
@@ -144,7 +161,13 @@ function fromRules(context: InterpretationContext): ChatInterpretation {
     };
   }
 
-  if (/\b(summary|summarize|overview|what is this|big picture)\b/.test(query)) {
+  if (
+    /\b(summary|summarize|overview|what is this|big picture)\b/.test(query) ||
+    // "What is in the X" — document-content queries without a specific topic
+    /\bwhat\s+is\s+in\s+the\b/.test(query) ||
+    // "What was / were discussed in the X meeting"
+    (/\bwhat\s+(was|were)\s+discussed\b/.test(query) && /\bmeeting\b/.test(query))
+  ) {
     return {
       intent: "document_summary",
       confidence: 0.71,
@@ -351,6 +374,89 @@ function enrichWithIdentifiers(
   };
 }
 
+// Explicit multi-word meeting-type phrases that clearly imply meeting minutes.
+// When any of these appear in a query the answer is overwhelmingly likely to
+// live in a meeting_minutes or communication document, not in a progress report
+// or submittal file.
+const MEETING_PHRASE_RE =
+  /\b(meeting\s+minutes|job\s+progress\s+meeting|coordination\s+meeting|progress\s+meeting|kick[\s-]?off\s*(meeting|conference)|pre[\s-]?work\s+conference)\b/i;
+
+// Looser signal: the word "meeting" accompanied by attendance/discussion vocabulary.
+const MEETING_CONTEXT_RE = /\b(attended|attendees|who\s+attended|presenter|agenda)\b/i;
+
+/**
+ * Steer retrieval toward `meeting_minutes` / `communication` files when the
+ * query clearly refers to a meeting or meeting minutes.
+ *
+ * Two tiers of intervention:
+ *
+ * 1. **Strong signal** (`MEETING_PHRASE_RE`) — the query names an explicit
+ *    meeting type (e.g. "Monthly Job Progress Meeting", "Coordination Meeting").
+ *    In this case the answer lives almost exclusively in meeting-minutes files,
+ *    so we create or widen the category restriction to
+ *    `["meeting_minutes", "communication"]`.  An empty list (no existing
+ *    restriction) is converted to this two-element list rather than left open,
+ *    because leaving it open causes a large Progress Report (500+ chunks) to
+ *    outrank the 30-chunk Meeting Minutes in unrestricted hybrid search.
+ *
+ * 2. **Weak signal** (`\bmeeting\b` + attendance vocabulary) — we only widen an
+ *    already-restricted list, never create a new restriction from an empty one.
+ *    This avoids narrowing an otherwise open search based on a vague cue.
+ */
+function enrichWithMeetingIntent(
+  interpretation: ChatInterpretation,
+  query: string
+): ChatInterpretation {
+  const existing = interpretation.retrievalHints?.preferredCategories ?? [];
+
+  const strongMeetingQuery = MEETING_PHRASE_RE.test(query);
+  const weakMeetingQuery =
+    !strongMeetingQuery &&
+    /\bmeeting\b/i.test(query) &&
+    MEETING_CONTEXT_RE.test(query);
+
+  if (!strongMeetingQuery && !weakMeetingQuery) {
+    return interpretation;
+  }
+
+  const MEETING_CATEGORIES = ["meeting_minutes", "communication"] as const;
+
+  if (strongMeetingQuery) {
+    // Already covers meeting types — no change needed.
+    if (MEETING_CATEGORIES.every((c) => existing.includes(c))) {
+      return interpretation;
+    }
+
+    // Either create a new restriction or widen the existing one.
+    // Also ensure confidence >= 0.65 so resolveIntentSearchScope honours the
+    // preferredCategories list (it ignores the list when confidence < 0.65).
+    const merged = Array.from(new Set([...existing, ...MEETING_CATEGORIES]));
+    return {
+      ...interpretation,
+      // Raise confidence to the minimum needed to honour preferredCategories.
+      // We only raise it, never lower it.
+      confidence: Math.max(interpretation.confidence, 0.65),
+      retrievalHints: {
+        ...interpretation.retrievalHints,
+        preferredCategories: merged,
+      },
+    };
+  }
+
+  // Weak signal: only widen a non-empty restriction list.
+  if (existing.length === 0 || MEETING_CATEGORIES.every((c) => existing.includes(c))) {
+    return interpretation;
+  }
+
+  return {
+    ...interpretation,
+    retrievalHints: {
+      ...interpretation.retrievalHints,
+      preferredCategories: Array.from(new Set([...existing, ...MEETING_CATEGORIES])),
+    },
+  };
+}
+
 export const interpretationService = {
   async interpret(context: InterpretationContext): Promise<ChatInterpretation> {
     const trimmedContext: InterpretationContext = {
@@ -370,6 +476,9 @@ export const interpretationService = {
       base = rules;
     }
 
-    return enrichWithIdentifiers(base, trimmedContext.query);
+    return enrichWithMeetingIntent(
+      enrichWithIdentifiers(base, trimmedContext.query),
+      trimmedContext.query
+    );
   },
 };

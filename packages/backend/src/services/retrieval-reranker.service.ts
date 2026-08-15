@@ -91,12 +91,18 @@ async function llmRerankHead<T extends RerankCandidate>(
   head: T[]
 ): Promise<T[] | null> {
   const env = getEnv();
-  const apiKey = env.geminiApiKey ?? env.openAiApiKey;
+  const apiKey = env.openrouterApiKey ?? env.geminiApiKey ?? env.openAiApiKey;
   if (!apiKey || head.length <= 1) return null;
 
-  const endpoint =
-    env.geminiChatEndpoint ?? env.openAiChatEndpoint ?? "https://api.openai.com/v1/chat/completions";
-  const model = env.geminiChatModel ?? env.openAiChatModel ?? "gemini-2.5-flash";
+  const endpoint = env.openrouterApiKey
+    ? env.openrouterChatEndpoint
+    : (env.geminiChatEndpoint ?? env.openAiChatEndpoint ?? "https://api.openai.com/v1/chat/completions");
+  const model = env.openrouterApiKey
+    ? env.openrouterChatModel
+    : (env.geminiChatModel ?? env.openAiChatModel ?? "gemini-2.5-flash");
+  const extraHeaders: Record<string, string> = env.openrouterApiKey
+    ? { "HTTP-Referer": "https://contractorai.app", "X-Title": "ContractorAI" }
+    : {};
 
   const list = head
     .map((candidate, index) => {
@@ -124,6 +130,7 @@ async function llmRerankHead<T extends RerankCandidate>(
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
+        ...extraHeaders,
       },
       body: JSON.stringify({
         model,

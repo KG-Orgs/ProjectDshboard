@@ -1102,6 +1102,20 @@
   border-color: #93c5fd;
 }
 
+/* Inline citation markers and "View source" links inside answer markdown. */
+.citation-link {
+  color: #1d4ed8;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border-bottom: 1px dotted #93c5fd;
+}
+
+.citation-link:hover {
+  color: #1e40af;
+  border-bottom-color: #1e40af;
+}
+
 .workspace-root code,
 .workspace-root pre,
 .workspace-root textarea {
