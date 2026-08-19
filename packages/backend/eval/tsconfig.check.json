@@ -22,6 +22,7 @@
     "./compare-independent-grades.ts",
     "./author-expected-facts.ts",
     "./sync-expected-questions.ts",
-    "./generate-97-traced-report.ts"
+    "./generate-97-traced-report.ts",
+    "./generate-pm-qa-report.ts"
   ]
 }

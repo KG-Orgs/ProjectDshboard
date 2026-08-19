@@ -1,0 +1,62 @@
+[run-97] project: 145b3dcf-272e-4c45-9e19-953f20f25bb9
+[run-97] questions: 100
+[run-97] flags: {"retrievalHybridEnabled":true,"chatAnswerFormatterEnabled":true,"chatSourceIdentityGuardEnabled":true,"chatVisualFallbackEnabled":true,"chatVisualFallbackMaxPages":3,"chatVisualFallbackDpi":200,"visionModel":"(chat model)","chatStrictCitationVerificationEnabled":true,"chatSectionProximityBoostEnabled":true,"retrievalRerankEnabled":false,"retrievalRerankProvider":"none","chatModel":"google/gemini-2.5-flash","llmProvider":"openrouter"}
+[run-97] out: C:\Users\georg\ProjectDshboard\packages\backend\eval\mlj017-100-pm-run.jsonl
+[run-97] raw log: C:\Users\georg\ProjectDshboard\packages\backend\eval\mlj017-100-pm-run.log
+[1/100] pm001 25.7s — deterministic · 8 sources
+[2/100] pm002 2.1s — deterministic · 8 sources
+[3/100] pm003 26.8s — deterministic · 8 sources
+[4/100] pm004 27.9s — deterministic · 8 sources
+[5/100] pm005 19.1s — not_found · 8 sources
+[6/100] pm006 1.9s — deterministic · 8 sources
+[7/100] pm007 2.9s — deterministic · 8 sources
+[8/100] pm008 26.8s — complete · 8 sources
+[9/100] pm009 20.1s — deterministic · 8 sources
+[10/100] pm010 1.8s — deterministic · 8 sources
+[11/100] pm011 24.3s — complete · 8 sources
+[12/100] pm012 2.0s — deterministic · 8 sources
+[13/100] pm013 1.7s — deterministic · 8 sources
+[14/100] pm014 23.1s — deterministic · 4 sources
+[15/100] pm015 26.7s — deterministic · 8 sources
+[16/100] pm016 2.2s — deterministic · 8 sources
+[17/100] pm017 2.7s — deterministic · 1 sources
+[18/100] pm018 2.0s — deterministic · 8 sources
+[19/100] pm019 21.1s — deterministic · 1 sources
+[20/100] pm020 24.2s — complete · 8 sources
+[21/100] pm021 1.8s — deterministic · 8 sources
+[22/100] pm022 12.6s — complete · 8 sources
+[23/100] pm023 1.9s — deterministic · 8 sources
+[24/100] pm024 19.9s — deterministic · 1 sources
+[25/100] pm025 27.9s — deterministic · 8 sources
+[26/100] pm026 15.3s — deterministic · 1 sources
+[27/100] pm027 24.3s — deterministic · 1 sources
+[28/100] pm028 2.1s — deterministic · 8 sources
+[29/100] pm029 24.5s — deterministic · 1 sources
+[30/100] pm030 2.3s — deterministic · 8 sources
+[31/100] pm031 16.4s — complete · 1 sources
+[32/100] pm032 27.0s — deterministic · 8 sources
+[33/100] pm033 20.4s — complete · 1 sources
+[34/100] pm034 24.5s — deterministic · 1 sources
+[35/100] pm035 24.3s — deterministic · 1 sources
+[36/100] pm036 24.6s — deterministic · 8 sources
+[37/100] pm037 21.9s — complete · 8 sources
+[38/100] pm038 17.9s — complete · 1 sources
+[39/100] pm039 26.3s — deterministic · 8 sources
+[40/100] pm040 34.7s — deterministic · 8 sources
+[41/100] pm041 27.8s — deterministic · 8 sources
+[42/100] pm042 17.2s — not_found · 8 sources
+[43/100] pm043 23.9s — partial · 8 sources
+[44/100] pm044 0.3s — deterministic · 1 sources
+[45/100] pm045 0.3s — deterministic · 1 sources
+[46/100] pm046 12.3s — deterministic · 1 sources
+[47/100] pm047 0.2s — deterministic · 1 sources
+[48/100] pm048 22.8s — deterministic · 8 sources
+[49/100] pm049 9.6s — not_found · 8 sources
+[50/100] pm050 9.8s — not_found · 8 sources
+[51/100] pm051 27.4s — deterministic · 8 sources
+[52/100] pm052 6.7s — partial · 1 sources
+[53/100] pm053 5.1s — not_found · 8 sources
+[54/100] pm054 7.5s — complete · 8 sources
+[55/100] pm055 13.1s — partial · 8 sources
+[56/100] pm056 29.3s — complete · 1 sources
+[57/100] pm057 16.5s — complete · 8 sources
