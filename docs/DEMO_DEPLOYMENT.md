@@ -301,6 +301,8 @@ New users see a **5-step product tour** after sign-in (dashboard) or on first wo
 | Access not granted on sign-in | Add user in Platform Admin before first login when `PLATFORM_OPERATOR_EMAILS` is set |
 | CORS errors | Set `WEB_ORIGIN` to the web URL on the API service |
 | 503 on `/health` | Check `DATABASE_URL`; Neon IP allowlist if enabled |
+| Chat works but PDFs will not open | Render has no local OneDrive disk. Deploy the Graph file-content fallback, then each tester must **Connect OneDrive** (do not Sync). The project folder must be shared with their Microsoft account. Use **MLJ-017 Package 6 - General**, not the TEST CLONE. |
+| `local_corpus_not_configured` / file missing | Live API is still on the old build, or the user has not connected OneDrive / does not have share access |
 
 ---
 

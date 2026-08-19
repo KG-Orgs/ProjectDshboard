@@ -730,55 +730,49 @@ async function createApp(): Promise<Express> {
         corpusParent: env.localCorpusParent,
       });
 
-      if (!absolutePath) {
-        res.status(400).json({
-          error: "local_corpus_not_configured",
-          message:
-            "LOCAL_CORPUS_PARENT is not configured. Set it to the OneDrive parent folder that contains the indexed corpus.",
-        });
-        return;
-      }
-
-      try {
-        const buffer = await readLocalCorpusFile(absolutePath);
-        res.setHeader("Content-Type", guessMimeType(file.fileName, file.mimeType ?? undefined));
-        res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
-        res.send(buffer);
-        return;
-      } catch (localError) {
-        // Local file not found (stale deepLinkUrl or LOCAL_CORPUS_PARENT not set).
-        // Fall back to fetching the file from the requesting user's OneDrive by
-        // relative path.  This lets any team member who has the shared folder in
-        // their own OneDrive view PDFs without reindexing.
-        const relPath = file.filePath;
-        if (relPath && req.user) {
-          try {
-            const oneDriveContent = await onedriveService.downloadFileContentByPath(req.user, relPath);
-            if (oneDriveContent) {
-              res.setHeader("Content-Type", oneDriveContent.contentType ?? guessMimeType(file.fileName, file.mimeType ?? undefined));
-              res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
-              res.send(oneDriveContent.buffer);
-              return;
-            }
-          } catch {
-            // OneDrive path lookup also failed; fall through to 404.
-          }
+      if (absolutePath) {
+        try {
+          const buffer = await readLocalCorpusFile(absolutePath);
+          res.setHeader("Content-Type", guessMimeType(file.fileName, file.mimeType ?? undefined));
+          res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
+          res.send(buffer);
+          return;
+        } catch (localError) {
+          logger.warn("project.file_content.local_read_failed", {
+            projectId,
+            fileId,
+            absolutePath,
+            details: localError instanceof Error ? localError.message : String(localError),
+          });
         }
-
-        const details = localError instanceof Error ? localError.message : String(localError);
-        logger.warn("project.file_content.local_read_failed", {
-          projectId,
-          fileId,
-          absolutePath,
-          details,
-        });
-        res.status(404).json({
-          error: "local_corpus_file_missing",
-          message: "Indexed file is not available on disk or in your connected OneDrive.",
-          details: { path: absolutePath },
-        });
-        return;
       }
+
+      // Hosted demo (Render) has no local OneDrive disk. Fetch from the bound
+      // project drive so testers with share access can open citations/PDFs.
+      if (file.filePath && req.user) {
+        try {
+          const oneDriveContent = await onedriveService.tryDownloadIndexedFileFromGraph(req.user, {
+            driveId: project.onedriveDriveId,
+            folderId: project.onedriveFolderId,
+            filePath: file.filePath,
+          });
+          if (oneDriveContent) {
+            res.setHeader("Content-Type", oneDriveContent.contentType ?? guessMimeType(file.fileName, file.mimeType ?? undefined));
+            res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
+            res.send(oneDriveContent.buffer);
+            return;
+          }
+        } catch {
+          // Graph lookup failed; fall through to 404.
+        }
+      }
+
+      res.status(404).json({
+        error: "local_corpus_file_missing",
+        message: "Indexed file is not available on disk or in your connected OneDrive. Connect OneDrive and confirm the project folder is shared with your Microsoft account.",
+        details: { path: absolutePath },
+      });
+      return;
     }
 
     // For Graph-backed projects (onedriveDriveId set), use /drives/{driveId}/items/{id}/content

@@ -92,6 +92,42 @@ function getGraphBaseUrl(): string {
   return getEnv().onedriveApiEndpoint.replace(/\/$/, "");
 }
 
+function encodeDrivePath(filePath: string): string {
+  return filePath
+    .replace(/\\/g, "/")
+    .split("/")
+    .filter((segment) => segment.length > 0)
+    .map(encodeURIComponent)
+    .join("/");
+}
+
+function folderRelativePath(filePath: string): string | null {
+  const normalized = filePath.replace(/\\/g, "/").replace(/^\/+/, "");
+  const slash = normalized.indexOf("/");
+  if (slash <= 0) {
+    return null;
+  }
+  return normalized.slice(slash + 1);
+}
+
+async function downloadGraphFileContent(
+  url: string,
+  accessToken: string
+): Promise<OneDriveFileContent | null> {
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) {
+    return null;
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  return {
+    buffer: Buffer.from(arrayBuffer),
+    contentType: response.headers.get("content-type") ?? undefined,
+  };
+}
+
 function requireUser(user?: RequestUserContext): RequestUserContext {
   if (!user) {
     throw new AppError(401, "unauthorized", "Unauthorized");
@@ -681,33 +717,57 @@ export const onedriveService = {
       return null;
     }
     const accessToken = await exchangeRefreshToken(connection);
-
-    // Normalise separators and encode each path segment individually so that
-    // spaces and special characters are handled correctly by Graph.
-    const encodedPath = filePath
-      .replace(/\\/g, "/")
-      .split("/")
-      .map(encodeURIComponent)
-      .join("/");
-
-    const response = await fetch(
+    const encodedPath = encodeDrivePath(filePath);
+    return downloadGraphFileContent(
       `${getGraphBaseUrl()}/me/drive/root:/${encodedPath}:/content`,
-      {
-        method: "GET",
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
+      accessToken
     );
+  },
 
-    if (!response.ok) {
-      // 404 / 403 just means the file isn't at that path in this user's drive.
+  /**
+   * Download a locally indexed corpus file from the project's bound Graph drive.
+   * `/me/drive/root:/path` only works for the folder owner; shared-folder testers
+   * need `/drives/{driveId}/root:/path` (or the folder-relative item path).
+   */
+  async tryDownloadIndexedFileFromGraph(
+    user: RequestUserContext | undefined,
+    options: {
+      driveId?: string | null;
+      folderId?: string | null;
+      filePath: string;
+    }
+  ): Promise<OneDriveFileContent | null> {
+    const authenticatedUser = requireUser(user);
+    const connection = await loadConnectionForUser(authenticatedUser.id);
+    if (!connection) {
       return null;
     }
+    const accessToken = await exchangeRefreshToken(connection);
+    const graphBase = getGraphBaseUrl();
+    const encodedRootPath = encodeDrivePath(options.filePath);
 
-    const arrayBuffer = await response.arrayBuffer();
-    return {
-      buffer: Buffer.from(arrayBuffer),
-      contentType: response.headers.get("content-type") ?? undefined,
-    };
+    if (options.driveId && encodedRootPath) {
+      const fromDriveRoot = await downloadGraphFileContent(
+        `${graphBase}/drives/${encodeURIComponent(options.driveId)}/root:/${encodedRootPath}:/content`,
+        accessToken
+      );
+      if (fromDriveRoot) {
+        return fromDriveRoot;
+      }
+
+      const relative = folderRelativePath(options.filePath);
+      if (options.folderId && relative) {
+        const fromFolder = await downloadGraphFileContent(
+          `${graphBase}/drives/${encodeURIComponent(options.driveId)}/items/${encodeURIComponent(options.folderId)}:/${encodeDrivePath(relative)}:/content`,
+          accessToken
+        );
+        if (fromFolder) {
+          return fromFolder;
+        }
+      }
+    }
+
+    return this.downloadFileContentByPath(user, options.filePath);
   },
 
   async downloadFileContent(

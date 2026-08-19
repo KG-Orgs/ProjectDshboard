@@ -51,9 +51,15 @@ services:
       - key: RETRIEVAL_HYBRID_ENABLED
         value: "true"
       - key: RETRIEVAL_RERANK_ENABLED
-        value: "true"
+        value: "false"
       - key: RETRIEVAL_RERANK_PROVIDER
-        value: llm
+        value: none
+      - key: CHAT_VISUAL_FALLBACK_ENABLED
+        value: "false"
+      - key: CHAT_ANSWER_FORMATTER_ENABLED
+        value: "false"
+      - key: GEMINI_CHAT_MODEL
+        value: gemini-2.5-flash-lite
       - key: PLATFORM_OPERATOR_EMAILS
         sync: false
 

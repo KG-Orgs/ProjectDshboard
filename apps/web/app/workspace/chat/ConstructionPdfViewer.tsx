@@ -478,6 +478,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
   const [loadProgress, setLoadProgress] = useState<number | null>(null);
   const [documentRetryKey, setDocumentRetryKey] = useState(0);
+  const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
 
   const [documentScale, setDocumentScale] = useState<DocumentScale | null>(null);
   const [pendingCalibration, setPendingCalibration] = useState<{
@@ -826,6 +827,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
   const retryDocumentLoad = useCallback(() => {
     setLoadProgress(null);
+    setLoadErrorMessage(null);
     pageCountRef.current = 0;
     setNumPages(0);
     setOutline(null);
@@ -833,6 +835,31 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     textCacheRef.current.clear();
     setDocumentRetryKey((key) => key + 1);
   }, []);
+
+  const handleDocumentLoadError = useCallback(
+    (error: Error) => {
+      void (async () => {
+        let message = error?.message?.trim() || 'Failed to load PDF.';
+        if (url) {
+          try {
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok) {
+              const payload = (await response.json().catch(() => undefined)) as
+                | { message?: string }
+                | undefined;
+              if (payload?.message?.trim()) {
+                message = payload.message.trim();
+              }
+            }
+          } catch {
+            // Keep the pdf.js error when the follow-up fetch fails.
+          }
+        }
+        setLoadErrorMessage(message);
+      })();
+    },
+    [url]
+  );
 
   const documentLoading = useMemo(() => (
     <div className="pdf-viewer-stage-state" role="status" aria-live="polite" aria-busy="true">
@@ -858,12 +885,14 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
 
   const renderDocumentError = useCallback((param?: { error?: Error } | null) => (
     <div className="pdf-viewer-stage-state pdf-viewer-stage-state--error" role="alert">
-      <p className="pdf-viewer-stage-state__label">{param?.error?.message || 'Failed to load PDF.'}</p>
+      <p className="pdf-viewer-stage-state__label">
+        {loadErrorMessage || param?.error?.message || 'Failed to load PDF.'}
+      </p>
       <button type="button" className="pdf-viewer-stage-state__retry" onClick={retryDocumentLoad}>
         Retry
       </button>
     </div>
-  ), [retryDocumentLoad]);
+  ), [loadErrorMessage, retryDocumentLoad]);
 
   const continuousPageSlotSize = useMemo(() => {
     const { width: baseW, height: baseH } = pageDimensions(rotation);
@@ -1051,6 +1080,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
     setCitationFlash(null);
     setPendingCalibration(null);
     setLoadProgress(null);
+    setLoadErrorMessage(null);
     setDocumentRetryKey(0);
     textCacheRef.current.clear();
     pdfRef.current = null;
@@ -2454,6 +2484,7 @@ export default function ConstructionPdfViewer({ projectId, fileId, fileName, url
             loading={documentLoading}
             // react-pdf NodeOrRenderer typing is narrower than runtime API
             error={renderDocumentError as never}
+            onLoadError={handleDocumentLoadError}
             onLoadProgress={({ loaded, total }) => {
               if (total > 0) {
                 setLoadProgress(Math.min(100, Math.round((loaded / total) * 100)));

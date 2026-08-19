@@ -3386,6 +3386,33 @@ describe('ConstructionPdfViewer – document loading and error states', () => {
     expect(screen.queryByTestId('pdf-page-1')).not.toBeInTheDocument();
   });
 
+  it('shows the API error message when the content proxy returns JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: false,
+        status: 404,
+        json: async () => ({
+          error: 'local_corpus_file_missing',
+          message:
+            'Indexed file is not available on disk or in your connected OneDrive. Connect OneDrive and confirm the project folder is shared with your Microsoft account.',
+        }),
+      })),
+    );
+
+    render(
+      <ConstructionPdfViewer
+        {...DEFAULT_PROPS}
+        url="/api/projects/proj/files/file-1/content"
+      />,
+    );
+    await simulatePdfLoadError('Failed to fetch PDF');
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/Connect OneDrive/i);
+    });
+  });
+
   it('returns to loading state when retry is clicked after a load error', async () => {
     render(<ConstructionPdfViewer {...DEFAULT_PROPS} />);
     await simulatePdfLoadError('Network error while loading PDF');
