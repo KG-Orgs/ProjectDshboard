@@ -7,6 +7,20 @@ import remarkGfm from 'remark-gfm';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MarkdownLink } from './MarkdownLink';
+import FileTree, { buildNestedFolderTree, type WsFile } from './FileTree';
+import { searchProjectFiles } from './projectFiles';
+import {
+  buildExplorerTree,
+  collectKnownFiles,
+  createExplorerSessionCache,
+  fetchExplorerFolder,
+  hydrateExplorerSessionCache,
+  isUsableExplorerCache,
+  mergeExplorerFolder,
+  readExplorerSessionCache,
+  writeExplorerSessionCache,
+} from './projectExplorer';
+import type { ProjectExplorerFolderResponse } from '@contractor/shared';
 import { useConversationStore } from './useConversationStore';
 import './workspace.css';
 
@@ -139,53 +153,10 @@ declare global {
   }
 }
 
-const DOC_LIBRARY: WorkspaceDoc[] = [
-  {
-    id: 'doc-structural-report',
-    title: 'structural-report.pdf',
-    kind: 'pdf',
-    url: '/sample.pdf',
-    source: 'library',
-  },
-  {
-    id: 'doc-site-notes',
-    title: 'site-notes.txt',
-    kind: 'txt',
-    source: 'library',
-    text: [
-      'Project: North Tower Retrofit',
-      'Safety status: clear',
-      'Critical path risk: steel delivery slips by 4 days',
-      'Action: coordinate alternate supplier quote by Wednesday',
-      'Page 12 summary: concrete curing variance requires timeline adjustment',
-    ].join('\n'),
-  },
-  {
-    id: 'doc-contract-scope',
-    title: 'contract-scope.docx',
-    kind: 'docx',
-    source: 'library',
-  },
-  {
-    id: 'doc-cost-tracker',
-    title: 'cost-tracker.xlsx',
-    kind: 'xlsx',
-    source: 'library',
-  },
-  {
-    id: 'doc-crane-photo',
-    title: 'crane-inspection.jpg',
-    kind: 'image',
-    source: 'library',
-    url: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1600&q=80',
-  },
-];
-
 const SUGGESTED_PROMPTS = [
-  'Open structural-report.pdf and summarize page 12',
-  'Compare cost-tracker.xlsx with contract-scope.docx for overruns',
-  'List unresolved risks in site-notes.txt',
-  'Open crane-inspection.jpg and draft a safety observation',
+  'Summarize the latest RFIs for this project',
+  'What submittals are still pending review?',
+  'Find schedule conflicts in the current package',
 ];
 
 function uid(prefix: string): string {
@@ -351,91 +322,6 @@ function CodeBlock({ code }: { code: string }) {
   );
 }
 
-// --- File explorer types & helpers -------------------------------------------
-
-interface WsFile {
-  id: string;
-  fileName: string;
-  filePath: string;
-  indexStatus: string;
-}
-
-interface FolderNode {
-  path: string;
-  name: string;
-  files: WsFile[];
-}
-
-function getFileIcon(fileName: string): string {
-  const ext = fileName.toLowerCase().split('.').pop() ?? '';
-  if (ext === 'pdf') return '[PDF]';
-  if (['doc', 'docx'].includes(ext)) return '[DOC]';
-  if (['xls', 'xlsx', 'csv'].includes(ext)) return '[XLS]';
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '[IMG]';
-  if (['dwg', 'dxf'].includes(ext)) return '[DWG]';
-  if (['mpp'].includes(ext)) return '[SCH]';
-  if (['rfi'].includes(ext) || fileName.toLowerCase().includes('rfi')) return '[RFI]';
-  return '[DOC]';
-}
-
-function buildFolderTree(files: WsFile[]): FolderNode[] {
-  const map = new Map<string, WsFile[]>();
-  for (const file of files) {
-    const parts = file.filePath.replace(/\\/g, '/').split('/');
-    parts.pop();
-    const folder = parts.filter(Boolean).join('/') || 'Project Files';
-    if (!map.has(folder)) map.set(folder, []);
-    map.get(folder)!.push(file);
-  }
-  return Array.from(map.entries()).map(([path, nodeFiles]) => ({
-    path,
-    name: path.split('/').filter(Boolean).pop() ?? path,
-    files: nodeFiles,
-  }));
-}
-
-interface FolderSectionProps {
-  folder: FolderNode;
-  isExpanded: boolean;
-  activeFileId: string | undefined;
-  onToggle: () => void;
-  onFileClick: (file: WsFile) => void;
-}
-
-function FolderSection({ folder, isExpanded, activeFileId, onToggle, onFileClick }: FolderSectionProps) {
-  return (
-    <div>
-      <button type="button" className="folder-header-btn" onClick={onToggle}>
-        <span className={`folder-chevron ${isExpanded ? 'open' : ''}`}>&rsaquo;</span>
-        <span>[DIR]</span>
-        <span className="file-name-text">{folder.name}</span>
-        <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#9ca3af', flexShrink: 0, paddingLeft: '4px' }}>
-          {folder.files.length}
-        </span>
-      </button>
-      {isExpanded ? (
-        <div>
-          {folder.files.map((file) => (
-            <button
-              key={file.id}
-              type="button"
-              className={`file-row-btn ${activeFileId === file.id ? 'active' : ''}`}
-              onClick={() => onFileClick(file)}
-              title={file.fileName}
-            >
-              <span style={{ flexShrink: 0 }}>{getFileIcon(file.fileName)}</span>
-              <span className="file-name-text">{file.fileName}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-
-
-
 function ChatWorkspacePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -476,10 +362,15 @@ function ChatWorkspacePageContent() {
   const [workspaceSearch, setWorkspaceSearch] = useState('');
 
   // -- File explorer state ----------------------------------------------------
-  const [wsFiles, setWsFiles] = useState<WsFile[]>([]);
+  const [loadedExplorerFolders, setLoadedExplorerFolders] = useState<Map<string, ProjectExplorerFolderResponse>>(new Map());
+  const [loadingExplorerPaths, setLoadingExplorerPaths] = useState<Set<string>>(new Set());
   const [wsFilesLoading, setWsFilesLoading] = useState(false);
+  const [explorerTotalFiles, setExplorerTotalFiles] = useState(0);
+  const [searchResults, setSearchResults] = useState<WsFile[]>([]);
+  const [fileSearchLoading, setFileSearchLoading] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [fileSearch, setFileSearch] = useState('');
+  const loadedExplorerFoldersRef = useRef<Map<string, ProjectExplorerFolderResponse>>(new Map());
 
   // -- Panel widths (px) ------------------------------------------------------
   const [leftPanelWidth, setLeftPanelWidth] = useState(248);
@@ -741,8 +632,7 @@ function ChatWorkspacePageContent() {
 
     const existing = openDocs.find((doc) =>
       (resolvedFileId && doc.fileId === resolvedFileId) || doc.title.toLowerCase() === fileName.toLowerCase()
-    )
-      ?? DOC_LIBRARY.find((doc) => doc.title.toLowerCase() === fileName.toLowerCase());
+    );
 
     const previewUrl = resolvedFileId && projectId ? buildProjectFileContentUrl(projectId, resolvedFileId) : undefined;
 
@@ -970,10 +860,17 @@ function ChatWorkspacePageContent() {
     });
   };
 
-  const resolveReferencedDocs = (prompt: string): WorkspaceDoc[] => {
+  const resolveReferencedDocs = useCallback((prompt: string): WorkspaceDoc[] => {
     const lowered = prompt.toLowerCase();
-    return DOC_LIBRARY.filter((doc) => lowered.includes(doc.title.toLowerCase()));
-  };
+    return collectKnownFiles(loadedExplorerFolders)
+      .filter((file) => lowered.includes(file.fileName.toLowerCase()))
+      .map((file) =>
+        createDocFromFileName(file.fileName, {
+          projectId: projectId ?? undefined,
+          fileId: file.id,
+        })
+      );
+  }, [loadedExplorerFolders, projectId]);
 
   // Detect whether the user wants to open/show a document
   const isOpenIntent = (prompt: string): boolean => {
@@ -1223,49 +1120,160 @@ function ChatWorkspacePageContent() {
     };
   }, [handleSendPrompt]);
 
-  const filteredLibrary = useMemo(() => {
-    if (!workspaceSearch.trim()) {
-      return DOC_LIBRARY;
+  const ensureExplorerFolderLoaded = useCallback(async (apiPath: string, uiPath?: string) => {
+    if (!projectId) {
+      return;
     }
 
-    const lowered = workspaceSearch.toLowerCase();
-    return DOC_LIBRARY.filter((doc) => doc.title.toLowerCase().includes(lowered));
-  }, [workspaceSearch]);
+    if (loadedExplorerFoldersRef.current.has(apiPath)) {
+      return;
+    }
 
-  // -- Fetch project files for the left panel explorer -----------------------
+    const loadingKey = uiPath ?? (apiPath || '__root__');
+    setLoadingExplorerPaths((current) => new Set(current).add(loadingKey));
+
+    try {
+      const folder = await fetchExplorerFolder(projectId, apiPath, projectDisplayName);
+      const nextFolders = mergeExplorerFolder(loadedExplorerFoldersRef.current, folder);
+      loadedExplorerFoldersRef.current = nextFolders;
+      setLoadedExplorerFolders(new Map(nextFolders));
+      setExplorerTotalFiles(folder.totalProjectFiles);
+      void writeExplorerSessionCache(
+        createExplorerSessionCache(projectId, projectDisplayName, nextFolders, folder.lastSyncedAt)
+      );
+    } catch {
+      if (apiPath === '') {
+        setLoadedExplorerFolders(new Map());
+        loadedExplorerFoldersRef.current = new Map();
+      }
+    } finally {
+      setLoadingExplorerPaths((current) => {
+        const next = new Set(current);
+        next.delete(loadingKey);
+        return next;
+      });
+    }
+  }, [projectDisplayName, projectId]);
+
+  // Load top-level folders from the snapshot API; restore expanded folders from IndexedDB
+  // when lastSyncedAt is unchanged.
   useEffect(() => {
-    if (!projectId) {
-      setWsFiles([]);
+    if (!projectId || !projectDisplayName) {
+      if (!projectId) {
+        loadedExplorerFoldersRef.current = new Map();
+        setLoadedExplorerFolders(new Map());
+        setExplorerTotalFiles(0);
+        setExpandedFolders(new Set());
+      }
       return;
     }
 
     let cancelled = false;
     setWsFilesLoading(true);
 
-    fetch(`/api/projects/${encodeURIComponent(projectId)}/files?page=1&pageSize=300`, { cache: 'no-store' })
-      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
-      .then((data: { files: WsFile[] }) => {
-        if (cancelled) return;
-        const files = data.files ?? [];
-        setWsFiles(files);
-        // Auto-expand first folder
-        const tree = buildFolderTree(files);
-        if (tree[0]) {
-          setExpandedFolders(new Set([tree[0].path]));
+    void (async () => {
+      const cached = await readExplorerSessionCache(projectId, projectDisplayName);
+      try {
+        const folder = await fetchExplorerFolder(projectId, '', projectDisplayName);
+        if (cancelled) {
+          return;
         }
-      })
-      .catch(() => { if (!cancelled) setWsFiles([]); })
-      .finally(() => { if (!cancelled) setWsFilesLoading(false); });
 
-    return () => { cancelled = true; };
-  }, [projectId]);
+        const cachedMatches = isUsableExplorerCache(
+          cached,
+          projectId,
+          projectDisplayName,
+          folder.lastSyncedAt ?? null
+        );
+        const next = cachedMatches && cached
+          ? mergeExplorerFolder(hydrateExplorerSessionCache(cached), folder)
+          : mergeExplorerFolder(new Map(), folder);
 
-  const folderTree = useMemo(() => {
-    const filtered = fileSearch.trim()
-      ? wsFiles.filter((f) => f.fileName.toLowerCase().includes(fileSearch.toLowerCase()))
-      : wsFiles;
-    return buildFolderTree(filtered);
-  }, [wsFiles, fileSearch]);
+        loadedExplorerFoldersRef.current = next;
+        setLoadedExplorerFolders(new Map(next));
+        setExplorerTotalFiles(folder.totalProjectFiles);
+        if (!cachedMatches) {
+          setExpandedFolders(new Set());
+        }
+        void writeExplorerSessionCache(
+          createExplorerSessionCache(projectId, projectDisplayName, next, folder.lastSyncedAt)
+        );
+      } catch {
+        if (cancelled) {
+          return;
+        }
+        if (cached) {
+          const hydrated = hydrateExplorerSessionCache(cached);
+          loadedExplorerFoldersRef.current = hydrated;
+          setLoadedExplorerFolders(hydrated);
+          setExplorerTotalFiles(hydrated.get('')?.totalProjectFiles ?? 0);
+        } else {
+          loadedExplorerFoldersRef.current = new Map();
+          setLoadedExplorerFolders(new Map());
+        }
+      } finally {
+        if (!cancelled) {
+          setWsFilesLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectDisplayName, projectId]);
+
+  // Server-side search so matches are not limited to files loaded so far.
+  useEffect(() => {
+    const query = fileSearch.trim();
+    if (!projectId || !query) {
+      setSearchResults([]);
+      setFileSearchLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setFileSearchLoading(true);
+
+    const handle = window.setTimeout(() => {
+      searchProjectFiles(projectId, query, { signal: controller.signal })
+        .then((files) => {
+          if (!controller.signal.aborted) {
+            setSearchResults(files);
+          }
+        })
+        .catch((error: unknown) => {
+          if (controller.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
+            return;
+          }
+          setSearchResults([]);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setFileSearchLoading(false);
+          }
+        });
+    }, 250);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(handle);
+    };
+  }, [fileSearch, projectId]);
+
+  const explorerTree = useMemo(
+    () => buildExplorerTree(loadedExplorerFolders),
+    [loadedExplorerFolders]
+  );
+
+  const searchTree = useMemo(
+    () => buildNestedFolderTree(searchResults, projectDisplayName),
+    [projectDisplayName, searchResults]
+  );
+
+  const displayExplorerTree = fileSearch.trim() ? searchTree : explorerTree;
+
+  const hasExplorerFiles = displayExplorerTree.length > 0;
 
   const handleExplorerFileClick = useCallback(
     (file: WsFile) => {
@@ -1279,7 +1287,7 @@ function ChatWorkspacePageContent() {
       // The explorer list is paged, so fall back to the file names carried on the
       // answers themselves before giving up on a cited file.
       const fileName =
-        wsFiles.find((file) => file.id === args.fileId)?.fileName ??
+        collectKnownFiles(loadedExplorerFolders).find((file) => file.id === args.fileId)?.fileName ??
         messages
           .flatMap((message) => message.references ?? [])
           .find((reference) => reference.fileId === args.fileId)?.fileName;
@@ -1303,16 +1311,26 @@ function ChatWorkspacePageContent() {
         delete window.openPdfCitation;
       }
     };
-  }, [messages, openOrCreateDoc, wsFiles]);
+  }, [loadedExplorerFolders, messages, openOrCreateDoc]);
 
   const toggleFolder = useCallback((path: string) => {
+    let expanding = false;
     setExpandedFolders((prev) => {
       const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+        expanding = true;
+      }
       return next;
     });
-  }, []);
+
+    if (expanding) {
+      const apiPath = path === '__root__' ? '' : path;
+      void ensureExplorerFolderLoaded(apiPath, path);
+    }
+  }, [ensureExplorerFolderLoaded]);
 
   const handleDropFiles = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -1612,19 +1630,21 @@ function ChatWorkspacePageContent() {
           </div>
           {/* Tree */}
           <div className="file-explorer-body">
-            {wsFilesLoading ? (
-              <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af' }}>Loading project files...</div>
-            ) : folderTree.length > 0 ? (
-              folderTree.map((folder) => (
-                <FolderSection
-                  key={folder.path}
-                  folder={folder}
-                  isExpanded={expandedFolders.has(folder.path)}
-                  activeFileId={activeDoc?.fileId}
-                  onToggle={() => toggleFolder(folder.path)}
-                  onFileClick={handleExplorerFileClick}
-                />
-              ))
+            {wsFilesLoading && loadedExplorerFolders.size === 0 ? (
+              <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af' }}>
+                Loading project folders...
+              </div>
+            ) : fileSearchLoading ? (
+              <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af' }}>Searching project files...</div>
+            ) : hasExplorerFiles ? (
+              <FileTree
+                tree={displayExplorerTree}
+                expandedFolders={expandedFolders}
+                loadingFolders={loadingExplorerPaths}
+                activeFileId={activeDoc?.fileId}
+                onToggleFolder={toggleFolder}
+                onFileClick={handleExplorerFileClick}
+              />
             ) : (
               <div style={{ padding: '14px 12px', fontSize: '12px', color: '#9ca3af', lineHeight: '1.6' }}>
                 {fileSearch.trim()
@@ -1634,25 +1654,9 @@ function ChatWorkspacePageContent() {
                     : 'No project files yet. Run a sync from the dashboard.'}
               </div>
             )}
-            {/* DOC_LIBRARY sample files */}
-            {filteredLibrary.length > 0 ? (
-              <div style={{ borderTop: '1px solid #f3f4f6', padding: '8px 0 4px' }}>
-                <p style={{ fontSize: '10px', color: '#9ca3af', padding: '0 10px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Sample Files
-                </p>
-                {filteredLibrary.map((doc) => (
-                  <button
-                    key={doc.id}
-                    type="button"
-                    className={`file-row-btn ${activeDoc?.id === doc.id ? 'active' : ''}`}
-                    onClick={() => openDoc(doc)}
-                  >
-                    <span style={{ flexShrink: 0 }}>
-                      {doc.kind === 'pdf' ? 'DOC' : doc.kind === 'image' ? 'DOC' : doc.kind === 'xlsx' ? 'DOC' : doc.kind === 'docx' ? 'DOC' : 'DOC'}
-                    </span>
-                    <span className="file-name-text">{doc.title}</span>
-                  </button>
-                ))}
+            {explorerTotalFiles > 0 && !fileSearch.trim() ? (
+              <div style={{ padding: '8px 12px 12px', fontSize: '11px', color: '#9ca3af' }}>
+                {explorerTotalFiles.toLocaleString()} indexed files
               </div>
             ) : null}
           </div>

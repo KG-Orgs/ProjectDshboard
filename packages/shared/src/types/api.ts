@@ -243,6 +243,20 @@ export interface ProjectFilesResponse {
   hasMore: boolean;
 }
 
+export interface ProjectExplorerFolderSummary {
+  name: string;
+  path: string;
+  fileCount: number;
+}
+
+export interface ProjectExplorerFolderResponse {
+  folderPath: string;
+  folders: ProjectExplorerFolderSummary[];
+  files: FileRecord[];
+  totalProjectFiles: number;
+  lastSyncedAt?: string | null;
+}
+
 export interface GroupedIndexingFailureReason {
   stage: string;
   errorCode: string;

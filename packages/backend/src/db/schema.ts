@@ -465,6 +465,28 @@ export const syncRuns = pgTable(
   })
 );
 
+/** Derived folder-tree index, rebuilt after sync. Explorer reads this instead of scanning file_records. */
+export const projectExplorerSnapshots = pgTable(
+  "project_explorer_snapshots",
+  {
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .primaryKey(),
+    projectRootFolderName: text("project_root_folder_name").default("").notNull(),
+    syncFingerprint: text("sync_fingerprint").default("").notNull(),
+    totalFiles: integer("total_files").default(0).notNull(),
+    entries: jsonb("entries").$type<Array<{
+      id: string;
+      fileName: string;
+      filePath: string;
+      indexStatus: string;
+    }>>().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  }
+);
+
 export const rechunkRuns = pgTable(
   "rechunk_runs",
   {

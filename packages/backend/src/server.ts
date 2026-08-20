@@ -707,6 +707,21 @@ async function createApp(): Promise<Express> {
     });
     res.json(response);
   }));
+  app.get("/api/projects/:id/files/explorer", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
+    const folderPath = typeof req.query.folderPath === "string" ? req.query.folderPath : "";
+    const projectRootFolderName =
+      typeof req.query.projectRootFolderName === "string" ? req.query.projectRootFolderName : undefined;
+
+    const projectId = toUuid(req.params.id);
+    await projectService.getProjectOrThrow(projectId, req.orgId, projectAccessFromRequest(req));
+
+    const response = await projectService.listProjectExplorerFolder(
+      projectId,
+      folderPath,
+      projectRootFolderName
+    );
+    res.json(response);
+  }));
   app.get("/api/projects/:id/files/:fileId/content", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
     const projectId = toUuid(req.params.id);
     const fileId = toUuid(req.params.fileId);
