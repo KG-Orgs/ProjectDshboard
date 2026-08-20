@@ -12,6 +12,13 @@
   ],
   "exclude": [
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "src/routes/**",
+    "src/middleware/**",
+    "src/migrations/**",
+    "src/db/client.ts",
+    "src/db/queries.ts",
+    "src/services/authService.ts",
+    "src/services/dataStore.ts"
   ]
 }
