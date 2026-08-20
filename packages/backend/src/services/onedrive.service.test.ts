@@ -99,4 +99,70 @@ describe("onedriveService project-owner file access", () => {
 
     expect(content).toBeNull();
   });
+
+  it("downloads when the indexed path is missing the project folder prefix", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+
+        if (url.includes("/oauth2/v2.0/token")) {
+          return new Response(
+            JSON.stringify({
+              access_token: "graph-access-token",
+              refresh_token: "graph-refresh-token",
+              expires_in: 3600,
+              token_type: "Bearer",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        if (url.endsWith("/v1.0/me/drive?$select=id,driveType,webUrl")) {
+          return new Response(
+            JSON.stringify({
+              id: "owner-drive-id",
+              driveType: "business",
+              webUrl: "https://example.sharepoint.com/drive",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        if (
+          url.includes(
+            "/drives/owner-drive-id/root:/MLJ-017%20Package%206%20-%20General/01%2035%2010%20Construction%20Safety%20Requirements/SWP-007.pdf:/content"
+          )
+        ) {
+          return new Response("normalized-path-pdf", {
+            status: 200,
+            headers: { "Content-Type": "application/pdf" },
+          });
+        }
+
+        return new Response("not found", { status: 404 });
+      })
+    );
+
+    const owner = testUser("owner-user-id", "owner@test.com");
+    const connectStart = onedriveService.getConnectUrl(owner, "http://localhost/onedrive/callback");
+    await onedriveService.connect(
+      {
+        code: "onedrive-code",
+        state: connectStart.state,
+        redirectUri: "http://localhost/onedrive/callback",
+      },
+      owner
+    );
+
+    const content = await onedriveService.tryDownloadIndexedFileFromGraph(undefined, {
+      driveId: "owner-drive-id",
+      folderId: "folder-id",
+      filePath: "01 35 10 Construction Safety Requirements\\SWP-007.pdf",
+      projectOwnerUserId: owner.id,
+      projectRootFolderName: "MLJ-017 Package 6 - General",
+    });
+
+    expect(content?.buffer.toString()).toBe("normalized-path-pdf");
+  });
 });

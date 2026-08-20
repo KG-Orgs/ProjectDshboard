@@ -18,6 +18,7 @@ import {
 import { getEnv, hasMicrosoftOAuthConfig } from "../config/env";
 import { getDbIfInitialized, onedriveConnections } from "../db";
 import { AppError } from "../lib/errors";
+import { logger } from "../lib/logger.js";
 import type { RequestUserContext } from "./service-types";
 import { toUuid } from "./service-types";
 import { eq } from "drizzle-orm";
@@ -110,15 +111,46 @@ function folderRelativePath(filePath: string): string | null {
   return normalized.slice(slash + 1);
 }
 
+/** Indexed paths sometimes omit the bound project folder; try both forms in Graph. */
+function graphFilePathCandidates(
+  filePath: string,
+  projectRootFolderName?: string | null
+): string[] {
+  const candidates = [filePath];
+  const root = projectRootFolderName?.trim();
+  if (!root) {
+    return candidates;
+  }
+
+  const normalize = (value: string) => value.replace(/\\/g, "/").replace(/^\/+/, "");
+  const pathNorm = normalize(filePath);
+  const rootNorm = normalize(root);
+
+  if (pathNorm === rootNorm || pathNorm.startsWith(`${rootNorm}/`)) {
+    return candidates;
+  }
+
+  const sep = filePath.includes("\\") ? "\\" : "/";
+  candidates.push(`${root}${sep}${filePath}`);
+  return candidates;
+}
+
 async function downloadGraphFileContent(
   url: string,
-  accessToken: string
+  accessToken: string,
+  logMeta?: Record<string, unknown>
 ): Promise<OneDriveFileContent | null> {
   const response = await fetch(url, {
     method: "GET",
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!response.ok) {
+    if (logMeta) {
+      logger.warn("onedrive.graph_download_failed", {
+        ...logMeta,
+        status: response.status,
+      });
+    }
     return null;
   }
   const arrayBuffer = await response.arrayBuffer();
@@ -770,6 +802,7 @@ export const onedriveService = {
       folderId?: string | null;
       filePath: string;
       projectOwnerUserId?: string | null;
+      projectRootFolderName?: string | null;
     }
   ): Promise<OneDriveFileContent | null> {
     const connection = await resolveConnectionForFileAccess({
@@ -777,36 +810,82 @@ export const onedriveService = {
       fallbackUser: user ? requireUser(user) : undefined,
     });
     if (!connection) {
+      logger.warn("onedrive.graph_file_access.no_connection", {
+        projectOwnerUserId: options.projectOwnerUserId,
+        viewerUserId: user?.id,
+      });
       return null;
     }
     const accessToken = await exchangeRefreshToken(connection);
     const graphBase = getGraphBaseUrl();
-    const encodedRootPath = encodeDrivePath(options.filePath);
+    const pathCandidates = graphFilePathCandidates(
+      options.filePath,
+      options.projectRootFolderName
+    );
 
-    if (options.driveId && encodedRootPath) {
-      const fromDriveRoot = await downloadGraphFileContent(
-        `${graphBase}/drives/${encodeURIComponent(options.driveId)}/root:/${encodedRootPath}:/content`,
-        accessToken
-      );
-      if (fromDriveRoot) {
-        return fromDriveRoot;
+    for (const candidatePath of pathCandidates) {
+      const encodedRootPath = encodeDrivePath(candidatePath);
+      if (!encodedRootPath) {
+        continue;
       }
 
-      const relative = folderRelativePath(options.filePath);
-      if (options.folderId && relative) {
-        const fromFolder = await downloadGraphFileContent(
-          `${graphBase}/drives/${encodeURIComponent(options.driveId)}/items/${encodeURIComponent(options.folderId)}:/${encodeDrivePath(relative)}:/content`,
-          accessToken
+      if (options.driveId) {
+        const fromDriveRoot = await downloadGraphFileContent(
+          `${graphBase}/drives/${encodeURIComponent(options.driveId)}/root:/${encodedRootPath}:/content`,
+          accessToken,
+          { strategy: "drive_root", filePath: candidatePath }
         );
-        if (fromFolder) {
-          return fromFolder;
+        if (fromDriveRoot) {
+          if (candidatePath !== options.filePath) {
+            logger.info("onedrive.graph_file_access.path_normalized", {
+              originalPath: options.filePath,
+              resolvedPath: candidatePath,
+            });
+          }
+          return fromDriveRoot;
         }
+
+        const relative = folderRelativePath(candidatePath);
+        if (options.folderId && relative) {
+          const fromFolder = await downloadGraphFileContent(
+            `${graphBase}/drives/${encodeURIComponent(options.driveId)}/items/${encodeURIComponent(options.folderId)}:/${encodeDrivePath(relative)}:/content`,
+            accessToken,
+            { strategy: "folder_relative", filePath: candidatePath, relativePath: relative }
+          );
+          if (fromFolder) {
+            if (candidatePath !== options.filePath) {
+              logger.info("onedrive.graph_file_access.path_normalized", {
+                originalPath: options.filePath,
+                resolvedPath: candidatePath,
+              });
+            }
+            return fromFolder;
+          }
+        }
+      }
+
+      const fromMeDrive = await this.downloadFileContentByPath(user, candidatePath, {
+        projectOwnerUserId: options.projectOwnerUserId,
+      });
+      if (fromMeDrive) {
+        if (candidatePath !== options.filePath) {
+          logger.info("onedrive.graph_file_access.path_normalized", {
+            originalPath: options.filePath,
+            resolvedPath: candidatePath,
+          });
+        }
+        return fromMeDrive;
       }
     }
 
-    return this.downloadFileContentByPath(user, options.filePath, {
+    logger.warn("onedrive.graph_file_access.exhausted", {
+      filePath: options.filePath,
+      pathCandidates,
+      driveId: options.driveId,
+      folderId: options.folderId,
       projectOwnerUserId: options.projectOwnerUserId,
     });
+    return null;
   },
 
   async downloadFileContent(

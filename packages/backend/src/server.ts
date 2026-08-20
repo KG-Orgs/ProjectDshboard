@@ -772,6 +772,7 @@ async function createApp(): Promise<Express> {
             folderId: project.onedriveFolderId,
             filePath: file.filePath,
             projectOwnerUserId: project.onedriveConnectedByUserId,
+            projectRootFolderName: project.name,
           });
           if (oneDriveContent) {
             res.setHeader("Content-Type", oneDriveContent.contentType ?? guessMimeType(file.fileName, file.mimeType ?? undefined));
