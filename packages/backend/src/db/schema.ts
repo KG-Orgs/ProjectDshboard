@@ -193,6 +193,11 @@ export const projects = pgTable(
     onedriveFolderId: text("onedrive_folder_id"),
     /** Owner's Graph driveId — enables /drives/{id}/... access for all members. */
     onedriveDriveId: text("onedrive_drive_id"),
+    /** User whose OneDrive token reads files for all project members. */
+    onedriveConnectedByUserId: uuid("onedrive_connected_by_user_id").references(
+      () => users.id,
+      { onDelete: "set null" }
+    ),
     status: text("status", { enum: ["active", "archived"] })
       .default("active")
       .notNull(),

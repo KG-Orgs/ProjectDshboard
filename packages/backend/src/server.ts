@@ -610,8 +610,10 @@ async function createApp(): Promise<Express> {
       throw new AppError(400, "invalid_folder", "onedriveFolderId is required");
     }
 
+    const oneDriveStatus = await onedriveService.getStatus(req.user);
     const project = await projectService.updateProjectFolderBinding(projectId, nextFolderId, {
       clearIndexedData: body.resetIndexedData === true,
+      connectedByUserId: oneDriveStatus.connected ? toUuid(req.user!.id) : undefined,
     });
 
     // Reset any stale progress snapshot immediately so polling never sees old-folder data.
@@ -661,7 +663,21 @@ async function createApp(): Promise<Express> {
       throw new AppError(400, "invalid_drive_binding", "driveId and folderId are required");
     }
 
-    const project = await projectService.bindProjectDrive(projectId, driveId, folderId);
+    const oneDriveStatus = await onedriveService.getStatus(req.user);
+    if (!oneDriveStatus.connected) {
+      throw new AppError(
+        412,
+        "onedrive_not_connected",
+        "Connect OneDrive before binding this project to a folder."
+      );
+    }
+
+    const project = await projectService.bindProjectDrive(
+      projectId,
+      driveId,
+      folderId,
+      toUuid(req.user!.id)
+    );
     res.json({ project });
   }));
   app.get("/api/projects/:id", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
@@ -748,13 +764,14 @@ async function createApp(): Promise<Express> {
       }
 
       // Hosted demo (Render) has no local OneDrive disk. Fetch from the bound
-      // project drive so testers with share access can open citations/PDFs.
-      if (file.filePath && req.user) {
+      // project drive using the project owner's OneDrive token when configured.
+      if (file.filePath) {
         try {
           const oneDriveContent = await onedriveService.tryDownloadIndexedFileFromGraph(req.user, {
             driveId: project.onedriveDriveId,
             folderId: project.onedriveFolderId,
             filePath: file.filePath,
+            projectOwnerUserId: project.onedriveConnectedByUserId,
           });
           if (oneDriveContent) {
             res.setHeader("Content-Type", oneDriveContent.contentType ?? guessMimeType(file.fileName, file.mimeType ?? undefined));
@@ -769,7 +786,8 @@ async function createApp(): Promise<Express> {
 
       res.status(404).json({
         error: "local_corpus_file_missing",
-        message: "Indexed file is not available on disk or in your connected OneDrive. Connect OneDrive and confirm the project folder is shared with your Microsoft account.",
+        message:
+          "This file could not be loaded from the project's OneDrive folder. Ask a project admin to connect OneDrive and bind the project folder.",
         details: { path: absolutePath },
       });
       return;
@@ -779,7 +797,12 @@ async function createApp(): Promise<Express> {
     // so non-owners with share access can open files (not just the drive owner).
     const graphDriveId = project.onedriveDriveId;
     const fileContent = graphDriveId
-      ? await onedriveService.downloadFileContentByDriveItem(req.user, graphDriveId, file.onedriveItemId)
+      ? await onedriveService.downloadFileContentByDriveItem(
+          req.user,
+          graphDriveId,
+          file.onedriveItemId,
+          { projectOwnerUserId: project.onedriveConnectedByUserId }
+        )
       : await onedriveService.downloadFileContent(req.user, file.onedriveItemId);
     const contentType = fileContent.contentType ?? file.mimeType ?? "application/octet-stream";
     res.setHeader("Content-Type", contentType);

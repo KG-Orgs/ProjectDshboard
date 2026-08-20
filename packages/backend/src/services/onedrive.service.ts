@@ -354,6 +354,37 @@ async function getConnectionOrThrow(
   return connection;
 }
 
+export interface FileAccessConnectionOptions {
+  projectOwnerUserId?: string | null;
+  fallbackUser?: RequestUserContext;
+}
+
+/** Prefer the project owner's OneDrive token; fall back to the viewer's connection. */
+async function resolveConnectionForFileAccess(
+  options: FileAccessConnectionOptions
+): Promise<OneDriveConnection | null> {
+  if (options.projectOwnerUserId) {
+    const ownerConnection = await loadConnectionForUser(options.projectOwnerUserId);
+    if (ownerConnection) {
+      return ownerConnection;
+    }
+  }
+
+  if (options.fallbackUser) {
+    return (await loadConnectionForUser(options.fallbackUser.id)) ?? null;
+  }
+
+  return null;
+}
+
+function projectOneDriveNotConnectedError(): AppError {
+  return new AppError(
+    412,
+    "project_onedrive_not_connected",
+    "This project's OneDrive folder is not connected. Ask a project admin to connect OneDrive and bind the folder."
+  );
+}
+
 export const onedriveService = {
   getConnectUrl(
     user: RequestUserContext | undefined,
@@ -709,10 +740,13 @@ export const onedriveService = {
    */
   async downloadFileContentByPath(
     user: RequestUserContext | undefined,
-    filePath: string
+    filePath: string,
+    options?: FileAccessConnectionOptions
   ): Promise<OneDriveFileContent | null> {
-    const authenticatedUser = requireUser(user);
-    const connection = await loadConnectionForUser(authenticatedUser.id);
+    const connection = await resolveConnectionForFileAccess({
+      projectOwnerUserId: options?.projectOwnerUserId,
+      fallbackUser: user ? requireUser(user) : undefined,
+    });
     if (!connection) {
       return null;
     }
@@ -726,8 +760,8 @@ export const onedriveService = {
 
   /**
    * Download a locally indexed corpus file from the project's bound Graph drive.
-   * `/me/drive/root:/path` only works for the folder owner; shared-folder testers
-   * need `/drives/{driveId}/root:/path` (or the folder-relative item path).
+   * Uses the project owner's OneDrive token when configured so members need not
+   * connect their own OneDrive or have the folder shared personally.
    */
   async tryDownloadIndexedFileFromGraph(
     user: RequestUserContext | undefined,
@@ -735,10 +769,13 @@ export const onedriveService = {
       driveId?: string | null;
       folderId?: string | null;
       filePath: string;
+      projectOwnerUserId?: string | null;
     }
   ): Promise<OneDriveFileContent | null> {
-    const authenticatedUser = requireUser(user);
-    const connection = await loadConnectionForUser(authenticatedUser.id);
+    const connection = await resolveConnectionForFileAccess({
+      projectOwnerUserId: options.projectOwnerUserId,
+      fallbackUser: user ? requireUser(user) : undefined,
+    });
     if (!connection) {
       return null;
     }
@@ -767,7 +804,9 @@ export const onedriveService = {
       }
     }
 
-    return this.downloadFileContentByPath(user, options.filePath);
+    return this.downloadFileContentByPath(user, options.filePath, {
+      projectOwnerUserId: options.projectOwnerUserId,
+    });
   },
 
   async downloadFileContent(
@@ -813,10 +852,16 @@ export const onedriveService = {
   async downloadFileContentByDriveItem(
     user: RequestUserContext | undefined,
     driveId: string,
-    itemId: string
+    itemId: string,
+    options?: { projectOwnerUserId?: string | null }
   ): Promise<OneDriveFileContent> {
-    const authenticatedUser = requireUser(user);
-    const connection = await getConnectionOrThrow(authenticatedUser);
+    const connection = await resolveConnectionForFileAccess({
+      projectOwnerUserId: options?.projectOwnerUserId,
+      fallbackUser: user ? requireUser(user) : undefined,
+    });
+    if (!connection) {
+      throw projectOneDriveNotConnectedError();
+    }
     const accessToken = await exchangeRefreshToken(connection);
 
     const response = await fetch(

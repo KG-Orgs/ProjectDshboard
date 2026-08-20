@@ -66,6 +66,8 @@ export interface Project {
   onedriveFolderId?: string;
   /** Owner's Graph driveId — enables /drives/{id}/... access for all team members. */
   onedriveDriveId?: string;
+  /** User id whose OneDrive connection serves project files (internal). */
+  onedriveConnectedByUserId?: UUID;
   status: "active" | "archived";
   createdAt: Date;
   /** Present when listing projects for the current user. */

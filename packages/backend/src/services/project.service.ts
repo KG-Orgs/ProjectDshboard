@@ -87,6 +87,7 @@ function toProjectResponseProject(record: {
   name: string;
   onedriveFolderId: string | null;
   onedriveDriveId?: string | null;
+  onedriveConnectedByUserId?: string | null;
   status: "active" | "archived";
   createdAt: Date;
 }): CreateProjectResponse["project"] {
@@ -96,6 +97,9 @@ function toProjectResponseProject(record: {
     name: record.name,
     onedriveFolderId: record.onedriveFolderId ?? undefined,
     onedriveDriveId: record.onedriveDriveId ?? undefined,
+    onedriveConnectedByUserId: record.onedriveConnectedByUserId
+      ? toUuid(record.onedriveConnectedByUserId)
+      : undefined,
     status: record.status,
     createdAt: record.createdAt,
   };
@@ -403,6 +407,7 @@ export const projectService = {
     onedriveFolderId: string,
     options?: {
       clearIndexedData?: boolean;
+      connectedByUserId?: UUID;
     }
   ): Promise<CreateProjectResponse["project"]> {
     const db = getDbIfInitialized();
@@ -413,6 +418,9 @@ export const projectService = {
         .update(projects)
         .set({
           onedriveFolderId,
+          ...(options?.connectedByUserId
+            ? { onedriveConnectedByUserId: options.connectedByUserId }
+            : {}),
         })
         .where(eq(projects.id, projectId))
         .returning();
@@ -440,6 +448,9 @@ export const projectService = {
       }
 
       project.onedriveFolderId = onedriveFolderId;
+      if (options?.connectedByUserId) {
+        project.onedriveConnectedByUserId = options.connectedByUserId;
+      }
       updatedProject = project;
       break;
     }
@@ -460,20 +471,25 @@ export const projectService = {
 
   /**
    * Bind a project to a specific Graph driveId + folderId (owner's IDs).
-   * After this, all file access uses /drives/{driveId}/items/{id}/... so
-   * any team member with a Graph token (not just the owner) can open files.
+   * Stores connectedByUserId so file reads use that user's OneDrive token for
+   * all project members (no per-member OneDrive connect required).
    */
   async bindProjectDrive(
     projectId: UUID,
     driveId: string,
-    folderId: string
+    folderId: string,
+    connectedByUserId: UUID
   ): Promise<CreateProjectResponse["project"]> {
     const db = getDbIfInitialized();
 
     if (db) {
       const [updated] = await db
         .update(projects)
-        .set({ onedriveDriveId: driveId, onedriveFolderId: folderId })
+        .set({
+          onedriveDriveId: driveId,
+          onedriveFolderId: folderId,
+          onedriveConnectedByUserId: connectedByUserId,
+        })
         .where(eq(projects.id, projectId))
         .returning();
 
@@ -492,6 +508,7 @@ export const projectService = {
     }
     project.onedriveDriveId = driveId;
     project.onedriveFolderId = folderId;
+    project.onedriveConnectedByUserId = connectedByUserId;
     return project;
   },
 
