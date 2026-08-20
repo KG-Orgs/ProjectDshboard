@@ -4,7 +4,7 @@ export function getErrorMessage(error: string | null, message: string | null): s
     return 'Microsoft OAuth is not configured. Set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET in your environment.';
   }
   if (error === 'backend_unreachable') {
-    return 'Backend API is unavailable. Start the backend service on localhost:3001 and retry.';
+    return 'Backend API is waking up or unavailable. Wait a few seconds and try signing in again.';
   }
   return null;
 }

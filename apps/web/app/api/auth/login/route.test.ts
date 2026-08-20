@@ -35,6 +35,40 @@ describe('GET /api/auth/login', () => {
     expect(response.headers.get('location')).toContain('login.microsoftonline.com');
   });
 
+  it('retries when the backend is cold-starting with 502', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 502,
+        headers: { get: () => null },
+        json: async () => ({}),
+      })
+      .mockResolvedValueOnce({
+        status: 302,
+        headers: {
+          get: (key: string) =>
+            key.toLowerCase() === 'location'
+              ? 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?state=retry'
+              : null,
+        },
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new NextRequest('http://localhost:3000/api/auth/login', {
+      method: 'GET',
+    });
+
+    const responsePromise = GET(request);
+    await vi.runAllTimersAsync();
+    const response = await responsePromise;
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toContain('login.microsoftonline.com');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
   it('redirects back to /login with friendly error when backend cannot start OAuth', async () => {
     vi.stubGlobal(
       'fetch',
