@@ -89,5 +89,5 @@ export async function readLocalCorpusFile(
 
   // AbortSignal.timeout available since Node 17.3 — safe on Node 22.
   const signal = AbortSignal.timeout(timeoutMs);
-  return fsPromises.readFile(absolutePath, { signal } as Parameters<typeof fsPromises.readFile>[1]);
+  return fsPromises.readFile(absolutePath, { signal, encoding: null });
 }
