@@ -4,10 +4,16 @@ import type {
   CreateProjectRequest,
   CreateProjectResponse,
   FileRecord,
+  ProjectExplorerFolderResponse,
   ProjectFilesResponse,
   ProjectDetailsResponse,
   ProjectListResponse,
   UUID,
+} from "@contractor/shared";
+import {
+  getExplorerContainingFolderPath,
+  pathStartsWithSegments,
+  splitExplorerFolderPath,
 } from "@contractor/shared";
 import {
   chunkLinks,
@@ -15,6 +21,7 @@ import {
   fileChunks,
   fileRecords,
   getDbIfInitialized,
+  projectExplorerSnapshots,
   projectMembers,
   projects,
   syncRuns,
@@ -242,6 +249,294 @@ function buildProjectFilesWhere(
   }
 
   return and(...conditions)!;
+}
+
+type ExplorerIndexEntry = {
+  id: UUID;
+  fileName: string;
+  filePath: string;
+  indexStatus: FileRecord["indexStatus"];
+  containingFolderPath: string;
+  containingFolderSegments: string[];
+};
+
+type ExplorerIndexCacheEntry = {
+  expiresAt: number;
+  entries: ExplorerIndexEntry[];
+};
+
+const explorerIndexCache = new Map<string, ExplorerIndexCacheEntry>();
+
+type ExplorerSnapshotRecord = {
+  id: UUID;
+  fileName: string;
+  filePath: string;
+  indexStatus: FileRecord["indexStatus"];
+};
+
+function toSyncFingerprint(value?: Date | string | null): string {
+  if (!value) {
+    return "";
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return date.toISOString();
+}
+
+async function getLatestSyncFingerprint(projectId: UUID): Promise<{ fingerprint: string; lastSyncedAt: Date | null }> {
+  const db = getDbIfInitialized();
+  if (db) {
+    const [latestRun] = await db
+      .select({ finishedAt: syncRuns.finishedAt })
+      .from(syncRuns)
+      .where(eq(syncRuns.projectId, projectId))
+      .orderBy(desc(syncRuns.finishedAt))
+      .limit(1);
+    return {
+      fingerprint: toSyncFingerprint(latestRun?.finishedAt),
+      lastSyncedAt: latestRun?.finishedAt ?? null,
+    };
+  }
+
+  const lastSyncedAt = syncTimesByProject.get(projectId) ?? null;
+  return { fingerprint: toSyncFingerprint(lastSyncedAt), lastSyncedAt };
+}
+
+async function invalidateExplorerSnapshots(projectId: UUID): Promise<void> {
+  for (const key of [...explorerIndexCache.keys()]) {
+    if (key.startsWith(`${projectId}:`)) {
+      explorerIndexCache.delete(key);
+    }
+  }
+
+  const db = getDbIfInitialized();
+  if (!db) {
+    return;
+  }
+
+  try {
+    await db.delete(projectExplorerSnapshots).where(eq(projectExplorerSnapshots.projectId, projectId));
+  } catch {
+    // Table may not exist until migration 0024 is applied.
+  }
+}
+
+async function persistExplorerSnapshot(
+  projectId: UUID,
+  projectRootFolderName: string,
+  fingerprint: string,
+  entries: ExplorerIndexEntry[]
+): Promise<void> {
+  const db = getDbIfInitialized();
+  if (!db) {
+    return;
+  }
+
+  const records: ExplorerSnapshotRecord[] = entries.map((entry) => ({
+    id: entry.id,
+    fileName: entry.fileName,
+    filePath: entry.filePath,
+    indexStatus: entry.indexStatus,
+  }));
+
+  try {
+    await db
+      .insert(projectExplorerSnapshots)
+      .values({
+        projectId,
+        projectRootFolderName,
+        syncFingerprint: fingerprint,
+        totalFiles: records.length,
+        entries: records,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: projectExplorerSnapshots.projectId,
+        set: {
+          projectRootFolderName,
+          syncFingerprint: fingerprint,
+          totalFiles: records.length,
+          entries: records,
+          updatedAt: new Date(),
+        },
+      });
+  } catch {
+    // Snapshot persistence is optional; explorer can still scan file_records.
+  }
+}
+
+async function readExplorerSnapshot(
+  projectId: UUID,
+  projectRootFolderName: string,
+  fingerprint: string
+): Promise<ExplorerIndexEntry[] | null> {
+  const db = getDbIfInitialized();
+  if (!db) {
+    return null;
+  }
+
+  try {
+    const [row] = await db
+      .select()
+      .from(projectExplorerSnapshots)
+      .where(eq(projectExplorerSnapshots.projectId, projectId))
+      .limit(1);
+
+    if (
+      !row ||
+      row.syncFingerprint !== fingerprint ||
+      row.projectRootFolderName !== projectRootFolderName
+    ) {
+      return null;
+    }
+
+    return (row.entries ?? []).map((record) =>
+      buildExplorerIndexEntry(
+        {
+          id: record.id as UUID,
+          fileName: record.fileName,
+          filePath: record.filePath,
+          indexStatus: record.indexStatus as FileRecord["indexStatus"],
+        },
+        projectRootFolderName
+      )
+    );
+  } catch {
+    return null;
+  }
+}
+
+function toExplorerWsFile(record: Pick<FileRecord, "id" | "fileName" | "filePath" | "indexStatus">): Pick<
+  FileRecord,
+  "id" | "fileName" | "filePath" | "indexStatus"
+> {
+  return {
+    id: record.id,
+    fileName: record.fileName,
+    filePath: record.filePath,
+    indexStatus: record.indexStatus,
+  };
+}
+
+function buildExplorerIndexEntry(
+  record: Pick<FileRecord, "id" | "fileName" | "filePath" | "indexStatus">,
+  projectRootFolderName?: string | null
+): ExplorerIndexEntry {
+  const containingFolderPath = getExplorerContainingFolderPath(
+    record.filePath,
+    record.fileName,
+    projectRootFolderName
+  );
+
+  return {
+    id: record.id,
+    fileName: record.fileName,
+    filePath: record.filePath,
+    indexStatus: record.indexStatus,
+    containingFolderPath,
+    containingFolderSegments: splitExplorerFolderPath(containingFolderPath),
+  };
+}
+
+async function getProjectExplorerIndex(
+  projectId: UUID,
+  projectRootFolderName?: string | null
+): Promise<{ entries: ExplorerIndexEntry[]; lastSyncedAt: Date | null }> {
+  const rootName = projectRootFolderName ?? "";
+  const { fingerprint, lastSyncedAt } = await getLatestSyncFingerprint(projectId);
+  const cacheKey = `${projectId}:${rootName}:${fingerprint}`;
+  const cached = explorerIndexCache.get(cacheKey);
+  if (cached) {
+    return { entries: cached.entries, lastSyncedAt };
+  }
+
+  const snapshot = await readExplorerSnapshot(projectId, rootName, fingerprint);
+  if (snapshot) {
+    explorerIndexCache.set(cacheKey, { expiresAt: Number.MAX_SAFE_INTEGER, entries: snapshot });
+    return { entries: snapshot, lastSyncedAt };
+  }
+
+  const db = getDbIfInitialized();
+  let records: Array<Pick<FileRecord, "id" | "fileName" | "filePath" | "indexStatus">> = [];
+
+  if (db) {
+    records = await db
+      .select({
+        id: fileRecords.id,
+        fileName: fileRecords.fileName,
+        filePath: fileRecords.filePath,
+        indexStatus: fileRecords.indexStatus,
+      })
+      .from(fileRecords)
+      .where(eq(fileRecords.projectId, projectId))
+      .orderBy(asc(fileRecords.filePath), asc(fileRecords.fileName));
+  } else {
+    records = (filesByProject.get(projectId) ?? []).map((file) => ({
+      id: file.id,
+      fileName: file.fileName,
+      filePath: file.filePath,
+      indexStatus: file.indexStatus,
+    }));
+  }
+
+  const entries = records.map((record) => buildExplorerIndexEntry(record, projectRootFolderName));
+  explorerIndexCache.set(cacheKey, { expiresAt: Number.MAX_SAFE_INTEGER, entries });
+  void persistExplorerSnapshot(projectId, rootName, fingerprint, entries);
+  return { entries, lastSyncedAt };
+}
+
+function buildProjectExplorerFolderResponse(
+  entries: ExplorerIndexEntry[],
+  folderPath: string
+): ProjectExplorerFolderResponse {
+  const parentSegments = splitExplorerFolderPath(folderPath);
+  const folderCounts = new Map<string, number>();
+  const directFiles: ProjectExplorerFolderResponse["files"] = [];
+
+  for (const entry of entries) {
+    if (!pathStartsWithSegments(entry.containingFolderSegments, parentSegments)) {
+      continue;
+    }
+
+    const relativeSegments = entry.containingFolderSegments.slice(parentSegments.length);
+    if (relativeSegments.length === 0) {
+      directFiles.push(toExplorerWsFile(entry) as FileRecord);
+      continue;
+    }
+
+    const childSegments = [...parentSegments, relativeSegments[0]!];
+    const childPath = childSegments.join("/");
+    folderCounts.set(childPath, (folderCounts.get(childPath) ?? 0) + 1);
+  }
+
+  const folders = [...folderCounts.entries()]
+    .map(([path, fileCount]) => ({
+      name: path.split("/").pop() ?? path,
+      path,
+      fileCount,
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+
+  directFiles.sort((left, right) => left.fileName.localeCompare(right.fileName));
+
+  return {
+    folderPath,
+    folders,
+    files: directFiles,
+    totalProjectFiles: entries.length,
+  };
+}
+
+function withExplorerSyncMeta(
+  response: ProjectExplorerFolderResponse,
+  lastSyncedAt: Date | null
+): ProjectExplorerFolderResponse {
+  return {
+    ...response,
+    lastSyncedAt: lastSyncedAt ? lastSyncedAt.toISOString() : null,
+  };
 }
 
 function filterInMemoryProjectFiles(
@@ -841,11 +1136,13 @@ export const projectService = {
         await db.delete(fileRecords).where(eq(fileRecords.projectId, projectId));
       }
 
+      await invalidateExplorerSnapshots(projectId);
       return;
     }
 
     filesByProject.set(projectId, files);
     syncTimesByProject.set(projectId, new Date());
+    await invalidateExplorerSnapshots(projectId);
   },
 
   async updateFileIndexingResult(
@@ -1233,10 +1530,12 @@ export const projectService = {
         createdAt: new Date(),
       });
       syncTimesByProject.set(projectId, input.finishedAt);
+      await invalidateExplorerSnapshots(projectId);
       return;
     }
 
     syncTimesByProject.set(projectId, input.finishedAt);
+    await invalidateExplorerSnapshots(projectId);
   },
 
   async listProjectFiles(
@@ -1289,6 +1588,19 @@ export const projectService = {
     };
   },
 
+  async listProjectExplorerFolder(
+    projectId: UUID,
+    folderPath?: string | null,
+    projectRootFolderName?: string | null
+  ): Promise<ProjectExplorerFolderResponse> {
+    const normalizedFolderPath = splitExplorerFolderPath(folderPath ?? "").join("/");
+    const { entries, lastSyncedAt } = await getProjectExplorerIndex(projectId, projectRootFolderName);
+    return withExplorerSyncMeta(
+      buildProjectExplorerFolderResponse(entries, normalizedFolderPath),
+      lastSyncedAt
+    );
+  },
+
   async getProjectFileById(projectId: UUID, fileId: UUID): Promise<FileRecord | null> {
     const db = getDbIfInitialized();
     if (db) {
@@ -1316,5 +1628,6 @@ export const projectService = {
     syncTimesByProject.clear();
     chunksByProject.clear();
     chunkLinksByProject.clear();
+    explorerIndexCache.clear();
   },
 };

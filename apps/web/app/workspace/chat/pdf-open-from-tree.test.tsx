@@ -131,7 +131,38 @@ function makeFetch(extraRoutes: Record<string, object> = {}) {
       }
     }
 
-    // File list for the left panel
+    // Lazy explorer folders for the left panel
+    if (
+      url.includes(`/api/projects/${PROJECT_ID}/files/explorer`) &&
+      method === 'GET'
+    ) {
+      const folderPath = new URL(url, 'http://localhost').searchParams.get('folderPath') ?? '';
+      if (folderPath === 'Project Files') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            folderPath: 'Project Files',
+            folders: [],
+            files: PROJECT_FILES,
+            totalProjectFiles: PROJECT_FILES.length,
+          }),
+        } as Response;
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          folderPath: '',
+          folders: [{ name: 'Project Files', path: 'Project Files', fileCount: PROJECT_FILES.length }],
+          files: [],
+          totalProjectFiles: PROJECT_FILES.length,
+        }),
+      } as Response;
+    }
+
+    // Legacy file list fallback
     if (
       url.includes(`/api/projects/${PROJECT_ID}/files`) &&
       method === 'GET'

@@ -70,6 +70,8 @@ export type {
   ProjectDetailsResponse,
   ProjectFilesRequest,
   ProjectFilesResponse,
+  ProjectExplorerFolderSummary,
+  ProjectExplorerFolderResponse,
   CreateChatSessionRequest,
   CreateChatSessionResponse,
   ChatSessionsListResponse,
@@ -106,6 +108,13 @@ export {
   isInviteOnlyAuth,
   parsePlatformOperatorEmails,
 } from "./auth/platform";
+
+export {
+  getExplorerContainingFolderPath,
+  normalizeExplorerFilePath,
+  pathStartsWithSegments,
+  splitExplorerFolderPath,
+} from "./explorer-path";
 
 // ================================
 // CITATION DEEP LINKS

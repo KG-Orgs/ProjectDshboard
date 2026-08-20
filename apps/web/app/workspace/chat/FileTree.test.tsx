@@ -49,4 +49,21 @@ describe('buildNestedFolderTree', () => {
     expect(tree[0]?.name).toBe('Project Files');
     expect(tree[0]?.files).toHaveLength(1);
   });
+
+  it('strips a redundant project root folder segment from indexed paths', () => {
+    const tree = buildNestedFolderTree(
+      [
+        {
+          id: '1',
+          fileName: 'swp.pdf',
+          filePath: 'MLJ-017 Package 6 - General/05 - SUBMITTALS/Safety/swp.pdf',
+          indexStatus: 'indexed',
+        },
+      ],
+      'MLJ-017 Package 6 - General'
+    );
+
+    expect(tree.map((node) => node.name)).toEqual(['05 - SUBMITTALS']);
+    expect(tree[0]?.children.map((child) => child.name)).toEqual(['Safety']);
+  });
 });
