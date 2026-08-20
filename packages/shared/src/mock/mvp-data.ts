@@ -1,7 +1,8 @@
-import { defaultFeatureOrder } from '../features/registry';
+import { BUILTIN_FEATURES, type FeatureModule } from '../features/registry';
 import type {
   ChatSession,
   DashboardFeature,
+  FeatureId,
   FileRecord,
   Organization,
   Project,
@@ -169,11 +170,25 @@ export const demoChatSessions: ChatSession[] = [
   },
 ];
 
-export const demoDashboardFeatures: DashboardFeature[] = defaultFeatureOrder.map((feature) => ({
-  ...feature,
-  enabled: feature.enabledByDefault,
-  statusLabel: feature.enabledByDefault ? 'Live in MVP' : 'Planned next',
-}));
+function toDashboardFeature(feature: FeatureModule): DashboardFeature {
+  return {
+    id: feature.id as FeatureId,
+    name: feature.name,
+    icon: feature.icon,
+    route: feature.route,
+    description: feature.description,
+    enabledByDefault: feature.defaultEnabled,
+    supportedPlatforms: feature.platforms,
+    contributesToChat: feature.id === 'chat',
+    sortOrder: feature.order,
+    enabled: feature.defaultEnabled,
+    statusLabel: feature.defaultEnabled ? 'Live in MVP' : 'Planned next',
+  };
+}
+
+export const demoDashboardFeatures: DashboardFeature[] = Object.values(BUILTIN_FEATURES)
+  .sort((a, b) => a.order - b.order)
+  .map(toDashboardFeature);
 
 export const onboardingChecklist = [
   'Sign in with Microsoft',
