@@ -25,19 +25,14 @@
  * locked document.
  */
 import type { UUID, VisualEvidence, VisualFallbackTrace, VisualNeedAssessment, VisualTaskType } from "@contractor/shared";
-import { and, eq } from "drizzle-orm";
 import { getEnv } from "../config/env";
-import { getDbIfInitialized } from "../db";
-import { fileRecords } from "../db/schema";
 import { logger } from "../lib/logger";
 import { callVisionLlm, extractFirstJsonObject } from "./llm-client";
-import {
-  isLocalCorpusItemId,
-  readLocalCorpusFile,
-  resolveLocalCorpusAbsolutePath,
-} from "./local-corpus.utils";
+import { isLocalCorpusItemId } from "./local-corpus.utils";
+import { onedriveService } from "./onedrive.service";
 import { getPdfPageCount, renderPdfPages } from "./pdf-page-render.service";
 import { projectService } from "./project.service";
+import type { RequestUserContext } from "./service-types";
 import { detectLostVisualState, isSuspiciousExtraction } from "./visual-need.utils";
 
 const VISION_MAX_OUTPUT_TOKENS = 1_024;
@@ -91,6 +86,8 @@ export interface VisualFallbackRequest {
   textEvidence: VisualCandidateChunk[];
   /** Pages the text answer already cited, when any. */
   citedPages?: number[];
+  /** Authenticated user — required to fetch file bytes via Microsoft Graph. */
+  user?: RequestUserContext;
 }
 
 /** An `ExtractorEvidenceItem`-shaped view of a visual observation set. */
@@ -556,61 +553,58 @@ export function detectSelectionConflicts(
 // ---------- Source resolution ----------
 
 /**
- * Resolve the locked document's PDF bytes.
+ * Resolve the locked document's PDF bytes via Microsoft Graph.
  *
- * Only the locally synced corpus is reachable here: the coordinator runs without
- * the caller's Microsoft token, so a Graph-only file cannot be rendered and the
- * stage reports `source_unavailable` instead of pretending it looked.
+ * Requires `user` context to obtain an access token. When no user is provided
+ * (e.g. in test scenarios without OneDrive), the stage reports
+ * `source_unavailable` instead of pretending it looked.
  */
-async function resolvePdfBytes(input: {
-  projectId: UUID;
-  fileId: UUID;
-  filePath?: string;
-  mimeType?: string;
-  fileName: string;
-}): Promise<{ pdfBytes: Buffer } | { error: string }> {
+async function resolvePdfBytes(
+  input: {
+    projectId: UUID;
+    fileId: UUID;
+    filePath?: string;
+    mimeType?: string;
+    fileName: string;
+  },
+  user: RequestUserContext | undefined
+): Promise<{ pdfBytes: Buffer } | { error: string }> {
   const isPdf =
     (input.mimeType ?? "").toLowerCase().includes("pdf") || /\.pdf$/i.test(input.fileName);
   if (!isPdf) {
     return { error: "locked document is not a PDF" };
   }
 
+  if (!user) {
+    return { error: "source_unavailable: user context required to fetch file via Microsoft Graph" };
+  }
+
   const file = await projectService.getProjectFileById(input.projectId, input.fileId).catch(() => null);
   const onedriveItemId = file?.onedriveItemId;
-
-  let deepLinkUrl: string | null | undefined;
-  const db = getDbIfInitialized();
-  if (db) {
-    try {
-      const [row] = await db
-        .select({ deepLinkUrl: fileRecords.deepLinkUrl })
-        .from(fileRecords)
-        .where(and(eq(fileRecords.projectId, input.projectId), eq(fileRecords.id, input.fileId)))
-        .limit(1);
-      deepLinkUrl = row?.deepLinkUrl;
-    } catch {
-      // Non-fatal: fall back to corpus-relative path resolution.
-    }
-  }
-
-  const absolutePath = resolveLocalCorpusAbsolutePath({
-    onedriveItemId,
-    filePath: file?.filePath ?? input.filePath,
-    deepLinkUrl,
-    corpusParent: getEnv().localCorpusParent,
-  });
-
-  if (!absolutePath) {
-    return {
-      error: isLocalCorpusItemId(onedriveItemId)
-        ? "LOCAL_CORPUS_PARENT is not configured"
-        : "source_unavailable: file bytes are only reachable through Microsoft Graph, which needs a user token",
-    };
-  }
+  const filePath = file?.filePath ?? input.filePath;
 
   try {
-    const pdfBytes = await readLocalCorpusFile(absolutePath);
-    return { pdfBytes };
+    if (isLocalCorpusItemId(onedriveItemId)) {
+      if (!filePath) {
+        return { error: "source_unavailable: file path is missing for local corpus item" };
+      }
+      const content = await onedriveService.downloadFileContentByPath(user, filePath);
+      if (!content) {
+        return { error: "source_unavailable: file not found in connected OneDrive" };
+      }
+      return { pdfBytes: content.buffer };
+    }
+
+    if (!onedriveItemId) {
+      return { error: "source_unavailable: no OneDrive item ID" };
+    }
+
+    const project = await projectService.getProjectOrThrow(input.projectId).catch(() => null);
+    const graphDriveId = project?.onedriveDriveId;
+    const content = graphDriveId
+      ? await onedriveService.downloadFileContentByDriveItem(user, graphDriveId, onedriveItemId)
+      : await onedriveService.downloadFileContent(user, onedriveItemId);
+    return { pdfBytes: content.buffer };
   } catch (error) {
     return { error: `source_unavailable: ${error instanceof Error ? error.message : String(error)}` };
   }
@@ -655,7 +649,7 @@ export async function runVisualFallback(
     ...(request.filePath ? { filePath: request.filePath } : {}),
     ...(request.mimeType ? { mimeType: request.mimeType } : {}),
     fileName: request.fileName,
-  });
+  }, request.user);
   if ("error" in source) {
     logger.warn("visual_fallback.failed", {
       fileId: request.fileId,

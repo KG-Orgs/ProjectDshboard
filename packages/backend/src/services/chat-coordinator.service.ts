@@ -28,6 +28,7 @@ import {
   type VisualCandidateChunk,
 } from "./visual-fallback.service";
 import { assessVisualNeed } from "./visual-need.utils";
+import type { RequestUserContext } from "./service-types";
 
 // Re-exported for tests that import the JSON helper from this module.
 export { extractFirstJsonObject };
@@ -2729,6 +2730,7 @@ async function tryVisualEvidenceAnswer(input: {
   rankedChunks: RankedDocumentChunk[];
   /** The status the text pipeline reached before refusing. */
   textStatus: "not_found" | "no_evidence";
+  user?: RequestUserContext;
 }): Promise<{ result?: CoordinatorResult; trace?: VisualFallbackTrace }> {
   const { detail, rawQuery, visualSource } = input;
   if (!getEnv().chatVisualFallbackEnabled || !visualSource) return {};
@@ -2782,6 +2784,7 @@ async function tryVisualEvidenceAnswer(input: {
       documentAlias: alias,
       assessment,
       textEvidence,
+      ...(input.user ? { user: input.user } : {}),
     },
     trigger
   );
@@ -3169,12 +3172,13 @@ async function answerFromDocumentDetail(
   history?: ChatHistoryTurn[],
   openDocs?: OpenDocContext[],
   selectedFileName?: string,
-  options?: { forceSummaryFallback?: boolean; maxGraphNodes?: number; projectId?: UUID }
+  options?: { forceSummaryFallback?: boolean; maxGraphNodes?: number; projectId?: UUID; user?: RequestUserContext }
 ): Promise<CoordinatorResult> {
   const designationAnswer = tryFilenameDesignationAnswer(detail, rawQuery, startedAt, selectedFileName);
   if (designationAnswer) return designationAnswer;
 
   const featureFlags = getChatCoordinatorFeatureFlags();
+  const user = options?.user;
   // The visual fallback needs the project to resolve the file's bytes; callers
   // that could not supply one get the text-only pipeline unchanged.
   const visualSource: LockedDocumentVisualSource | undefined = options?.projectId
@@ -3364,6 +3368,7 @@ async function answerFromDocumentDetail(
         ...(visualSource ? { visualSource } : {}),
         rankedChunks,
         textStatus: "not_found",
+        ...(user ? { user } : {}),
       });
       if (visualAttempt.result) return visualAttempt.result;
 
@@ -3635,6 +3640,7 @@ async function answerFromDocumentDetail(
       ...(visualSource ? { visualSource } : {}),
       rankedChunks,
       textStatus: "no_evidence",
+      ...(user ? { user } : {}),
     });
     if (visualAttempt.result) return visualAttempt.result;
 
@@ -3744,7 +3750,8 @@ async function answerFromDocumentDetail(
         detail.fileName,
         enrichedMatches,
         detail.fileId,
-        visualSource
+        visualSource,
+        user
       );
       const content = extracted?.markdown ?? buildDetailedKeywordMatchContent(detail.fileName, rawQuery, enrichedMatches);
 
@@ -4019,6 +4026,7 @@ async function answerFromDocumentDetail(
       ...(visualSource ? { visualSource } : {}),
       rankedChunks,
       textStatus: "not_found",
+      ...(user ? { user } : {}),
     });
     if (visualAttempt.result) return visualAttempt.result;
     lateVisualTrace = visualAttempt.trace;
@@ -5600,6 +5608,7 @@ export interface ExtractorVisualContext {
   documentAlias: string;
   /** Ranked chunks from the locked document, for page selection and prompt context. */
   textEvidence: VisualCandidateChunk[];
+  user?: RequestUserContext;
 }
 
 /**
@@ -5740,6 +5749,7 @@ async function attemptVisualFallback(input: {
       assessment,
       textEvidence: context.textEvidence,
       ...(citedPages.length > 0 ? { citedPages } : {}),
+      ...(context.user ? { user: context.user } : {}),
     },
     trigger
   );
@@ -5820,7 +5830,8 @@ async function callDetailedExtractionLlm(
   fileName: string,
   matchedChunks: RankedDocumentChunk[],
   fileId?: string,
-  visual?: LockedDocumentVisualSource
+  visual?: LockedDocumentVisualSource,
+  user?: RequestUserContext
 ): Promise<{ markdown: string; answer: ExtractedAnswer } | null> {
   const alias = deriveShortFormName(fileName);
 
@@ -5840,7 +5851,7 @@ async function callDetailedExtractionLlm(
     maxTokens: DETAILED_EXTRACTION_MAX_OUTPUT_TOKENS,
     ...(visual
       ? {
-          visual: buildVisualContext(visual, alias, matchedChunks),
+          visual: buildVisualContext(visual, alias, matchedChunks, user),
         }
       : {}),
   });
@@ -5866,7 +5877,8 @@ export interface LockedDocumentVisualSource {
 function buildVisualContext(
   source: LockedDocumentVisualSource,
   documentAlias: string,
-  rankedChunks: RankedDocumentChunk[]
+  rankedChunks: RankedDocumentChunk[],
+  user?: RequestUserContext
 ): ExtractorVisualContext {
   const textEvidence: VisualCandidateChunk[] = rankedChunks.slice(0, 24).map((chunk) => ({
     ...(typeof chunk.pageNumber === "number" ? { page: chunk.pageNumber } : {}),
@@ -5883,6 +5895,7 @@ function buildVisualContext(
     ...(source.mimeType ? { mimeType: source.mimeType } : {}),
     documentAlias,
     textEvidence,
+    ...(user ? { user } : {}),
   };
 }
 
@@ -6708,7 +6721,8 @@ export const chatCoordinatorService = {
     history?: ChatHistoryTurn[],
     openDocs?: OpenDocContext[],
     activeDocFileName?: string,
-    activeDocFileId?: UUID
+    activeDocFileId?: UUID,
+    user?: RequestUserContext
   ): Promise<CoordinatorResult> {
     const featureFlags = getChatCoordinatorFeatureFlags();
     const startedAt = Date.now();
@@ -6930,7 +6944,7 @@ export const chatCoordinatorService = {
             history,
             openDocs,
             activeDocFileName,
-            { projectId }
+            { projectId, ...(user ? { user } : {}) }
           );
         }
 
@@ -6976,7 +6990,7 @@ export const chatCoordinatorService = {
           history,
           openDocs,
           activeDocFileName ?? activeDocDetail.fileName,
-          { projectId }
+          { projectId, ...(user ? { user } : {}) }
         );
       }
     }
@@ -6998,7 +7012,7 @@ export const chatCoordinatorService = {
           history,
           openDocs,
           directDocumentCandidate.fileName,
-          { projectId }
+          { projectId, ...(user ? { user } : {}) }
         );
       }
 

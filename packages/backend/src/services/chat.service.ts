@@ -131,7 +131,8 @@ export const chatService = {
       history,
       openDocs,
       activeDocFileName,
-      activeDocFileId
+      activeDocFileId,
+      user
     );
 
     const response: SendChatMessageResponse = {

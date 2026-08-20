@@ -5,13 +5,11 @@
 
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { writeFile as fsWriteFile } from "node:fs/promises";
 import express, { type Express, Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { eq, and } from "drizzle-orm";
-import { initializeDb, getDbIfInitialized, fileRecords } from "./db";
+import { initializeDb, getDbIfInitialized } from "./db";
 import type {
   AuthLoginRequest,
   ChatIntentLabel,
@@ -32,17 +30,11 @@ import { isOrgPowerUser } from "@contractor/shared";
 import { getEnv, hasMicrosoftOAuthConfig } from "./config/env";
 import { AppError, asyncHandler, isAppError } from "./lib/errors";
 import { logger } from "./lib/logger";
-import {
-  guessMimeType,
-  isLocalCorpusItemId,
-  readLocalCorpusFile,
-  resolveLocalCorpusAbsolutePath,
-} from "./services/local-corpus.utils";
+import { isLocalCorpusItemId } from "./services/local-corpus.utils";
 import {
   authService,
   chatService,
   documentRelationshipService,
-  excelEditorService,
   featureService,
   healthService,
   indexingService,
@@ -727,70 +719,27 @@ async function createApp(): Promise<Express> {
     const safeName = file.fileName.replace(/\"/g, "");
 
     if (isLocalCorpusItemId(file.onedriveItemId)) {
-      const env = getEnv();
-      let deepLinkUrl: string | null | undefined;
-      const db = getDbIfInitialized();
-      if (db) {
-        const [row] = await db
-          .select({ deepLinkUrl: fileRecords.deepLinkUrl })
-          .from(fileRecords)
-          .where(and(eq(fileRecords.projectId, projectId), eq(fileRecords.id, fileId)))
-          .limit(1);
-        deepLinkUrl = row?.deepLinkUrl;
+      if (!file.filePath) {
+        res.status(400).json({ error: "file_source_missing", message: "File path is missing for this item." });
+        return;
       }
-
-      const absolutePath = resolveLocalCorpusAbsolutePath({
-        onedriveItemId: file.onedriveItemId,
+      const oneDriveContent = await onedriveService.tryDownloadIndexedFileFromGraph(req.user, {
+        driveId: project.onedriveDriveId,
+        folderId: project.onedriveFolderId,
         filePath: file.filePath,
-        deepLinkUrl,
-        corpusParent: env.localCorpusParent,
+        projectOwnerUserId: project.onedriveConnectedByUserId,
+        projectRootFolderName: project.name,
       });
-
-      if (absolutePath) {
-        try {
-          const buffer = await readLocalCorpusFile(absolutePath);
-          res.setHeader("Content-Type", guessMimeType(file.fileName, file.mimeType ?? undefined));
-          res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
-          res.send(buffer);
-          return;
-        } catch (localError) {
-          logger.warn("project.file_content.local_read_failed", {
-            projectId,
-            fileId,
-            absolutePath,
-            details: localError instanceof Error ? localError.message : String(localError),
-          });
-        }
+      if (!oneDriveContent) {
+        res.status(404).json({
+          error: "onedrive_file_not_found",
+          message: "This file could not be loaded from the project's OneDrive folder. Ask a project admin to connect OneDrive and bind the project folder.",
+        });
+        return;
       }
-
-      // Hosted demo (Render) has no local OneDrive disk. Fetch from the bound
-      // project drive using the project owner's OneDrive token when configured.
-      if (file.filePath) {
-        try {
-          const oneDriveContent = await onedriveService.tryDownloadIndexedFileFromGraph(req.user, {
-            driveId: project.onedriveDriveId,
-            folderId: project.onedriveFolderId,
-            filePath: file.filePath,
-            projectOwnerUserId: project.onedriveConnectedByUserId,
-            projectRootFolderName: project.name,
-          });
-          if (oneDriveContent) {
-            res.setHeader("Content-Type", oneDriveContent.contentType ?? guessMimeType(file.fileName, file.mimeType ?? undefined));
-            res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
-            res.send(oneDriveContent.buffer);
-            return;
-          }
-        } catch {
-          // Graph lookup failed; fall through to 404.
-        }
-      }
-
-      res.status(404).json({
-        error: "local_corpus_file_missing",
-        message:
-          "This file could not be loaded from the project's OneDrive folder. Ask a project admin to connect OneDrive and bind the project folder.",
-        details: { path: absolutePath },
-      });
+      res.setHeader("Content-Type", oneDriveContent.contentType ?? file.mimeType ?? "application/octet-stream");
+      res.setHeader("Content-Disposition", `inline; filename=\"${safeName}\"`);
+      res.send(oneDriveContent.buffer);
       return;
     }
 
@@ -979,77 +928,11 @@ async function createApp(): Promise<Express> {
       return;
     }
 
-    if (!isLocalCorpusItemId(file.onedriveItemId)) {
-      res.status(400).json({
-        error: "onedrive_file_readonly",
-        message: "Excel edits are only supported for local-corpus files. OneDrive files are read-only until write scope is enabled.",
-      });
-      return;
-    }
-
-    const body = req.body as { sheetName?: unknown; edits?: unknown };
-    if (typeof body.sheetName !== "string" || !body.sheetName.trim()) {
-      res.status(400).json({ error: "invalid_request", message: "sheetName is required" });
-      return;
-    }
-    if (!Array.isArray(body.edits) || body.edits.length === 0) {
-      res.status(400).json({ error: "invalid_request", message: "edits must be a non-empty array" });
-      return;
-    }
-    if (body.edits.length > 500) {
-      res.status(400).json({ error: "invalid_request", message: "edits must not exceed 500 cells per request" });
-      return;
-    }
-
-    const env = getEnv();
-    const db = getDbIfInitialized();
-
-    const [fileRow] = db
-      ? await db.select({ deepLinkUrl: fileRecords.deepLinkUrl }).from(fileRecords)
-          .where(and(eq(fileRecords.projectId, projectId), eq(fileRecords.id, fileId))).limit(1)
-      : [];
-
-    const absolutePath = resolveLocalCorpusAbsolutePath({
-      onedriveItemId: file.onedriveItemId,
-      filePath: file.filePath,
-      deepLinkUrl: fileRow?.deepLinkUrl,
-      corpusParent: env.localCorpusParent,
+    // TODO (OneDrive write): implement via onedriveService.uploadFileContent() after Files.ReadWrite scope is enabled.
+    res.status(400).json({
+      error: "onedrive_file_readonly",
+      message: "Excel edits are not supported. Files are read-only until OneDrive write scope is enabled.",
     });
-
-    if (!absolutePath) {
-      res.status(400).json({ error: "local_corpus_not_configured", message: "LOCAL_CORPUS_PARENT is not configured." });
-      return;
-    }
-
-    const fileBuffer = await readLocalCorpusFile(absolutePath);
-
-    // Validate sheet exists before attempting edits
-    const sheetNames = excelEditorService.getSheetNames(fileBuffer);
-    if (!sheetNames.includes(body.sheetName)) {
-      res.status(404).json({
-        error: "sheet_not_found",
-        message: `Sheet "${body.sheetName}" not found. Available: ${sheetNames.join(", ")}`,
-      });
-      return;
-    }
-
-    const edits = (body.edits as Array<{ cell?: unknown; value?: unknown }>)
-      .filter((e) => typeof e.cell === "string" && (typeof e.value === "string" || typeof e.value === "number"))
-      .map((e) => ({ cell: e.cell as string, value: e.value as string | number }));
-
-    const modifiedBuffer = excelEditorService.applyExcelEdits(fileBuffer, body.sheetName, edits);
-    await fsWriteFile(absolutePath, modifiedBuffer);
-
-    // Mark file as pending re-index so next sync picks up the changes
-    if (db) {
-      await db.update(fileRecords)
-        .set({ indexStatus: "pending", lastIndexed: null, updatedAt: new Date() })
-        .where(and(eq(fileRecords.projectId, projectId), eq(fileRecords.id, fileId)));
-    }
-
-    logger.info("excel-edit.applied", { projectId, fileId, sheetName: body.sheetName, editCount: edits.length, user: req.user?.name });
-
-    res.json({ success: true, editsApplied: edits.length });
   }));
 
   app.get("/api/projects/:id/indexing/progress", requireAuthenticatedRequest, asyncHandler(async (req, res) => {
