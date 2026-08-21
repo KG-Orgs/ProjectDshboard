@@ -462,7 +462,7 @@ async function getProjectExplorerIndex(
   let records: Array<Pick<FileRecord, "id" | "fileName" | "filePath" | "indexStatus">> = [];
 
   if (db) {
-    records = await db
+    const rows = await db
       .select({
         id: fileRecords.id,
         fileName: fileRecords.fileName,
@@ -472,6 +472,13 @@ async function getProjectExplorerIndex(
       .from(fileRecords)
       .where(eq(fileRecords.projectId, projectId))
       .orderBy(asc(fileRecords.filePath), asc(fileRecords.fileName));
+
+    records = rows.map((row) => ({
+      id: toUuid(row.id),
+      fileName: row.fileName,
+      filePath: row.filePath,
+      indexStatus: row.indexStatus,
+    }));
   } else {
     records = (filesByProject.get(projectId) ?? []).map((file) => ({
       id: file.id,
