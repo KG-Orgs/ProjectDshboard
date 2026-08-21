@@ -17,7 +17,9 @@ import {
   hydrateExplorerSessionCache,
   isUsableExplorerCache,
   mergeExplorerFolder,
+  pruneStaleEmptyExplorerFolders,
   readExplorerSessionCache,
+  shouldRefetchExplorerFolder,
   writeExplorerSessionCache,
 } from './projectExplorer';
 import type { ProjectExplorerFolderResponse } from '@contractor/shared';
@@ -372,6 +374,8 @@ function ChatWorkspacePageContent() {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [fileSearch, setFileSearch] = useState('');
   const loadedExplorerFoldersRef = useRef<Map<string, ProjectExplorerFolderResponse>>(new Map());
+  const projectIdRef = useRef(projectId);
+  projectIdRef.current = projectId;
 
   // -- Panel widths (px) ------------------------------------------------------
   const [leftPanelWidth, setLeftPanelWidth] = useState(248);
@@ -1126,7 +1130,9 @@ function ChatWorkspacePageContent() {
       return;
     }
 
-    if (loadedExplorerFoldersRef.current.has(apiPath)) {
+    // Skip only when we already have a non-stale listing. Empty cache entries that
+    // contradict parent fileCount (IndexedDB hydrate / failed expand) must refetch.
+    if (!shouldRefetchExplorerFolder(loadedExplorerFoldersRef.current, apiPath)) {
       return;
     }
 
@@ -1135,18 +1141,37 @@ function ChatWorkspacePageContent() {
 
     try {
       const folder = await fetchExplorerFolder(projectId, apiPath, projectDisplayName);
+      if (projectIdRef.current !== projectId) {
+        return;
+      }
       const nextFolders = mergeExplorerFolder(loadedExplorerFoldersRef.current, folder);
       loadedExplorerFoldersRef.current = nextFolders;
       setLoadedExplorerFolders(new Map(nextFolders));
       setExplorerTotalFiles(folder.totalProjectFiles);
+      if (apiPath !== '') {
+        setExplorerLoadError(null);
+      }
       void writeExplorerSessionCache(
         createExplorerSessionCache(projectId, projectDisplayName, nextFolders, folder.lastSyncedAt)
       );
-    } catch {
+    } catch (error) {
+      if (projectIdRef.current !== projectId) {
+        return;
+      }
+      // Drop the bad cache key so the next expand retries instead of staying blank.
+      if (loadedExplorerFoldersRef.current.has(apiPath)) {
+        const nextFolders = new Map(loadedExplorerFoldersRef.current);
+        nextFolders.delete(apiPath);
+        loadedExplorerFoldersRef.current = nextFolders;
+        setLoadedExplorerFolders(nextFolders);
+      }
       if (apiPath === '') {
         setLoadedExplorerFolders(new Map());
         loadedExplorerFoldersRef.current = new Map();
       }
+      setExplorerLoadError(
+        error instanceof Error ? error.message : 'Failed to load project folders'
+      );
     } finally {
       setLoadingExplorerPaths((current) => {
         const next = new Set(current);
@@ -1187,9 +1212,11 @@ function ChatWorkspacePageContent() {
           projectDisplayName,
           folder.lastSyncedAt ?? null
         );
-        const next = cachedMatches && cached
-          ? mergeExplorerFolder(hydrateExplorerSessionCache(cached), folder)
-          : mergeExplorerFolder(new Map(), folder);
+        const next = pruneStaleEmptyExplorerFolders(
+          cachedMatches && cached
+            ? mergeExplorerFolder(hydrateExplorerSessionCache(cached), folder)
+            : mergeExplorerFolder(new Map(), folder)
+        );
 
         loadedExplorerFoldersRef.current = next;
         setLoadedExplorerFolders(new Map(next));
@@ -1206,11 +1233,15 @@ function ChatWorkspacePageContent() {
           return;
         }
         if (cached) {
-          const hydrated = hydrateExplorerSessionCache(cached);
+          const hydrated = pruneStaleEmptyExplorerFolders(hydrateExplorerSessionCache(cached));
           loadedExplorerFoldersRef.current = hydrated;
           setLoadedExplorerFolders(hydrated);
           setExplorerTotalFiles(hydrated.get('')?.totalProjectFiles ?? 0);
-          setExplorerLoadError(null);
+          setExplorerLoadError(
+            error instanceof Error
+              ? `Using cached folders (${error.message}). Expand a folder to retry live data.`
+              : 'Using cached folders. Expand a folder to retry live data.'
+          );
         } else {
           loadedExplorerFoldersRef.current = new Map();
           setLoadedExplorerFolders(new Map());

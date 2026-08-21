@@ -147,6 +147,16 @@ function FolderSection({
               Loading folder...
             </div>
           ) : null}
+          {!isLoading &&
+          isExpanded &&
+          node.childrenLoaded &&
+          node.children.length === 0 &&
+          node.files.length === 0 &&
+          fileCount > 0 ? (
+            <div style={{ padding: '6px 12px 6px', paddingLeft: `${indent + 16}px`, fontSize: '11px', color: '#b45309' }}>
+              Folder didn&apos;t load. Collapse and expand to retry.
+            </div>
+          ) : null}
           {node.children.map((child) => (
             <FolderSection
               key={child.path}

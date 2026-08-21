@@ -176,6 +176,58 @@ export function mergeExplorerFolder(
   return next;
 }
 
+/** Parent-folder metadata fileCount for a path, when available from a loaded ancestor listing. */
+export function expectedExplorerFileCount(
+  loadedFolders: Map<string, ProjectExplorerFolderResponse>,
+  apiPath: string
+): number | undefined {
+  if (!apiPath) {
+    return loadedFolders.get('')?.totalProjectFiles;
+  }
+
+  const parentPath = apiPath.includes('/') ? apiPath.slice(0, apiPath.lastIndexOf('/')) : '';
+  const parent = loadedFolders.get(parentPath);
+  return parent?.folders.find((folder) => folder.path === apiPath)?.fileCount;
+}
+
+/**
+ * True when we should hit the network again for this path.
+ * Empty cached listings that contradict parent fileCount are treated as stale
+ * (common after a failed/partial expand that got written to IndexedDB).
+ */
+export function shouldRefetchExplorerFolder(
+  loadedFolders: Map<string, ProjectExplorerFolderResponse>,
+  apiPath: string
+): boolean {
+  const loaded = loadedFolders.get(apiPath);
+  if (!loaded) {
+    return true;
+  }
+
+  if (loaded.files.length > 0 || loaded.folders.length > 0) {
+    return false;
+  }
+
+  const expected = expectedExplorerFileCount(loadedFolders, apiPath);
+  return typeof expected === 'number' && expected > 0;
+}
+
+/** Drop empty child cache entries that disagree with parent folder counts. */
+export function pruneStaleEmptyExplorerFolders(
+  loadedFolders: Map<string, ProjectExplorerFolderResponse>
+): Map<string, ProjectExplorerFolderResponse> {
+  const next = new Map(loadedFolders);
+  for (const path of [...next.keys()]) {
+    if (path === '') {
+      continue;
+    }
+    if (shouldRefetchExplorerFolder(next, path)) {
+      next.delete(path);
+    }
+  }
+  return next;
+}
+
 export function createExplorerSessionCache(
   projectId: string,
   projectRootFolderName: string,
