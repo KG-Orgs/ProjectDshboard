@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchBackendWithColdStartRetries, getBackendBaseUrl } from '../../../lib/backend-fetch';
 import { getPublicOrigin, publicUrl } from '../../../lib/request-origin';
+import { APP_SESSION_COOKIE, appSessionCookieOptions } from '../../../lib/session-cookie';
 
-const APP_SESSION_COOKIE = 'app_session';
 export const dynamic = 'force-dynamic';
-
-function getBackendBaseUrl(): string {
-  return process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-}
 
 function buildLoginErrorRedirect(request: NextRequest, error: string, message: string): URL {
   const url = publicUrl(request, '/login');
@@ -45,7 +42,8 @@ export async function GET(request: NextRequest) {
   const redirectUri = `${getPublicOrigin(request)}/auth/callback`;
 
   try {
-    const response = await fetch(`${getBackendBaseUrl()}/api/auth/login`, {
+    // Same cold-start retries as login start — callback is when the API is most often asleep.
+    const response = await fetchBackendWithColdStartRetries(`${getBackendBaseUrl()}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,7 +53,6 @@ export async function GET(request: NextRequest) {
         state,
         redirectUri,
       }),
-      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -83,13 +80,7 @@ export async function GET(request: NextRequest) {
     }
 
     const nextResponse = NextResponse.redirect(publicUrl(request, '/'), 302);
-    nextResponse.cookies.set(APP_SESSION_COOKIE, data.accessToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30,
-    });
+    nextResponse.cookies.set(APP_SESSION_COOKIE, data.accessToken, appSessionCookieOptions());
 
     return nextResponse;
   } catch (error) {
@@ -98,7 +89,7 @@ export async function GET(request: NextRequest) {
       buildLoginErrorRedirect(
         request,
         'backend_unreachable',
-        'Backend API is unavailable. Start the backend service and retry.'
+        'Backend API is waking up. Wait about 30 seconds and try signing in again.'
       ),
       302
     );

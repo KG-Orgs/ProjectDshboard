@@ -46,8 +46,9 @@ const accessSessions = new Map<string, AuthSession>();
 const refreshSessions = new Map<string, AuthSession>();
 /** One-time nonce set for signed OAuth states (best-effort; signed payload survives restarts). */
 const oauthStateNonces = new Map<string, number>();
-const APP_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
-const OAUTH_STATE_TTL_MS = 1000 * 60 * 15;
+const APP_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 365;
+/** Allow extra time for Render free-tier wake during the Microsoft redirect round-trip. */
+const OAUTH_STATE_TTL_MS = 1000 * 60 * 30;
 
 type SignedOAuthStatePayload = {
   redirectUri: string;

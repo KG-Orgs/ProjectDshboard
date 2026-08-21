@@ -1,27 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  BACKEND_FETCH_TIMEOUT_MS,
+  COLD_START_MAX_ATTEMPTS,
+  COLD_START_RETRY_DELAY_MS,
+  fetchBackendWithColdStartRetries,
+  getBackendBaseUrl,
+  isBackendTransientFailure,
+  sleep,
+} from '../../../../lib/backend-fetch';
 import { publicUrl } from '../../../../lib/request-origin';
+import { APP_SESSION_COOKIE, appSessionCookieOptions } from '../../../../lib/session-cookie';
 
-const APP_SESSION_COOKIE = 'app_session';
 export const dynamic = 'force-dynamic';
-
-/** Render free-tier API wake can exceed 20s; keep this above observed cold-start times. */
-const BACKEND_FETCH_TIMEOUT_MS = 60_000;
-const COLD_START_RETRY_DELAY_MS = 2_000;
-const COLD_START_MAX_ATTEMPTS = 4;
-
-function getBackendBaseUrl(): string {
-  return process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-}
 
 function buildLoginErrorRedirect(request: NextRequest, error: string, message: string): URL {
   const url = publicUrl(request, '/login');
   url.searchParams.set('error', error);
   url.searchParams.set('message', message);
   return url;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function isSuccessfulAuthRedirect(response: Response): boolean {
@@ -34,11 +30,12 @@ async function shouldRetryAuthStart(response: Response): Promise<boolean> {
     return false;
   }
 
-  if ([502, 504, 520, 522, 524].includes(response.status)) {
+  if (isBackendTransientFailure(response.status)) {
     return true;
   }
 
   // 503 may be OAuth misconfig (JSON) or a cold-start shell (HTML).
+  // 200 may be a cold-start shell (HTML).
   if (response.status === 503 || response.status === 200) {
     const data = (await response
       .clone()
@@ -156,13 +153,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json();
-    const response = await fetch(`${getBackendBaseUrl()}/api/auth/login`, {
+    const response = await fetchBackendWithColdStartRetries(`${getBackendBaseUrl()}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-      cache: 'no-store',
     });
 
     const data = await response.json();
@@ -172,21 +168,18 @@ export async function POST(request: NextRequest) {
     );
 
     if (response.ok && data.accessToken) {
-      nextResponse.cookies.set(APP_SESSION_COOKIE, data.accessToken, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30,
-      });
+      nextResponse.cookies.set(APP_SESSION_COOKIE, data.accessToken, appSessionCookieOptions());
     }
 
     return nextResponse;
   } catch (error) {
     console.error('Login exchange error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      {
+        error: 'backend_unreachable',
+        message: 'Backend API is waking up. Wait about 30 seconds and try signing in again.',
+      },
+      { status: 503 }
     );
   }
 }

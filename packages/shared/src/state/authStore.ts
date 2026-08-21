@@ -37,9 +37,16 @@ async function fetchJson<T>(
   };
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const AUTH_FETCH_TIMEOUT_MS = 60_000;
+const AUTH_FETCH_MAX_ATTEMPTS = 4;
+
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       capabilities: null,
       isAuthenticated: false,
@@ -51,7 +58,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15_000);
+          const timeoutId = setTimeout(() => controller.abort(), AUTH_FETCH_TIMEOUT_MS);
           const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -89,53 +96,81 @@ export const useAuthStore = create<AuthState>()(
 
         set({ isLoading: true, error: null });
 
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15_000);
-          const meResponse = await fetchJson<AuthMeResponse>("/api/auth/me", {
-            method: "GET",
-            signal: controller.signal,
-          });
-          clearTimeout(timeoutId);
+        let lastMessage = "Session expired. Sign in again.";
 
-          if (!meResponse.ok || !meResponse.data?.user) {
-            if (meResponse.status === 401) {
-              await useAuthStore.persist.clearStorage();
-              set({
-                user: null,
-                capabilities: null,
-                isAuthenticated: false,
-                isLoading: false,
-                error: null,
-              });
-              return;
+        for (let attempt = 1; attempt <= AUTH_FETCH_MAX_ATTEMPTS; attempt += 1) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), AUTH_FETCH_TIMEOUT_MS);
+            const meResponse = await fetchJson<AuthMeResponse>("/api/auth/me", {
+              method: "GET",
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
+            if (!meResponse.ok || !meResponse.data?.user) {
+              if (meResponse.status === 401) {
+                await useAuthStore.persist.clearStorage();
+                set({
+                  user: null,
+                  capabilities: null,
+                  isAuthenticated: false,
+                  isLoading: false,
+                  error: null,
+                });
+                return;
+              }
+
+              if (meResponse.status === 503 && attempt < AUTH_FETCH_MAX_ATTEMPTS) {
+                await sleep(2_000 * attempt);
+                continue;
+              }
+
+              throw new Error("Session expired. Sign in again.");
             }
 
-            throw new Error("Session expired. Sign in again.");
-          }
+            set({
+              user: meResponse.data.user,
+              capabilities: meResponse.data.capabilities ?? null,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+            return;
+          } catch (error) {
+            lastMessage =
+              error instanceof Error && error.name === "AbortError"
+                ? "Session restore timed out while the API was waking up. Refresh to retry."
+                : error instanceof Error
+                  ? error.message
+                  : "Session expired. Sign in again.";
 
+            if (attempt < AUTH_FETCH_MAX_ATTEMPTS) {
+              await sleep(2_000 * attempt);
+              continue;
+            }
+          }
+        }
+
+        // Keep a previously persisted user so a cold-start blip doesn't force re-login.
+        const existingUser = get().user;
+        if (existingUser) {
           set({
-            user: meResponse.data.user,
-            capabilities: meResponse.data.capabilities ?? null,
+            user: existingUser,
             isAuthenticated: true,
             isLoading: false,
-            error: null,
+            error: lastMessage,
           });
-        } catch (error) {
-          const message =
-            error instanceof Error && error.name === "AbortError"
-              ? "Session restore timed out. Sign in again."
-              : error instanceof Error
-                ? error.message
-                : "Session expired. Sign in again.";
-          set({
-            user: null,
-            capabilities: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: message,
-          });
+          return;
         }
+
+        set({
+          user: null,
+          capabilities: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: lastMessage,
+        });
       },
 
       setAuth: (user) => {

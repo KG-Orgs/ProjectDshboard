@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchBackendWithColdStartRetries, getBackendBaseUrl } from '../../../../lib/backend-fetch';
+import { APP_SESSION_COOKIE } from '../../../../lib/session-cookie';
 
-const APP_SESSION_COOKIE = 'app_session';
 export const dynamic = 'force-dynamic';
-
-function getBackendBaseUrl(): string {
-  return process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-}
 
 export async function GET(request: NextRequest) {
   try {
     const sessionToken = request.cookies.get(APP_SESSION_COOKIE)?.value;
-    const response = await fetch(`${getBackendBaseUrl()}/api/auth/me`, {
+    const response = await fetchBackendWithColdStartRetries(`${getBackendBaseUrl()}/api/auth/me`, {
       method: 'GET',
       headers: sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {},
-      cache: 'no-store',
     });
 
     if (response.status === 204) {
@@ -24,6 +20,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Get auth me error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'backend_unreachable',
+        message: 'Backend API is waking up. Wait a moment and refresh.',
+      },
+      { status: 503 }
+    );
   }
 }
