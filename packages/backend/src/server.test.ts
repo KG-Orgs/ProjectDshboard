@@ -9,8 +9,9 @@ describe("backend server", () => {
     authService.resetForTests();
     onedriveService.resetForTests();
     projectService.resetForTests();
-    resetEnvCache();
     vi.restoreAllMocks();
+    vi.stubEnv("PLATFORM_OPERATOR_EMAILS", "jane@contractor.ai");
+    resetEnvCache();
   });
 
   it("returns API health with a request id", async () => {
@@ -117,7 +118,7 @@ describe("backend server", () => {
     expect(createResponse.status).toBe(200);
     expect(createResponse.body.project.name).toBe("Airport Expansion");
     expect(createResponse.body.project.onedriveFolderId).toBe("folder-123");
-    expect(login.body.user.role).toBe("member");
+    expect(login.body.user.role).toBe("super");
 
     const listResponse = await request(app)
       .get("/api/projects")

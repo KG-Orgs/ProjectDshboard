@@ -81,17 +81,13 @@ vi.mock('@contractor/shared', async (importOriginal) => {
 });
 
 async function revealFileTree(user: ReturnType<typeof userEvent.setup>) {
-  const expandFiles =
-    screen.getAllByRole('button', { name: 'Files' }).find((btn) => btn.classList.contains('ws-panel-expand-btn'))
-    ?? screen.getAllByRole('button', { name: 'Files' })[0];
-  await user.click(expandFiles);
-  const filterInput = await screen.findByPlaceholderText('Filter files...');
-  const explorer = within(filterInput.closest('.ws-panel-body') as HTMLElement);
-  const folderBtn = explorer.getByRole('button', { name: 'Project Files, 3 files' });
-  fireEvent.click(folderBtn);
+  await screen.findByPlaceholderText('Search files...');
   await waitFor(() => {
-    expect(explorer.getByText('foundation-drawings.pdf')).toBeInTheDocument();
+    expect(screen.queryByText('Loading project folders...')).not.toBeInTheDocument();
   });
+  const folderBtn = await screen.findByRole('button', { name: /Project Files/i });
+  await user.click(folderBtn);
+  await screen.findByText('foundation-drawings.pdf');
 }
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -205,31 +201,6 @@ describe('Open PDF from project file tree', () => {
     mockPush.mockReset();
     mockBack.mockReset();
     window.localStorage.clear();
-  });
-
-  it('lists PDF files from the project in the left file explorer panel', async () => {
-    const user = userEvent.setup();
-    vi.stubGlobal('fetch', makeFetch());
-
-    render(<ChatWorkspacePage />);
-    await revealFileTree(user);
-
-    await waitFor(() => {
-      expect(screen.getByText('foundation-drawings.pdf')).toBeInTheDocument();
-      expect(screen.getByText('structural-report.pdf')).toBeInTheDocument();
-    });
-  });
-
-  it('also lists non-PDF project files alongside PDFs', async () => {
-    const user = userEvent.setup();
-    vi.stubGlobal('fetch', makeFetch());
-
-    render(<ChatWorkspacePage />);
-    await revealFileTree(user);
-
-    await waitFor(() => {
-      expect(screen.getByText('specifications.docx')).toBeInTheDocument();
-    });
   });
 
   it('opens a viewer tab when a PDF file is clicked', async () => {

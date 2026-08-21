@@ -7,7 +7,7 @@ import type {
   UserRole,
   UUID,
 } from "@contractor/shared";
-import { isOrgPowerUser, isPlatformOperatorEmail } from "@contractor/shared";
+import { isPlatformOperatorEmail } from "@contractor/shared";
 import { getPlatformOperatorEmails } from "./platform-admin.service";
 import { getDbIfInitialized, projectMembers, projects, users } from "../db";
 import { AppError } from "../lib/errors";

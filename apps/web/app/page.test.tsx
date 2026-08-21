@@ -8,6 +8,7 @@ const mockPush = vi.fn();
 
 vi.mock('@contractor/shared', () => ({
   useAuthStore: () => mockUseAuthStore(),
+  isOrgPowerUser: (role?: string) => role === 'super' || role === 'admin',
 }));
 
 vi.mock('next/navigation', () => ({
@@ -61,7 +62,7 @@ describe('Home page', () => {
     const hydrate = vi.fn();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor', onboardingCompleted: true },
+      user: { name: 'Jane Contractor', onboardingCompleted: true, role: 'admin' },
       hydrate,
       logout,
       isLoading: false,
@@ -173,7 +174,7 @@ describe('Home page', () => {
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor', onboardingCompleted: true },
+      user: { name: 'Jane Contractor', onboardingCompleted: true, role: 'admin' },
       hydrate: vi.fn(),
       logout: vi.fn(),
       isLoading: false,
@@ -316,7 +317,7 @@ describe('Home page', () => {
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor', onboardingCompleted: true },
+      user: { name: 'Jane Contractor', onboardingCompleted: true, role: 'admin' },
       hydrate: vi.fn(),
       logout: vi.fn(),
       isLoading: false,
@@ -454,7 +455,7 @@ describe('Home page', () => {
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor', onboardingCompleted: true },
+      user: { name: 'Jane Contractor', onboardingCompleted: true, role: 'admin' },
       hydrate: vi.fn(),
       logout: vi.fn(),
       isLoading: false,
@@ -546,7 +547,7 @@ describe('Home page', () => {
     const user = userEvent.setup();
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
-      user: { name: 'Jane Contractor', onboardingCompleted: true },
+      user: { name: 'Jane Contractor', onboardingCompleted: true, role: 'admin' },
       hydrate: vi.fn(),
       logout: vi.fn(),
       isLoading: false,

@@ -138,7 +138,7 @@ describe("formatAnswer end to end", () => {
       question: "When was it approved?",
       answer: {
         ...ANSWER,
-        citations: ANSWER.citations.map(({ fileId, ...rest }) => rest),
+        citations: ANSWER.citations.map(({ fileId: _fileId, ...rest }) => rest),
       },
     });
 

@@ -58,6 +58,7 @@ describe("chatService", () => {
       undefined,
       undefined,
       undefined,
+      undefined,
       undefined
     );
     expect(response.content).toContain("indexed context");

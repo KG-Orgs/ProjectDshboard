@@ -5,7 +5,7 @@
  * Run with: npm run db:migrate
  */
 
-import { db, pool } from '../db/client';
+import { pool } from '../db/client';
 
 export async function up() {
   console.log('Running migration: create ContractorAI schema');

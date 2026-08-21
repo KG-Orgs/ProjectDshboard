@@ -25,7 +25,7 @@ function toDeterministicUuid(seed: string): string {
 }
 
 export function getPlatformOperatorEmails(): string[] {
-  return getEnv().platformOperatorEmails;
+  return getEnv().platformOperatorEmails ?? [];
 }
 
 export function isInviteOnlyAuthEnabled(): boolean {

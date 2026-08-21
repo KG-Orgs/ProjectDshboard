@@ -1184,8 +1184,8 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
       bubbles: true,
       cancelable: true,
       touches: [
-        { clientX: 300, clientY: 300, identifier: 0, target: scrollEl } as Touch,
-        { clientX: 400, clientY: 400, identifier: 1, target: scrollEl } as Touch,
+        { clientX: 300, clientY: 300, identifier: 0, target: scrollEl } as unknown as Touch,
+        { clientX: 400, clientY: 400, identifier: 1, target: scrollEl } as unknown as Touch,
       ],
     });
     host.dispatchEvent(touchStart);
@@ -1194,8 +1194,8 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
       bubbles: true,
       cancelable: true,
       touches: [
-        { clientX: 250, clientY: 250, identifier: 0, target: scrollEl } as Touch,
-        { clientX: 450, clientY: 450, identifier: 1, target: scrollEl } as Touch,
+        { clientX: 250, clientY: 250, identifier: 0, target: scrollEl } as unknown as Touch,
+        { clientX: 450, clientY: 450, identifier: 1, target: scrollEl } as unknown as Touch,
       ],
     });
     host.dispatchEvent(touchMove);
@@ -1266,8 +1266,8 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
       bubbles: true,
       cancelable: true,
       touches: [
-        { clientX: 300, clientY: 300, identifier: 0, target: scrollEl } as Touch,
-        { clientX: 400, clientY: 400, identifier: 1, target: scrollEl } as Touch,
+        { clientX: 300, clientY: 300, identifier: 0, target: scrollEl } as unknown as Touch,
+        { clientX: 400, clientY: 400, identifier: 1, target: scrollEl } as unknown as Touch,
       ],
     }));
 
@@ -1275,8 +1275,8 @@ describe('ConstructionPdfViewer – page navigation and viewer controls', () => 
       bubbles: true,
       cancelable: true,
       touches: [
-        { clientX: 250, clientY: 250, identifier: 0, target: scrollEl } as Touch,
-        { clientX: 450, clientY: 450, identifier: 1, target: scrollEl } as Touch,
+        { clientX: 250, clientY: 250, identifier: 0, target: scrollEl } as unknown as Touch,
+        { clientX: 450, clientY: 450, identifier: 1, target: scrollEl } as unknown as Touch,
       ],
     }));
 
@@ -2374,6 +2374,7 @@ describe('ConstructionPdfViewer – continuous scroll markup interaction', () =>
     type: string;
     pageNumber: number;
     coordinates: Record<string, unknown>;
+    comment: string;
   }> = {}) {
     return {
       id: overrides.id ?? 'markup-cont-1',
@@ -2384,6 +2385,7 @@ describe('ConstructionPdfViewer – continuous scroll markup interaction', () =>
       coordinates: overrides.coordinates ?? { x: 0.1, y: 0.1, width: 0.3, height: 0.2 },
       category: 'General Comment',
       status: 'Open',
+      comment: overrides.comment,
       createdBy: 'Tester',
       createdAt: now,
       updatedAt: now,

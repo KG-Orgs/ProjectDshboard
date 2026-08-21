@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { UUID } from "@contractor/shared";
 import { resetEnvCache } from "../config/env";
 import { logger } from "../lib/logger";
 import { featureService } from "./feature.service";
@@ -18,7 +19,7 @@ describe("featureService rollout flags", () => {
     resetEnvCache();
 
     const enabled = featureService.isRolloutFlagEnabledForProject(
-      "project-a" as any,
+      "project-a" as UUID,
       "RETRIEVAL_HYBRID_ENABLED"
     );
 
@@ -31,11 +32,11 @@ describe("featureService rollout flags", () => {
     resetEnvCache();
 
     const canaryEnabled = featureService.isRolloutFlagEnabledForProject(
-      "project-canary" as any,
+      "project-canary" as UUID,
       "RETRIEVAL_HYBRID_ENABLED"
     );
     const nonCanaryEnabled = featureService.isRolloutFlagEnabledForProject(
-      "project-other" as any,
+      "project-other" as UUID,
       "RETRIEVAL_HYBRID_ENABLED"
     );
 
@@ -51,7 +52,7 @@ describe("featureService rollout flags", () => {
     const infoSpy = vi.spyOn(logger, "info");
 
     featureService.isRolloutFlagEnabledForProject(
-      "project-canary" as any,
+      "project-canary" as UUID,
       "RETRIEVAL_RERANK_ENABLED"
     );
 

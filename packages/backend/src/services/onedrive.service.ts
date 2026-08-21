@@ -239,16 +239,6 @@ async function fetchGraphWithRetry(url: string, accessToken: string): Promise<Re
   throw lastError instanceof Error ? lastError : new Error("Graph request failed after retries.");
 }
 
-async function fetchGraphRaw(url: string, accessToken: string): Promise<Response> {
-  return fetch(url, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: "application/json",
-    },
-  });
-}
-
 async function exchangeRefreshToken(connection: OneDriveConnection): Promise<string> {
   const hasCachedToken =
     typeof connection.accessToken === "string" &&

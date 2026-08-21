@@ -12,10 +12,9 @@
  */
 
 import type { UUID } from "@contractor/shared";
-import { eq, and, ne } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { getDbIfInitialized, documentRelationships, fileRecords } from "../db";
 import { logger } from "../lib/logger";
-import type { ConstructionCategory } from "../db/schema";
 
 // ============================================================
 // Types

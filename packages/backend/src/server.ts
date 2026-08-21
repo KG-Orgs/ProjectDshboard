@@ -9,7 +9,7 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import dotenv from "dotenv";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { initializeDb, getDbIfInitialized } from "./db";
+import { initializeDb } from "./db";
 import type {
   AuthLoginRequest,
   ChatIntentLabel,
@@ -21,7 +21,6 @@ import type {
   OneDriveConnectRequest,
   OneDriveSyncRequest,
   SendChatMessageRequest,
-  UpdateChatSessionRequest,
   UpdateProjectFolderRequest,
   UpdateProjectFeatureRequest,
   BindProjectDriveRequest,
@@ -1097,7 +1096,7 @@ async function createApp(): Promise<Express> {
   });
 
   // Default error handler
-  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
     const statusCode = isAppError(err) ? err.statusCode : 500;
     logger.error("http.request.failed", err, {
       requestId: req.requestId,

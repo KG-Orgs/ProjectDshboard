@@ -67,8 +67,8 @@ export class VectorStoreClient {
    */
   async search(
     queryVector: number[],
-    topK: number = 10,
-    filter?: Record<string, unknown>
+    _topK: number = 10,
+    _filter?: Record<string, unknown>
   ): Promise<SearchResult[]> {
     // TODO: Implement with Pinecone client
     // const results = await this.client
@@ -91,7 +91,7 @@ export class VectorStoreClient {
   /**
    * Delete vectors by filter
    */
-  async deleteByFilter(filter: Record<string, unknown>): Promise<void> {
+  async deleteByFilter(_filter: Record<string, unknown>): Promise<void> {
     // TODO: Implement with Pinecone client
     // await this.client.index(this.indexName).deleteMany({ filter });
     console.log('Vectors deleted by filter');

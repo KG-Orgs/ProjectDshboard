@@ -34,8 +34,10 @@ vi.mock("../config/env", () => ({
     microsoftClientId: "test-client-id",
     microsoftClientSecret: "test-client-secret",
     oauthRedirectUri: "https://contractorai-web.onrender.com/auth/callback",
+    platformOperatorEmails: ["georgegao1997@gmail.com"],
   }),
   hasMicrosoftOAuthConfig: () => true,
+  resetEnvCache: () => undefined,
 }));
 
 vi.mock("../db", () => ({

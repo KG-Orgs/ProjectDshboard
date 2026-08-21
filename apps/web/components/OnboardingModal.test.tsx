@@ -9,6 +9,7 @@ const mockSetAuth = vi.fn();
 vi.mock('@contractor/shared', () => ({
   useAuthStore: (selector: (state: { setAuth: typeof mockSetAuth }) => unknown) =>
     selector({ setAuth: mockSetAuth }),
+  isOrgPowerUser: (role?: string) => role === 'super' || role === 'admin',
 }));
 
 vi.mock('framer-motion', () => {

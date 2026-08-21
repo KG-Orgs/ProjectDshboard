@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { guessMimeType, isLocalCorpusItemId, readLocalCorpusFile, resolveLocalCorpusAbsolutePath } from "./local-corpus.utils";

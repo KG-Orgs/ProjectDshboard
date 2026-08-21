@@ -205,12 +205,15 @@ function createSession(
 }
 
 async function resolveLoginSession(session: AuthSession): Promise<void> {
+  const email = session.user.email.trim().toLowerCase();
   const db = getDbIfInitialized();
   if (!db) {
+    // In-memory/local tests still honor platform operators for create-project flows.
+    if (isPlatformOperator(email)) {
+      session.user.role = "super";
+    }
     return;
   }
-
-  const email = session.user.email.trim().toLowerCase();
   const [existing] = await db
     .select({
       id: users.id,
@@ -257,6 +260,7 @@ async function resolveLoginSession(session: AuthSession): Promise<void> {
 async function persistSession(session: AuthSession): Promise<void> {
   const db = getDbIfInitialized();
   if (!db) {
+    await resolveLoginSession(session);
     return;
   }
 
