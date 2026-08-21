@@ -1,7 +1,10 @@
 # Mirrors Render: type-check + production compile, plus Docker images.
-# Require only "Lint, type-check, test, build" as a status check so merges
-# are not blocked on slower Docker image builds. Docker still runs on every
-# PR and push to main as extra coverage (Alpine / case-sensitive paths).
+#
+# Branch protection should require exactly:
+#   "Lint, type-check, test, build"
+# That check is the gate job below — it stays red unless BOTH unit checks AND
+# Docker (api + web) succeed. That way Render Dockerfile `tsc` failures (e.g.
+# branded UUID assignability) cannot be bypassed by a lint-only unit failure.
 
 name: CI
 
@@ -22,8 +25,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: Lint, type-check, test, build
+  unit:
+    name: Unit checks
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -45,8 +48,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint backend
-        run: pnpm --filter @contractor/backend lint
+      # Same compile sequence as Dockerfile / Render API image — run before lint
+      # so a missing eslint binary cannot hide production tsc failures.
+      - name: Backend production compile (Docker parity)
+        run: |
+          pnpm --filter @contractor/shared build
+          pnpm --filter @contractor/ai-actions build
+          pnpm --filter @contractor/backend build
 
       - name: Type-check
         run: pnpm type-check
@@ -56,6 +64,9 @@ jobs:
 
       - name: Production build
         run: pnpm build
+
+      - name: Lint backend
+        run: pnpm --filter @contractor/backend lint
 
   docker:
     name: Docker (${{ matrix.name }})
@@ -84,3 +95,21 @@ jobs:
           push: false
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  # Keep this job name stable — it is the required status check on main.
+  gate:
+    name: Lint, type-check, test, build
+    needs: [unit, docker]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require unit checks and Docker image builds
+        run: |
+          unit="${{ needs.unit.result }}"
+          docker="${{ needs.docker.result }}"
+          echo "unit=$unit"
+          echo "docker=$docker"
+          if [ "$unit" != "success" ] || [ "$docker" != "success" ]; then
+            echo "::error::CI gate failed (unit=$unit docker=$docker). Docker (api) must pass — that is the Render API image build."
+            exit 1
+          fi
