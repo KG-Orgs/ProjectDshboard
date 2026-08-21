@@ -92,6 +92,27 @@ Uses `DATABASE_URL` from repo-root `.env`. Tracks applied files in `schema_sql_m
 
 Click **Apply**. First build takes ~5–10 minutes (Docker images for web + API).
 
+### Dockerfile paths (required if deploys fail with `open Dockerfile`)
+
+Render’s service dashboard often defaults to `Dockerfile` and **ignores** blueprint paths until you set them. For each Docker service → **Settings** → **Build & Deploy**:
+
+| Service | Dockerfile path | Docker build context |
+|---------|-----------------|----------------------|
+| `contractorai-api` | `Dockerfile` (or `./Dockerfile`) | `.` |
+| `contractorai-web` | `Dockerfile.web` (or `./Dockerfile.web`) | `.` |
+
+If web is left on `Dockerfile`, it will build the **API** image and fail or serve the wrong app.
+
+After fixing paths: **Manual Deploy** → clear build cache → deploy latest `main`.
+
+Confirm the live API is on a recent commit (health includes `gitCommit` when Render injects `RENDER_GIT_COMMIT`):
+
+```bash
+curl -sS https://contractorai-api.onrender.com/health | jq '.dependencies.api.details'
+curl -sS -o /dev/null -w "%{http_code}\n" https://contractorai-api.onrender.com/api/projects/00000000-0000-4000-8000-000000000001/files/explorer
+# expect 401 (route exists), not 404
+```
+
 ### 5. Verify health
 
 ```bash
@@ -99,7 +120,7 @@ curl https://contractorai-api.onrender.com/health/api
 curl -I https://contractorai-web.onrender.com/
 ```
 
-### 5. Share the demo URL
+### 6. Share the demo URL
 
 Send teammates:
 

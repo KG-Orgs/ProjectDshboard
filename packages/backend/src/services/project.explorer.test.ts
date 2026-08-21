@@ -48,6 +48,42 @@ describe("projectService.listProjectExplorerFolder", () => {
     expect(root.lastSyncedAt === null || typeof root.lastSyncedAt === "string").toBe(true);
   });
 
+  it("normalizes Windows-style OneDrive paths the same way as SQL listing", async () => {
+    projectService.resetForTests();
+    await projectService.setProjectFiles(projectId, [
+      {
+        id: "00000000-0000-4000-8000-000000000301",
+        projectId,
+        fileName: "a.pdf",
+        filePath: "MLJ-017 Package 6 - General\\02 - DESIGN\\a.pdf",
+        indexStatus: "indexed",
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000302",
+        projectId,
+        fileName: "b.pdf",
+        filePath: "MLJ-017 Package 6 - General\\02 - DESIGN\\Nested\\b.pdf",
+        indexStatus: "indexed",
+      },
+    ] as FileRecord[]);
+
+    const root = await projectService.listProjectExplorerFolder(
+      projectId,
+      "",
+      "MLJ-017 Package 6 - General"
+    );
+    const design = await projectService.listProjectExplorerFolder(
+      projectId,
+      "02 - DESIGN",
+      "MLJ-017 Package 6 - General"
+    );
+
+    expect(root.folders.map((folder) => folder.name)).toEqual(["02 - DESIGN"]);
+    expect(root.folders[0]?.fileCount).toBe(2);
+    expect(design.files.map((file) => file.fileName)).toEqual(["a.pdf"]);
+    expect(design.folders.map((folder) => folder.name)).toEqual(["Nested"]);
+  });
+
   it("returns direct files and child folders when a folder is opened", async () => {
     const folder = await projectService.listProjectExplorerFolder(
       projectId,

@@ -539,6 +539,168 @@ function withExplorerSyncMeta(
   };
 }
 
+type ExplorerSqlRow = Record<string, unknown>;
+
+function asExplorerSqlRows(result: unknown): ExplorerSqlRow[] {
+  if (Array.isArray(result)) {
+    return result as ExplorerSqlRow[];
+  }
+  if (result && typeof result === "object" && "rows" in result) {
+    const rows = (result as { rows?: unknown }).rows;
+    if (Array.isArray(rows)) {
+      return rows as ExplorerSqlRow[];
+    }
+  }
+  return [];
+}
+
+function normalizeExplorerRootName(projectRootFolderName?: string | null): string {
+  return (projectRootFolderName ?? "")
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "");
+}
+
+/** List one folder level via SQL so large projects never load all file rows into memory. */
+async function listExplorerFolderFromDb(
+  projectId: UUID,
+  folderPath: string,
+  projectRootFolderName?: string | null
+): Promise<ProjectExplorerFolderResponse> {
+  const db = getDbIfInitialized();
+  if (!db) {
+    throw new Error("Database is required for SQL explorer listing");
+  }
+
+  const root = normalizeExplorerRootName(projectRootFolderName);
+  const parent = folderPath;
+  const backslash = "\\";
+  const rootPrefix = root ? `${root}/%` : "";
+  const parentPrefix = parent ? `${parent}/%` : "";
+
+  const [totalRow] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(fileRecords)
+    .where(eq(fileRecords.projectId, projectId));
+
+  const folderRows = asExplorerSqlRows(
+    await db.execute(sql`
+      WITH base AS (
+        SELECT replace(file_path, ${backslash}, '/') AS norm_path
+        FROM file_records
+        WHERE project_id = ${projectId}
+      ),
+      rel AS (
+        SELECT
+          CASE
+            WHEN ${root} = '' THEN norm_path
+            WHEN norm_path = ${root} THEN ''
+            WHEN ${root} <> '' AND norm_path LIKE ${rootPrefix} THEN substr(norm_path, length(${root}) + 2)
+            ELSE norm_path
+          END AS rel_path
+        FROM base
+      ),
+      cf AS (
+        SELECT
+          CASE
+            WHEN rel_path = '' THEN ''
+            WHEN rel_path NOT LIKE '%/%' THEN ''
+            ELSE regexp_replace(rel_path, '/[^/]+$', '')
+          END AS containing_folder
+        FROM rel
+      ),
+      children AS (
+        SELECT
+          CASE
+            WHEN ${parent} = '' THEN split_part(containing_folder, '/', 1)
+            ELSE split_part(substr(containing_folder, length(${parent}) + 2), '/', 1)
+          END AS child_name
+        FROM cf
+        WHERE
+          (${parent} = '' AND containing_folder <> '')
+          OR (${parent} <> '' AND containing_folder LIKE ${parentPrefix})
+      )
+      SELECT child_name AS name, count(*)::int AS file_count
+      FROM children
+      WHERE child_name <> ''
+      GROUP BY child_name
+      ORDER BY child_name
+    `)
+  );
+
+  const fileRows = asExplorerSqlRows(
+    await db.execute(sql`
+      WITH base AS (
+        SELECT
+          id,
+          file_name,
+          file_path,
+          index_status,
+          replace(file_path, ${backslash}, '/') AS norm_path
+        FROM file_records
+        WHERE project_id = ${projectId}
+      ),
+      rel AS (
+        SELECT
+          id,
+          file_name,
+          file_path,
+          index_status,
+          CASE
+            WHEN ${root} = '' THEN norm_path
+            WHEN norm_path = ${root} THEN ''
+            WHEN ${root} <> '' AND norm_path LIKE ${rootPrefix} THEN substr(norm_path, length(${root}) + 2)
+            ELSE norm_path
+          END AS rel_path
+        FROM base
+      ),
+      cf AS (
+        SELECT
+          id,
+          file_name,
+          file_path,
+          index_status,
+          CASE
+            WHEN rel_path = '' THEN ''
+            WHEN rel_path NOT LIKE '%/%' THEN ''
+            ELSE regexp_replace(rel_path, '/[^/]+$', '')
+          END AS containing_folder
+        FROM rel
+      )
+      SELECT id, file_name, file_path, index_status
+      FROM cf
+      WHERE containing_folder = ${parent}
+      ORDER BY file_name
+    `)
+  );
+
+  const folders = folderRows.map((row) => {
+    const name = String(row.name ?? "");
+    return {
+      name,
+      path: parent ? `${parent}/${name}` : name,
+      fileCount: Number(row.file_count ?? 0),
+    };
+  });
+
+  const files = fileRows.map((row) =>
+    toExplorerWsFile({
+      id: String(row.id) as UUID,
+      fileName: String(row.file_name ?? ""),
+      filePath: String(row.file_path ?? ""),
+      indexStatus: String(row.index_status ?? "pending") as FileRecord["indexStatus"],
+    }) as FileRecord
+  );
+
+  return {
+    folderPath: parent,
+    folders,
+    files,
+    totalProjectFiles: Number(totalRow?.total ?? 0),
+  };
+}
+
 function filterInMemoryProjectFiles(
   records: FileRecord[],
   query: ReturnType<typeof normalizeProjectFilesQuery>
@@ -1594,7 +1756,19 @@ export const projectService = {
     projectRootFolderName?: string | null
   ): Promise<ProjectExplorerFolderResponse> {
     const normalizedFolderPath = splitExplorerFolderPath(folderPath ?? "").join("/");
-    const { entries, lastSyncedAt } = await getProjectExplorerIndex(projectId, projectRootFolderName);
+    const { lastSyncedAt } = await getLatestSyncFingerprint(projectId);
+    const db = getDbIfInitialized();
+
+    // SQL folder listing whenever Postgres is available (local + Render).
+    // In-memory index is only for unit tests without a database.
+    if (db) {
+      return withExplorerSyncMeta(
+        await listExplorerFolderFromDb(projectId, normalizedFolderPath, projectRootFolderName),
+        lastSyncedAt
+      );
+    }
+
+    const { entries } = await getProjectExplorerIndex(projectId, projectRootFolderName);
     return withExplorerSyncMeta(
       buildProjectExplorerFolderResponse(entries, normalizedFolderPath),
       lastSyncedAt

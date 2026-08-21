@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Root Render/CI entrypoint is ../../Dockerfile — keep in sync.
+# Root entrypoint for Render (API). Canonical twin: packages/backend/Dockerfile — keep in sync.
 FROM node:20-alpine AS base
 RUN npm install -g pnpm@10.33.0
 

@@ -365,6 +365,7 @@ function ChatWorkspacePageContent() {
   const [loadedExplorerFolders, setLoadedExplorerFolders] = useState<Map<string, ProjectExplorerFolderResponse>>(new Map());
   const [loadingExplorerPaths, setLoadingExplorerPaths] = useState<Set<string>>(new Set());
   const [wsFilesLoading, setWsFilesLoading] = useState(false);
+  const [explorerLoadError, setExplorerLoadError] = useState<string | null>(null);
   const [explorerTotalFiles, setExplorerTotalFiles] = useState(0);
   const [searchResults, setSearchResults] = useState<WsFile[]>([]);
   const [fileSearchLoading, setFileSearchLoading] = useState(false);
@@ -1170,6 +1171,7 @@ function ChatWorkspacePageContent() {
 
     let cancelled = false;
     setWsFilesLoading(true);
+    setExplorerLoadError(null);
 
     void (async () => {
       const cached = await readExplorerSessionCache(projectId, projectDisplayName);
@@ -1192,13 +1194,14 @@ function ChatWorkspacePageContent() {
         loadedExplorerFoldersRef.current = next;
         setLoadedExplorerFolders(new Map(next));
         setExplorerTotalFiles(folder.totalProjectFiles);
+        setExplorerLoadError(null);
         if (!cachedMatches) {
           setExpandedFolders(new Set());
         }
         void writeExplorerSessionCache(
           createExplorerSessionCache(projectId, projectDisplayName, next, folder.lastSyncedAt)
         );
-      } catch {
+      } catch (error) {
         if (cancelled) {
           return;
         }
@@ -1207,9 +1210,13 @@ function ChatWorkspacePageContent() {
           loadedExplorerFoldersRef.current = hydrated;
           setLoadedExplorerFolders(hydrated);
           setExplorerTotalFiles(hydrated.get('')?.totalProjectFiles ?? 0);
+          setExplorerLoadError(null);
         } else {
           loadedExplorerFoldersRef.current = new Map();
           setLoadedExplorerFolders(new Map());
+          setExplorerLoadError(
+            error instanceof Error ? error.message : 'Failed to load project folders'
+          );
         }
       } finally {
         if (!cancelled) {
@@ -1651,7 +1658,9 @@ function ChatWorkspacePageContent() {
                   ? 'No matching files'
                   : !projectId
                     ? 'Open a project from the dashboard.'
-                    : 'No project files yet. Run a sync from the dashboard.'}
+                    : explorerLoadError
+                      ? `Could not load folders (${explorerLoadError}). Refresh and try again.`
+                      : 'No project files yet. Run a sync from the dashboard.'}
               </div>
             )}
             {explorerTotalFiles > 0 && !fileSearch.trim() ? (

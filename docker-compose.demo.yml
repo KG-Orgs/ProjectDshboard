@@ -22,7 +22,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: packages/backend/Dockerfile
+      dockerfile: Dockerfile
     container_name: contractor_demo_backend
     restart: unless-stopped
     networks:
@@ -58,7 +58,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: Dockerfile.web
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
         NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-ContractorAI}

@@ -81,7 +81,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: packages/backend/Dockerfile
+      dockerfile: Dockerfile
     container_name: contractor_backend
     restart: unless-stopped
     networks:
@@ -133,7 +133,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: Dockerfile.web
     container_name: contractor_web
     restart: unless-stopped
     networks:

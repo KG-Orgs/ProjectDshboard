@@ -53,6 +53,12 @@ export function createHealthService(
       details: {
         uptimeSeconds: Math.round(process.uptime()),
         nodeVersion: process.version,
+        // Render injects this; useful to confirm the live image matches origin/main.
+        gitCommit:
+          process.env.RENDER_GIT_COMMIT ??
+          process.env.GIT_COMMIT ??
+          process.env.COMMIT_SHA ??
+          null,
       },
     };
   },

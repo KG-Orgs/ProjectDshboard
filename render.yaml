@@ -12,7 +12,8 @@ services:
   - type: web
     name: contractorai-api
     runtime: docker
-    dockerfilePath: ./packages/backend/Dockerfile
+    # Root Dockerfile so dashboard default "Dockerfile" also works.
+    dockerfilePath: ./Dockerfile
     dockerContext: .
     plan: free
     healthCheckPath: /health/api
@@ -66,7 +67,8 @@ services:
   - type: web
     name: contractorai-web
     runtime: docker
-    dockerfilePath: ./apps/web/Dockerfile
+    # Must be Dockerfile.web — a plain "Dockerfile" builds the API image.
+    dockerfilePath: ./Dockerfile.web
     dockerContext: .
     plan: free
     healthCheckPath: /

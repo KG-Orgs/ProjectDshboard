@@ -66,9 +66,9 @@ jobs:
       matrix:
         include:
           - name: api
-            file: packages/backend/Dockerfile
+            file: Dockerfile
           - name: web
-            file: apps/web/Dockerfile
+            file: Dockerfile.web
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
