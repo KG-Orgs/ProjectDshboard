@@ -2,24 +2,44 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET, POST } from './route';
 
+function mockResponse(init: {
+  status: number;
+  location?: string | null;
+  json?: (() => Promise<unknown>) | Record<string, unknown>;
+}) {
+  const response = {
+    status: init.status,
+    headers: {
+      get: (key: string) =>
+        key.toLowerCase() === 'location' ? (init.location ?? null) : null,
+    },
+    json:
+      typeof init.json === 'function'
+        ? init.json
+        : async () => init.json ?? {},
+    clone() {
+      return mockResponse(init);
+    },
+  };
+  return response;
+}
+
 describe('GET /api/auth/login', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
+    vi.useRealTimers();
   });
 
   it('redirects to Microsoft authorization URL when backend returns 302', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        status: 302,
-        headers: {
-          get: (key: string) =>
-            key.toLowerCase() === 'location'
-              ? 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?state=abc123'
-              : null,
-        },
-      })
+      vi.fn().mockResolvedValue(
+        mockResponse({
+          status: 302,
+          location: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?state=abc123',
+        })
+      )
     );
 
     const request = new NextRequest(
@@ -39,20 +59,13 @@ describe('GET /api/auth/login', () => {
     vi.useFakeTimers();
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({
-        status: 502,
-        headers: { get: () => null },
-        json: async () => ({}),
-      })
-      .mockResolvedValueOnce({
-        status: 302,
-        headers: {
-          get: (key: string) =>
-            key.toLowerCase() === 'location'
-              ? 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?state=retry'
-              : null,
-        },
-      });
+      .mockResolvedValueOnce(mockResponse({ status: 502 }))
+      .mockResolvedValueOnce(
+        mockResponse({
+          status: 302,
+          location: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?state=retry',
+        })
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     const request = new NextRequest('http://localhost:3000/api/auth/login', {
@@ -66,22 +79,53 @@ describe('GET /api/auth/login', () => {
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toContain('login.microsoftonline.com');
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    vi.useRealTimers();
+  });
+
+  it('retries when the backend is cold-starting with 503 HTML', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        mockResponse({
+          status: 503,
+          json: async () => {
+            throw new Error('not json');
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        mockResponse({
+          status: 302,
+          location: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?state=retry',
+        })
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new NextRequest('http://localhost:3000/api/auth/login', {
+      method: 'GET',
+    });
+
+    const responsePromise = GET(request);
+    await vi.runAllTimersAsync();
+    const response = await responsePromise;
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toContain('login.microsoftonline.com');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('redirects back to /login with friendly error when backend cannot start OAuth', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        status: 503,
-        headers: {
-          get: () => null,
-        },
-        json: async () => ({
-          error: 'oauth_not_configured',
-          message: 'Microsoft OAuth is not configured',
-        }),
-      })
+      vi.fn().mockResolvedValue(
+        mockResponse({
+          status: 503,
+          json: {
+            error: 'oauth_not_configured',
+            message: 'Microsoft OAuth is not configured',
+          },
+        })
+      )
     );
 
     const request = new NextRequest('http://localhost:3000/api/auth/login', {
@@ -101,16 +145,15 @@ describe('GET /api/auth/login', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://contractorai-web.onrender.com');
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        status: 503,
-        headers: {
-          get: () => null,
-        },
-        json: async () => ({
-          error: 'oauth_not_configured',
-          message: 'Microsoft OAuth is not configured',
-        }),
-      })
+      vi.fn().mockResolvedValue(
+        mockResponse({
+          status: 503,
+          json: {
+            error: 'oauth_not_configured',
+            message: 'Microsoft OAuth is not configured',
+          },
+        })
+      )
     );
 
     const request = new NextRequest('https://0.0.0.0:10000/api/auth/login', {

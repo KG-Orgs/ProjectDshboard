@@ -4,9 +4,10 @@ import { publicUrl } from '../../../../lib/request-origin';
 const APP_SESSION_COOKIE = 'app_session';
 export const dynamic = 'force-dynamic';
 
-const BACKEND_FETCH_TIMEOUT_MS = 20_000;
-const COLD_START_RETRY_DELAY_MS = 1_500;
-const COLD_START_MAX_ATTEMPTS = 3;
+/** Render free-tier API wake can exceed 20s; keep this above observed cold-start times. */
+const BACKEND_FETCH_TIMEOUT_MS = 60_000;
+const COLD_START_RETRY_DELAY_MS = 2_000;
+const COLD_START_MAX_ATTEMPTS = 4;
 
 function getBackendBaseUrl(): string {
   return process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -23,9 +24,33 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function isRetryableAuthStartFailure(status: number): boolean {
-  // Render cold starts usually surface as gateway timeouts, not app-level 503 OAuth errors.
-  return status === 502 || status === 504 || status === 0;
+function isSuccessfulAuthRedirect(response: Response): boolean {
+  const location = response.headers.get('location');
+  return response.status >= 300 && response.status < 400 && Boolean(location);
+}
+
+async function shouldRetryAuthStart(response: Response): Promise<boolean> {
+  if (isSuccessfulAuthRedirect(response)) {
+    return false;
+  }
+
+  if ([502, 504, 520, 522, 524].includes(response.status)) {
+    return true;
+  }
+
+  // 503 may be OAuth misconfig (JSON) or a cold-start shell (HTML).
+  if (response.status === 503 || response.status === 200) {
+    const data = (await response
+      .clone()
+      .json()
+      .catch(() => undefined)) as { error?: string } | undefined;
+    if (data?.error) {
+      return false;
+    }
+    return true;
+  }
+
+  return false;
 }
 
 async function fetchAuthLoginStart(query: string): Promise<Response> {
@@ -63,7 +88,7 @@ export async function GET(request: NextRequest) {
     for (let attempt = 1; attempt <= COLD_START_MAX_ATTEMPTS; attempt += 1) {
       try {
         response = await fetchAuthLoginStart(query);
-        if (!isRetryableAuthStartFailure(response.status)) {
+        if (!(await shouldRetryAuthStart(response))) {
           break;
         }
       } catch (error) {
@@ -82,35 +107,46 @@ export async function GET(request: NextRequest) {
         buildLoginErrorRedirect(
           request,
           'backend_unreachable',
-          'Backend API is waking up or unavailable. Wait a few seconds and try signing in again.'
+          'Backend API is waking up. Wait about 30 seconds and try signing in again.'
         ),
         302
       );
     }
 
-    const location = response.headers.get('location');
-    if (response.status >= 300 && response.status < 400 && location) {
-      return NextResponse.redirect(location, 302);
+    if (isSuccessfulAuthRedirect(response)) {
+      return NextResponse.redirect(response.headers.get('location')!, 302);
     }
 
     const data = (await response.json().catch(() => undefined)) as
       | { error?: string; message?: string }
       | undefined;
 
-    const error = data?.error ?? (isRetryableAuthStartFailure(response.status) ? 'backend_unreachable' : 'auth_start_failed');
-    const message =
-      data?.message ??
-      (isRetryableAuthStartFailure(response.status)
-        ? 'Backend API is waking up or unavailable. Wait a few seconds and try signing in again.'
-        : 'Unable to start Microsoft sign-in. Please try again.');
-    return NextResponse.redirect(buildLoginErrorRedirect(request, error, message), 302);
+    if (data?.error) {
+      return NextResponse.redirect(
+        buildLoginErrorRedirect(
+          request,
+          data.error,
+          data.message ?? 'Unable to start Microsoft sign-in. Please try again.'
+        ),
+        302
+      );
+    }
+
+    return NextResponse.redirect(
+      buildLoginErrorRedirect(
+        request,
+        'backend_unreachable',
+        'Backend API is waking up. Wait about 30 seconds and try signing in again.'
+      ),
+      302
+    );
   } catch (error) {
     console.error('Login start proxy error:', error);
     return NextResponse.redirect(
       buildLoginErrorRedirect(
         request,
         'backend_unreachable',
-        'Backend API is waking up or unavailable. Wait a few seconds and try signing in again.'
+        'Backend API is waking up. Wait about 30 seconds and try signing in again.'
       ),
       302
     );
