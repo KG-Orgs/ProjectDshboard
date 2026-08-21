@@ -4,7 +4,6 @@ import LoginPage from './page';
 
 describe('Login page', () => {
   it('renders a Microsoft sign-in link that points at the web auth proxy route', () => {
-    window.history.pushState({}, '', 'http://localhost:3000/login');
     render(<LoginPage />);
 
     expect(

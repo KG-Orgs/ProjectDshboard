@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 function MicrosoftLogo() {
   return (
     <svg width="20" height="20" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -11,18 +13,34 @@ function MicrosoftLogo() {
   );
 }
 
+function buildMicrosoftAuthUrl(redirectUri: string): string {
+  const params = new URLSearchParams({
+    redirectUri,
+    prompt: 'select_account',
+  });
+  return `/api/auth/login?${params.toString()}`;
+}
+
 type LoginPageClientProps = {
   errorMessage: string | null;
+  /** Absolute OAuth callback URL from the server (preferred over window). */
+  redirectUri?: string;
 };
 
-export default function LoginPageClient({ errorMessage }: LoginPageClientProps) {
-  const redirectUri =
-    typeof window === 'undefined'
-      ? undefined
-      : `${window.location.origin}/auth/callback`;
-  const authUrl = redirectUri
-    ? `/api/auth/login?redirectUri=${encodeURIComponent(redirectUri)}&prompt=select_account`
-    : '/api/auth/login';
+export default function LoginPageClient({ errorMessage, redirectUri: redirectUriProp }: LoginPageClientProps) {
+  const [authUrl, setAuthUrl] = useState(() =>
+    redirectUriProp ? buildMicrosoftAuthUrl(redirectUriProp) : '/api/auth/login?prompt=select_account'
+  );
+
+  useEffect(() => {
+    const redirectUri =
+      redirectUriProp ??
+      (typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : null);
+    if (!redirectUri) {
+      return;
+    }
+    setAuthUrl(buildMicrosoftAuthUrl(redirectUri));
+  }, [redirectUriProp]);
 
   return (
     <div
@@ -107,6 +125,11 @@ export default function LoginPageClient({ errorMessage }: LoginPageClientProps) 
 
         <a
           href={authUrl}
+          onClick={(event) => {
+            // Force a full document navigation so the auth proxy is never soft-routed.
+            event.preventDefault();
+            window.location.assign(authUrl);
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',
