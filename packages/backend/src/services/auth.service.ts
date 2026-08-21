@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq, gt } from "drizzle-orm";
 import type {
   AuthLoginRequest,
@@ -44,8 +44,75 @@ interface AuthSession {
 
 const accessSessions = new Map<string, AuthSession>();
 const refreshSessions = new Map<string, AuthSession>();
-const oauthStates = new Map<string, { redirectUri: string; createdAt: number }>();
+/** One-time nonce set for signed OAuth states (best-effort; signed payload survives restarts). */
+const oauthStateNonces = new Map<string, number>();
 const APP_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const OAUTH_STATE_TTL_MS = 1000 * 60 * 15;
+
+type SignedOAuthStatePayload = {
+  redirectUri: string;
+  nonce: string;
+  exp: number;
+};
+
+function getOAuthStateSecret(): string {
+  const env = getEnv();
+  return (
+    process.env.AUTH_STATE_SECRET ??
+    env.microsoftClientSecret ??
+    env.microsoftClientId ??
+    "dev-oauth-state-secret"
+  );
+}
+
+function signOAuthState(payload: SignedOAuthStatePayload): string {
+  const body = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+  const signature = createHmac("sha256", getOAuthStateSecret()).update(body).digest("base64url");
+  return `${body}.${signature}`;
+}
+
+function verifyOAuthState(state: string): SignedOAuthStatePayload {
+  const [body, signature] = state.split(".");
+  if (!body || !signature) {
+    throw new AppError(400, "invalid_oauth_state", "OAuth state is invalid or expired. Start sign-in again.");
+  }
+
+  const expected = createHmac("sha256", getOAuthStateSecret()).update(body).digest("base64url");
+  const provided = Buffer.from(signature);
+  const computed = Buffer.from(expected);
+  if (provided.length !== computed.length || !timingSafeEqual(provided, computed)) {
+    throw new AppError(400, "invalid_oauth_state", "OAuth state is invalid or expired. Start sign-in again.");
+  }
+
+  let payload: SignedOAuthStatePayload;
+  try {
+    payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as SignedOAuthStatePayload;
+  } catch {
+    throw new AppError(400, "invalid_oauth_state", "OAuth state is invalid or expired. Start sign-in again.");
+  }
+
+  if (!payload.redirectUri || !payload.nonce || !Number.isFinite(payload.exp)) {
+    throw new AppError(400, "invalid_oauth_state", "OAuth state is invalid or expired. Start sign-in again.");
+  }
+
+  if (payload.exp < Date.now()) {
+    throw new AppError(
+      400,
+      "invalid_oauth_state",
+      "Sign-in timed out. The API may have been waking up — try signing in again."
+    );
+  }
+
+  return payload;
+}
+
+function pruneOAuthStateNonces(now = Date.now()): void {
+  for (const [nonce, exp] of oauthStateNonces) {
+    if (exp < now) {
+      oauthStateNonces.delete(nonce);
+    }
+  }
+}
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -508,11 +575,15 @@ export const authService = {
       );
     }
 
-    const state = randomUUID();
     const resolvedRedirectUri = redirectUri ?? getEnv().oauthRedirectUri;
-    oauthStates.set(state, {
+    const nonce = randomUUID();
+    const exp = Date.now() + OAUTH_STATE_TTL_MS;
+    pruneOAuthStateNonces();
+    oauthStateNonces.set(nonce, exp);
+    const state = signOAuthState({
       redirectUri: resolvedRedirectUri,
-      createdAt: Date.now(),
+      nonce,
+      exp,
     });
 
     return {
@@ -532,17 +603,14 @@ export const authService = {
       throw new AppError(400, "auth_code_missing", "Missing authorization code");
     }
 
-    const stateRecord = request.state ? oauthStates.get(request.state) : undefined;
-    if (request.state && !stateRecord) {
-      throw new AppError(400, "invalid_oauth_state", "OAuth state is invalid or expired");
-    }
-
-    // Consume the state before network I/O so duplicate callback attempts fail fast.
+    let redirectUri = request.redirectUri;
     if (request.state) {
-      oauthStates.delete(request.state);
+      const payload = verifyOAuthState(request.state);
+      // Prefer the signed redirect URI; drop the nonce if this process still has it.
+      redirectUri = payload.redirectUri;
+      oauthStateNonces.delete(payload.nonce);
     }
 
-    const redirectUri = stateRecord?.redirectUri ?? request.redirectUri;
     if (!redirectUri) {
       throw new AppError(400, "redirect_uri_missing", "Redirect URI is required");
     }
@@ -728,6 +796,6 @@ export const authService = {
   resetForTests(): void {
     accessSessions.clear();
     refreshSessions.clear();
-    oauthStates.clear();
+    oauthStateNonces.clear();
   },
 };
